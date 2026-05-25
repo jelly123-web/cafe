@@ -36,6 +36,11 @@ class DatabaseSeeder extends Seeder
                     'manage_menus' => true,
                     'manage_branches' => true,
                     'manage_users' => true,
+                    'manage_orders' => true,
+                    'view_all_orders' => true,
+                    'cancel_orders' => true,
+                    'order_history' => true,
+                    'monitor_orders_realtime' => true,
                 ],
                 'email_verified_at' => now(),
             ]
@@ -55,6 +60,11 @@ class DatabaseSeeder extends Seeder
                     'manage_menus' => false,
                     'manage_branches' => false,
                     'manage_users' => false,
+                    'manage_orders' => false,
+                    'view_all_orders' => false,
+                    'cancel_orders' => false,
+                    'order_history' => false,
+                    'monitor_orders_realtime' => false,
                 ],
                 'email_verified_at' => now(),
             ]

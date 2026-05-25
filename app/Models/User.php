@@ -19,6 +19,11 @@ class User extends Authenticatable
         'manage_menus' => 'Kelola menu',
         'manage_branches' => 'Kelola cabang',
         'manage_users' => 'Kelola akun',
+        'manage_orders' => 'Manajemen Pesanan',
+        'view_all_orders' => 'Melihat semua pesanan',
+        'cancel_orders' => 'Membatalkan pesanan',
+        'order_history' => 'Riwayat pesanan',
+        'monitor_orders_realtime' => 'Monitoring pesanan real-time',
     ];
 
     /**

@@ -39,6 +39,11 @@ class UserFactory extends Factory
                 'manage_menus' => false,
                 'manage_branches' => false,
                 'manage_users' => false,
+                'manage_orders' => false,
+                'view_all_orders' => false,
+                'cancel_orders' => false,
+                'order_history' => false,
+                'monitor_orders_realtime' => false,
             ],
         ];
     }

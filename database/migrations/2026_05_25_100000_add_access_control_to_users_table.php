@@ -22,6 +22,11 @@ return new class extends Migration
                 'manage_menus' => true,
                 'manage_branches' => true,
                 'manage_users' => true,
+                'manage_orders' => true,
+                'view_all_orders' => true,
+                'cancel_orders' => true,
+                'order_history' => true,
+                'monitor_orders_realtime' => true,
             ]),
         ]);
     }

@@ -2,6 +2,33 @@
     $isEdit = isset($mode) && $mode === 'edit';
 @endphp
 
+@push('head')
+    <style>
+        .category-form .form-actions .secondary-link {
+            background: #f3f3f3;
+            color: #8d8d8d !important;
+            border: 1px solid #e0e0e0;
+            font-weight: 700;
+        }
+
+        .category-form .form-actions .secondary-link:hover {
+            background: #ececec;
+            color: #7d7d7d !important;
+            border-color: #d6d6d6;
+        }
+
+        .category-form .form-actions .primary-link {
+            background: var(--highlight);
+            color: #fff !important;
+        }
+
+        .category-form .form-actions .primary-link:hover {
+            background: #c68b59;
+            color: #fff !important;
+        }
+    </style>
+@endpush
+
 <div class="panel">
     <form method="POST" action="{{ $isEdit ? route('superadmin.menu-categories.update', $category) : route('superadmin.menu-categories.store') }}" class="category-form">
         @csrf

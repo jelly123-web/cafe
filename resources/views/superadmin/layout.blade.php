@@ -49,9 +49,6 @@
                 <a class="nav-item {{ request()->routeIs('superadmin.menus.*') ? 'active' : '' }}" href="{{ route('superadmin.menus.index') }}">
                     Manajemen Menu
                 </a>
-                <a class="nav-item {{ request()->routeIs('superadmin.menu-categories.*') ? 'active' : '' }}" href="{{ route('superadmin.menu-categories.index') }}">
-                    Kategori Menu
-                </a>
             </nav>
 
             <div class="sidebar-footer">

@@ -40,7 +40,8 @@
 
             <label class="switch-row">
                 <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $user->is_active ?? true))>
-                <span>Akun aktif</span>
+                <span class="switch-ui" aria-hidden="true"></span>
+                <span class="switch-label">Akun aktif</span>
             </label>
         </div>
 
