@@ -46,7 +46,7 @@
                                 <strong>{{ $row->name }}</strong>
                             </td>
                             <td>{{ $row->username }}</td>
-                            <td><span class="tag">{{ $row->role }}</span></td>
+                            <td><span class="tag">{{ $row->roleLabel() }}</span></td>
                             <td>
                                 <span class="tag {{ $row->is_active ? 'tag-success' : 'tag-muted' }}">
                                     {{ $row->is_active ? 'Aktif' : 'Nonaktif' }}

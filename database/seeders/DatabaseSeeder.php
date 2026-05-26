@@ -3,10 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\Branch;
+use App\Models\DiningTable;
 use App\Models\Menu;
 use App\Models\MenuCategory;
 use App\Models\SaleTransaction;
 use App\Models\SaleTransactionItem;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -22,6 +24,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        SystemSetting::updateOrCreate(
+            ['key' => 'cafe_name'],
+            ['value' => 'Cafe Serba']
+        );
+
+        SystemSetting::updateOrCreate(
+            ['key' => 'cafe_logo'],
+            ['value' => null]
+        );
+
         User::updateOrCreate(
             ['username' => 'superadmin'],
             [
@@ -70,6 +82,30 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::updateOrCreate(
+            ['username' => 'dapur'],
+            [
+                'name' => 'Tim Dapur',
+                'email' => 'dapur@cafe.local',
+                'password' => 'dapur',
+                'role' => 'kitchen',
+                'is_active' => true,
+                'permissions' => [
+                    'view_dashboard' => false,
+                    'view_sales' => false,
+                    'manage_menus' => false,
+                    'manage_branches' => false,
+                    'manage_users' => false,
+                    'manage_orders' => false,
+                    'view_all_orders' => false,
+                    'cancel_orders' => false,
+                    'order_history' => false,
+                    'monitor_orders_realtime' => false,
+                ],
+                'email_verified_at' => now(),
+            ]
+        );
+
         $branches = collect([
             ['code' => 'PST', 'name' => 'Cabang Pusat'],
             ['code' => 'BRT', 'name' => 'Cabang Barat'],
@@ -79,6 +115,21 @@ class DatabaseSeeder extends Seeder
                 $branch['code'] => Branch::updateOrCreate(
                     ['code' => $branch['code']],
                     ['name' => $branch['name']]
+                ),
+                ];
+            });
+
+        $tables = collect(range(1, 12))->mapWithKeys(function (int $number) {
+            $tableNumber = (string) $number;
+
+            return [
+                $tableNumber => DiningTable::updateOrCreate(
+                    ['number' => $tableNumber],
+                    [
+                        'name' => 'Meja '.$tableNumber,
+                        'qr_token' => DiningTable::query()->where('number', $tableNumber)->value('qr_token') ?? \Illuminate\Support\Str::uuid()->toString(),
+                        'is_active' => true,
+                    ]
                 ),
             ];
         });
@@ -120,7 +171,9 @@ class DatabaseSeeder extends Seeder
             [
                 'code' => 'TRX-0001',
                 'branch' => $branches['PST'],
+                'table' => $tables['1'],
                 'sold_at' => Carbon::today()->setTime(9, 15),
+                'notes' => 'Pedas, tanpa bawang.',
                 'items' => [
                     ['menu' => $menus['M001'], 'qty' => 2],
                     ['menu' => $menus['M003'], 'qty' => 1],
@@ -129,7 +182,9 @@ class DatabaseSeeder extends Seeder
             [
                 'code' => 'TRX-0002',
                 'branch' => $branches['BRT'],
+                'table' => $tables['2'],
                 'sold_at' => Carbon::today()->setTime(11, 20),
+                'notes' => 'Kurang gula.',
                 'items' => [
                     ['menu' => $menus['M002'], 'qty' => 1],
                     ['menu' => $menus['M004'], 'qty' => 2],
@@ -138,7 +193,9 @@ class DatabaseSeeder extends Seeder
             [
                 'code' => 'TRX-0003',
                 'branch' => $branches['TMR'],
+                'table' => $tables['3'],
                 'sold_at' => Carbon::yesterday()->setTime(15, 45),
+                'notes' => 'Jangan terlalu panas.',
                 'items' => [
                     ['menu' => $menus['M001'], 'qty' => 3],
                     ['menu' => $menus['M002'], 'qty' => 1],
@@ -147,7 +204,9 @@ class DatabaseSeeder extends Seeder
             [
                 'code' => 'TRX-0004',
                 'branch' => $branches['PST'],
+                'table' => $tables['4'],
                 'sold_at' => Carbon::yesterday()->setTime(19, 10),
+                'notes' => 'Tanpa es.',
                 'items' => [
                     ['menu' => $menus['M003'], 'qty' => 1],
                     ['menu' => $menus['M004'], 'qty' => 1],
@@ -160,7 +219,9 @@ class DatabaseSeeder extends Seeder
                 ['code' => $data['code']],
                 [
                     'branch_id' => $data['branch']->id,
+                    'table_id' => $data['table']->id,
                     'sold_at' => $data['sold_at'],
+                    'notes' => $data['notes'],
                 ]
             );
 
@@ -168,7 +229,9 @@ class DatabaseSeeder extends Seeder
                 ->where('id', $sale->id)
                 ->update([
                     'branch_id' => $data['branch']->id,
+                    'table_id' => $data['table']->id,
                     'sold_at' => $data['sold_at']->format('Y-m-d H:i:s'),
+                    'notes' => $data['notes'],
                 ]);
 
             $totalAmount = 0;

@@ -14,9 +14,11 @@ class SaleTransaction extends Model
     protected $fillable = [
         'code',
         'branch_id',
+        'table_id',
         'sold_at',
         'total_amount',
         'total_cost',
+        'notes',
     ];
 
     protected function casts(): array
@@ -31,6 +33,11 @@ class SaleTransaction extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function table(): BelongsTo
+    {
+        return $this->belongsTo(DiningTable::class, 'table_id');
     }
 
     public function items(): HasMany

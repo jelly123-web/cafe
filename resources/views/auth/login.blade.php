@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login Superadmin</title>
+    <title>Login {{ $cafeBrand['name'] ?? 'Superadmin' }}</title>
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/auth/login.css', 'resources/js/auth/login.js'])
     @else
@@ -14,7 +14,7 @@
 <body>
     <main class="shell">
         <section class="hero">
-            <div class="eyebrow">Cafe Superadmin</div>
+            <div class="eyebrow">{{ $cafeBrand['name'] ?? 'Cafe Superadmin' }}</div>
             <h1>Dashboard penjualan lintas cabang.</h1>
             <p>
                 Login memakai <strong>username</strong> dan <strong>password</strong>.

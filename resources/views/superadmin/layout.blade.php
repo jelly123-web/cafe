@@ -3,7 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Superadmin')</title>
+    <title>@yield('title', $cafeBrand['name'] ?? 'Superadmin')</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite([
             'resources/css/superadmin/dashboard.css',
@@ -31,9 +35,13 @@
     <div class="app-shell">
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <span class="badge">Cafe</span>
-                <h2>Superadmin</h2>
-                <p>Kelola cabang, akun, dan akses sistem.</p>
+                @if (!empty($cafeBrand['logo_url']))
+                    <img src="{{ $cafeBrand['logo_url'] }}" alt="{{ $cafeBrand['name'] ?? 'Cafe' }}" style="width:64px;height:64px;object-fit:cover;border-radius:18px;box-shadow:0 4px 15px rgba(121, 85, 72, 0.12);margin-bottom:0.5rem;">
+                @else
+                    <span class="badge">{{ strtoupper(substr($cafeBrand['name'] ?? 'Cafe', 0, 4)) }}</span>
+                @endif
+                <h2>{{ $cafeBrand['name'] ?? 'Superadmin' }}</h2>
+                <p>Kelola cabang, akun, akses sistem, dan pengaturan cafe.</p>
             </div>
 
             <nav class="nav-menu">
@@ -48,6 +56,18 @@
                 </a>
                 <a class="nav-item {{ request()->routeIs('superadmin.menus.*') ? 'active' : '' }}" href="{{ route('superadmin.menus.index') }}">
                     Manajemen Menu
+                </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.menu-categories.*') ? 'active' : '' }}" href="{{ route('superadmin.menu-categories.index') }}">
+                    Kategori Menu
+                </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.tables.*') ? 'active' : '' }}" href="{{ route('superadmin.tables.index') }}">
+                    Meja
+                </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.reports.*') ? 'active' : '' }}" href="{{ route('superadmin.reports.index') }}">
+                    Laporan
+                </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.settings.*') ? 'active' : '' }}" href="{{ route('superadmin.settings.index') }}">
+                    Pengaturan Sistem
                 </a>
             </nav>
 

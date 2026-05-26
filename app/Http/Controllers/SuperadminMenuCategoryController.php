@@ -14,7 +14,7 @@ class SuperadminMenuCategoryController extends Controller
     public function index(): View
     {
         return view('superadmin.menu-categories.index', [
-            'categories' => MenuCategory::query()->withCount('menus')->orderBy('name')->get(),
+            'categories' => MenuCategory::query()->withCount('menus')->orderBy('name')->paginate(8),
         ]);
     }
 
@@ -34,7 +34,7 @@ class SuperadminMenuCategoryController extends Controller
             'slug' => Str::slug($data['name']),
         ]);
 
-        return redirect()->route('superadmin.menus.index')->with('status', 'Kategori berhasil ditambahkan.');
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Kategori berhasil ditambahkan.');
     }
 
     public function edit(MenuCategory $menuCategory): View
@@ -53,7 +53,7 @@ class SuperadminMenuCategoryController extends Controller
             'slug' => Str::slug($data['name']),
         ]);
 
-        return redirect()->route('superadmin.menus.index')->with('status', 'Kategori berhasil diperbarui.');
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Kategori berhasil diperbarui.');
     }
 
     public function destroy(MenuCategory $menuCategory): RedirectResponse
@@ -64,7 +64,7 @@ class SuperadminMenuCategoryController extends Controller
 
         $menuCategory->delete();
 
-        return redirect()->route('superadmin.menus.index')->with('status', 'Kategori berhasil dihapus.');
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Kategori berhasil dihapus.');
     }
 
     private function validateCategory(Request $request, ?int $ignoreId = null): array

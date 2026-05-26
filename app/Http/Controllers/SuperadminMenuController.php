@@ -25,16 +25,11 @@ class SuperadminMenuController extends Controller
                 });
             })
             ->latest()
-            ->get();
-
-        $categories = MenuCategory::query()
-            ->withCount('menus')
-            ->orderBy('name')
-            ->get();
+            ->paginate(6)
+            ->withQueryString();
 
         return view('superadmin.menus.index', [
             'menus' => $menus,
-            'categories' => $categories,
         ]);
     }
 

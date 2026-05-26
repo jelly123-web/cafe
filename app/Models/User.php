@@ -13,6 +13,13 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_LABELS = [
+        'superadmin' => 'Superadmin',
+        'admin' => 'Admin',
+        'staff' => 'Staff',
+        'kitchen' => 'Dapur',
+    ];
+
     public const PERMISSIONS = [
         'view_dashboard' => 'Lihat dashboard',
         'view_sales' => 'Lihat penjualan',
@@ -83,5 +90,10 @@ class User extends Authenticatable
     public function permissionNames(): array
     {
         return array_keys(self::PERMISSIONS);
+    }
+
+    public function roleLabel(): string
+    {
+        return self::ROLE_LABELS[$this->role] ?? $this->role;
     }
 }

@@ -352,6 +352,66 @@
             font-style: italic;
         }
 
+        .menu-pagination {
+            margin-top: 1.25rem;
+        }
+
+        .pagination-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--accent);
+        }
+
+        .pagination-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .pagination-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .pagination-link,
+        .pagination-dots {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            padding: 0 0.85rem;
+            border-radius: 12px;
+            border: 1px solid var(--accent);
+            background: var(--bg-card);
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .pagination-link.active {
+            background: var(--highlight);
+            color: #fff;
+            border-color: var(--highlight);
+        }
+
+        .pagination-link.disabled {
+            color: var(--text-muted);
+            background: #f9f5f0;
+            cursor: not-allowed;
+        }
+
+        .pagination-dots {
+            border-color: transparent;
+            background: transparent;
+        }
+
         @media (max-width: 1100px) {
             .app-shell {
                 grid-template-columns: 1fr;
@@ -416,7 +476,7 @@
 
 @section('title', 'Manajemen Menu')
 @section('page_title', 'Manajemen Menu')
-@section('page_description', 'Tambah, edit, hapus menu, atur kategori, foto, dan harga.')
+@section('page_description', 'Tambah, edit, hapus menu, foto, dan harga.')
 
 @section('content')
     <div class="content-toolbar">
@@ -428,75 +488,45 @@
         <a class="primary-link" href="{{ route('superadmin.menus.create') }}">+ Tambah Menu</a>
     </div>
 
-    <div class="menu-layout">
-        <div class="panel">
-            <div class="panel-head">
-                <h2>Daftar Menu</h2>
-                <span>{{ $menus->count() }} menu</span>
-            </div>
-
-            <div class="menu-card-list">
-                @forelse ($menus as $menu)
-                    <div class="menu-card">
-                        <img
-                            class="menu-thumb"
-                            src="{{ $menu->image_path ? asset('storage/' . $menu->image_path) : asset('images/menu-placeholder.svg') }}"
-                            alt="{{ $menu->name }}"
-                        >
-                        <div class="menu-meta">
-                            <h3>{{ $menu->name }}</h3>
-                            <p>{{ $menu->code }}</p>
-                            <div class="menu-pricing">
-                                <span class="tag">{{ $menu->category?->name ?? 'Tanpa kategori' }}</span>
-                                <span class="tag tag-success">Rp {{ number_format((float) $menu->selling_price, 0, ',', '.') }}</span>
-                                <span class="tag tag-muted">Modal Rp {{ number_format((float) $menu->cost_price, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="actions">
-                                <a href="{{ route('superadmin.menus.edit', $menu) }}">Edit</a>
-                                <form method="POST" action="{{ route('superadmin.menus.destroy', $menu) }}" onsubmit="return confirm('Hapus menu ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit">Hapus</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="alert">Belum ada menu.</div>
-                @endforelse
-            </div>
+    <div class="panel">
+        <div class="panel-head">
+            <h2>Daftar Menu</h2>
+            <span>{{ $menus->total() }} menu</span>
         </div>
 
-        <div class="panel">
-            <div class="panel-head">
-                <h2>Kategori Menu</h2>
-                <span>{{ $categories->count() }} kategori</span>
-            </div>
-
-            <div class="category-list">
-                @forelse ($categories as $category)
-                    <div class="category-row">
-                        <div>
-                            <strong>{{ $category->name }}</strong>
-                            <div class="muted">{{ $category->menus_count }} menu</div>
+        <div class="menu-card-list">
+            @forelse ($menus as $menu)
+                <div class="menu-card">
+                    <img
+                        class="menu-thumb"
+                        src="{{ $menu->image_path ? asset('storage/' . $menu->image_path) : asset('images/menu-placeholder.svg') }}"
+                        alt="{{ $menu->name }}"
+                    >
+                    <div class="menu-meta">
+                        <h3>{{ $menu->name }}</h3>
+                        <p>{{ $menu->code }}</p>
+                        <div class="menu-pricing">
+                            <span class="tag">{{ $menu->category?->name ?? 'Tanpa kategori' }}</span>
+                            <span class="tag tag-success">Rp {{ number_format((float) $menu->selling_price, 0, ',', '.') }}</span>
+                            <span class="tag tag-muted">Modal Rp {{ number_format((float) $menu->cost_price, 0, ',', '.') }}</span>
                         </div>
                         <div class="actions">
-                            <a href="{{ route('superadmin.menu-categories.edit', $category) }}">Edit</a>
-                            <form method="POST" action="{{ route('superadmin.menu-categories.destroy', $category) }}" onsubmit="return confirm('Hapus kategori ini?')">
+                            <a href="{{ route('superadmin.menus.edit', $menu) }}">Edit</a>
+                            <form method="POST" action="{{ route('superadmin.menus.destroy', $menu) }}" onsubmit="return confirm('Hapus menu ini?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit">Hapus</button>
                             </form>
                         </div>
                     </div>
-                @empty
-                    <div class="alert">Belum ada kategori.</div>
-                @endforelse
-            </div>
+                </div>
+            @empty
+                <div class="alert">Belum ada menu.</div>
+            @endforelse
+        </div>
 
-            <div class="mt-16">
-                <a class="secondary-link" href="{{ route('superadmin.menu-categories.create') }}">+ Tambah Kategori</a>
-            </div>
+        <div class="menu-pagination">
+            {{ $menus->links('components.pagination') }}
         </div>
     </div>
 @endsection

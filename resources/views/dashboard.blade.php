@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard</title>
+    <title>{{ $cafeBrand['name'] ?? config('app.name') }} - Dashboard</title>
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/dashboard.css', 'resources/js/dashboard.js'])
     @else
@@ -15,7 +15,7 @@
     <main class="dashboard-shell">
         <section class="hero">
             <span class="badge">Dashboard pengguna</span>
-            <h1>Selamat datang, {{ $user->name }}</h1>
+            <h1>Selamat datang di {{ $cafeBrand['name'] ?? config('app.name') }}, {{ $user->name }}</h1>
             <p>Halaman ini menampilkan hak akses yang diset oleh superadmin.</p>
         </section>
 

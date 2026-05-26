@@ -112,7 +112,7 @@ class SuperadminUserController extends Controller
                 'max:255',
                 Rule::unique('users', 'username')->ignore($ignoreId),
             ],
-            'role' => ['required', 'in:superadmin,admin,staff'],
+            'role' => ['required', 'in:superadmin,admin,staff,kitchen'],
             'password' => [$ignoreId ? 'nullable' : 'required', 'string', 'min:6'],
             'is_active' => ['nullable', 'boolean'],
         ];

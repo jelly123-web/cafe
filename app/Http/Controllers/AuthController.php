@@ -33,7 +33,11 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route($user->role === 'superadmin' ? 'superadmin.dashboard' : 'dashboard');
+        return redirect()->route(match ($user->role) {
+            'superadmin' => 'superadmin.dashboard',
+            'kitchen' => 'kitchen.dashboard',
+            default => 'dashboard',
+        });
     }
 
     public function destroy(Request $request): RedirectResponse
