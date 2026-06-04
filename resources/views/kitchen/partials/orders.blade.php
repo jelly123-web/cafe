@@ -26,8 +26,11 @@
                 Daftar menu yang dipesan, jumlah menu: <strong>{{ (int) $order->items->sum('qty') }}</strong>
             </div>
             @foreach ($order->items as $item)
+                @php
+                    $itemName = $item->food_package_id ? ($item->foodPackage?->name ?? 'Paket') : ($item->menu?->name ?? 'Menu');
+                @endphp
                 <div class="item-row">
-                    <span><span class="item-qty">{{ $item->qty }}x</span>{{ $item->menu?->name ?? 'Menu' }}</span>
+                    <span><span class="item-qty">{{ $item->qty }}x</span>{{ $itemName }}</span>
                 </div>
             @endforeach
         </div>

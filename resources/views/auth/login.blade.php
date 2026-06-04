@@ -3,15 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Login - {{ $cafeBrand['name'] ?? config('app.name') }}</title>
     <link rel="stylesheet" href="{{ asset('css/auth/login.css') }}?v={{ @filemtime(public_path('css/auth/login.css')) }}">
-    
-    {{-- Turbo for faster transitions --}}
-    <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css">
-    <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
     <style>
-        #nprogress .bar { background: #795548 !important; height: 3px !important; }
         .shell { animation: fadeIn .3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         button:disabled { opacity: 0.7; cursor: not-allowed; position: relative; }
@@ -21,15 +19,6 @@
     <script defer src="{{ asset('js/auth/login.js') }}"></script>
 </head>
 <body>
-    <script>
-        document.addEventListener('turbo:click', () => NProgress.start());
-        document.addEventListener('turbo:load', () => NProgress.done());
-        document.addEventListener('turbo:submit-start', (e) => {
-            const btn = e.target.querySelector('button[type="submit"]');
-            if (btn) btn.disabled = true;
-            NProgress.start();
-        });
-    </script>
     <main class="shell">
         <section class="card">
             @if(isset($cafeBrand['logo']) && $cafeBrand['logo'])
@@ -40,11 +29,13 @@
             <h2>Login</h2>
             <p>silahkan login!</p>
 
-            @if ($errors->any())
+            @if (session('error'))
+                <div class="error">{{ session('error') }}</div>
+            @elseif ($errors->any())
                 <div class="error">{{ $errors->first() }}</div>
             @endif
 
-            <form method="POST" action="{{ route('login.store') }}">
+            <form id="loginForm" method="POST" action="{{ route('login.store') }}" data-turbo="false" autocomplete="off">
                 @csrf
                 <div class="field">
                     <label for="username">Username</label>

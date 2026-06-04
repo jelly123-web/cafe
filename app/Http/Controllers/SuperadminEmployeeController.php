@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,7 +17,7 @@ class SuperadminEmployeeController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -32,7 +33,7 @@ class SuperadminEmployeeController extends Controller
             $code = 'EMP-' . str_pad((string) random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
         }
 
-        Employee::query()->create([
+        $employee = Employee::query()->create([
             'employee_code' => $code,
             'name' => $data['name'],
             'position' => $data['position'] ?? null,
@@ -41,20 +42,53 @@ class SuperadminEmployeeController extends Controller
             'is_active' => (bool) ($data['is_active'] ?? true),
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Karyawan berhasil ditambahkan.',
+                'employee' => $this->employeePayload($employee),
+            ]);
+        }
+
         return back()->with('status', 'Karyawan berhasil ditambahkan.');
     }
 
-    public function destroy(Employee $employee): RedirectResponse
+    public function destroy(Request $request, Employee $employee): RedirectResponse|JsonResponse
     {
         $employee->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Karyawan berhasil dihapus.',
+                'employee_id' => $employee->id,
+            ]);
+        }
 
         return back()->with('status', 'Karyawan berhasil dihapus.');
     }
 
-    public function destroyAll(): RedirectResponse
+    public function destroyAll(Request $request): RedirectResponse|JsonResponse
     {
         Employee::query()->delete();
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Semua data karyawan berhasil dihapus.',
+            ]);
+        }
+
         return back()->with('status', 'Semua data karyawan berhasil dihapus.');
+    }
+
+    private function employeePayload(Employee $employee): array
+    {
+        return [
+            'id' => $employee->id,
+            'employee_code' => $employee->employee_code,
+            'name' => $employee->name,
+            'position' => $employee->position ?: '-',
+            'phone' => $employee->phone ?: '-',
+            'hire_date' => $employee->hire_date?->format('d M Y') ?: '-',
+            'delete_url' => route('superadmin.employees.destroy', $employee),
+        ];
     }
 }

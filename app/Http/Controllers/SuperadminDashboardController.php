@@ -23,8 +23,12 @@ class SuperadminDashboardController extends Controller
         return redirect()->route('superadmin.dashboard', $request->except('page'));
     }
 
-    public function fragment(Request $request): View
+    public function fragment(Request $request): View|RedirectResponse
     {
+        if (! $request->ajax() && ! $request->expectsJson()) {
+            return redirect()->route('superadmin.dashboard', $request->except('page'));
+        }
+
         return view('superadmin.live-dashboard', $this->dashboardData($request));
     }
 

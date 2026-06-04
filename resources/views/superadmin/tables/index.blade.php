@@ -421,15 +421,14 @@
                 padding: 1rem;
             }
         }
+
         @media (max-width: 768px) {
             .table-toolbar { flex-direction: column; align-items: stretch; padding: 1rem; }
             .table-toolbar div { width: 100%; }
             .primary-link { width: 100%; justify-content: center; }
-            
             .table-grid { grid-template-columns: 1fr; gap: 1rem; }
             .table-card { padding: 1rem; }
             .qr-preview { width: 100%; height: auto; aspect-ratio: 1/1; max-width: 200px; margin: 0 auto 0.5rem; }
-            
             .drawer-head h3 { font-size: 1.15rem; }
             .drawer-body { padding: 1rem; }
             .drawer-foot { padding: 1rem; }
@@ -569,7 +568,7 @@
             const methodSpoof = document.getElementById('methodSpoof');
             const submitBtn = document.getElementById('submitDrawerBtn');
             const errorEl = document.getElementById('drawerError');
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const qrModal = document.getElementById('qrModal');
             const qrBackdrop = document.getElementById('qrModalBackdrop');
             const closeQrBtn = document.getElementById('closeQrModalBtn');
@@ -581,11 +580,13 @@
                 backdrop.classList.add('open');
                 drawer.setAttribute('aria-hidden', 'false');
             };
+
             const closeDrawer = () => {
                 drawer.classList.remove('open');
                 backdrop.classList.remove('open');
                 drawer.setAttribute('aria-hidden', 'true');
             };
+
             const openQrModal = (url, qrUrl) => {
                 qrPreviewUrl.textContent = url;
                 qrPreviewImg.src = qrUrl || '';
@@ -593,6 +594,7 @@
                 qrBackdrop.classList.add('open');
                 qrModal.setAttribute('aria-hidden', 'false');
             };
+
             const closeQrModal = () => {
                 qrModal.classList.remove('open');
                 qrBackdrop.classList.remove('open');
@@ -658,20 +660,21 @@
                         data-active="${payload.is_active ? 1 : 0}"
                     >Edit</button>
                     <form method="POST" action="${escapeHtml(payload.delete_url)}" onsubmit="return confirm('Hapus meja ini?')">
-                        <input type="hidden" name="_token" value="${escapeHtml(csrf)}">
+                        <input type="hidden" name="_token" value="${escapeHtml(getCsrfToken())}">
                         <input type="hidden" name="_method" value="DELETE">
                         <button type="submit" class="danger-link">Hapus</button>
                     </form>
                 </div>
             `;
 
-            const bindEditButtons = (root = document) => {
+            const bindActionButtons = (root = document) => {
                 root.querySelectorAll('.btn-open-edit').forEach((btn) => {
                     btn.addEventListener('click', () => {
                         setEditMode(btn);
                         openDrawer();
                     });
                 });
+
                 root.querySelectorAll('.btn-show-qr').forEach((btn) => {
                     btn.addEventListener('click', () => {
                         const url = btn.getAttribute('data-show-url');
@@ -688,7 +691,7 @@
 
             [closeBtn, cancelBtn, backdrop].forEach((el) => el?.addEventListener('click', closeDrawer));
             [closeQrBtn, qrBackdrop].forEach((el) => el?.addEventListener('click', closeQrModal));
-            bindEditButtons();
+            bindActionButtons();
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -699,7 +702,9 @@
                 if (!document.getElementById('drawer_is_active').checked) {
                     formData.delete('is_active');
                 }
-                if (methodSpoof.value === 'PUT') formData.set('_method', 'PUT');
+                if (methodSpoof.value === 'PUT') {
+                    formData.set('_method', 'PUT');
+                }
 
                 try {
                     const res = await fetch(form.action, {
@@ -707,10 +712,15 @@
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrf
+                            'X-CSRF-TOKEN': getCsrfToken()
                         },
                         body: formData
                     });
+
+                    if (res.status === 419) {
+                        errorEl.textContent = 'Sesi telah berakhir. Refresh halaman lalu coba lagi.';
+                        return;
+                    }
 
                     const payload = await res.json();
                     if (!res.ok) {
@@ -729,12 +739,10 @@
                         grid.prepend(card);
                     }
                     card.innerHTML = cardMarkup(data);
-                    bindEditButtons(card);
+                    bindActionButtons(card);
                     closeDrawer();
-                    window.showToast?.(payload.message || 'Meja tersimpan.', 'success');
                 } catch (err) {
                     errorEl.textContent = err.message || 'Terjadi kesalahan.';
-                    window.showToast?.(err.message || 'Terjadi kesalahan.', 'error');
                 } finally {
                     submitBtn.disabled = false;
                 }

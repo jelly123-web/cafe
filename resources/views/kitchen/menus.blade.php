@@ -29,7 +29,6 @@
         .btn-success { background: transparent; color: var(--profit); border-color: #C8E6C9; }
         .btn-success:hover { background: #E8F5E9; border-color: var(--profit); }
         .empty-state { color: var(--text-muted); font-style: italic; text-align: center; padding: 2.5rem 1rem; }
-        .pagination-area { margin-top: 1.5rem; }
         @media (max-width: 768px) {
             .page-title { font-size: 1.3rem; }
             .panel { padding: 1.25rem; }
@@ -65,7 +64,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="pagination-area" id="kitchenMenusPagination">{{ $menus->links('components.pagination') }}</div>
+            <div id="kitchenMenusPagination">{{ $menus->links('components.pagination') }}</div>
         </section>
     </div>
     <script>

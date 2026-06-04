@@ -8,17 +8,28 @@ use App\Support\CroppedImageStore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SuperadminMenuController extends Controller
 {
-    public function index(): View
-    {
-        $search = request()->string('search')->toString();
+    private const FIXED_CATEGORIES = [
+        'makanan',
+        'minuman',
+        'paket',
+    ];
 
-        $menus = Menu::query()
+    public function index(): View|JsonResponse
+    {
+        $this->ensureFixedCategories();
+
+        $search = request()->string('search')->toString();
+        $categoryId = request()->get('category_id');
+        $allowedCategoryIds = $this->fixedCategoryIds();
+
+        $query = Menu::query()
             ->with('category')
             ->where('code', '!=', 'A01')
             ->when($search, function ($query, string $search) {
@@ -27,21 +38,55 @@ class SuperadminMenuController extends Controller
                         ->orWhere('name', 'like', "%{$search}%");
                 });
             })
-            ->latest()
-            ->paginate(6)
-            ->withQueryString();
+            ->when($categoryId, function ($query, $categoryId) {
+                if ($categoryId !== 'all' && $categoryId !== '') {
+                    $query->where('menu_category_id', $categoryId);
+                }
+            })
+            ->latest();
+
+        if (request()->ajax()) {
+            $menus = $query->get();
+            return response()->json([
+                'menus' => $menus->map(fn($m) => [
+                    'id' => $m->id,
+                    'code' => $m->code,
+                    'name' => $m->name,
+                    'selling_price' => (float) $m->selling_price,
+                    'cost_price' => (float) $m->cost_price,
+                    'menu_category_id' => $m->menu_category_id,
+                    'category_name' => $m->category?->name ?? 'Tanpa kategori',
+                    'image_url' => $m->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($m->image_path)
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($m->image_path)
+                        : asset('images/menu-placeholder.svg'),
+                ]),
+                'total' => $menus->count(),
+            ]);
+        }
+
+        $menus = $query->paginate(12)->withQueryString();
 
         return view('superadmin.menus.index', [
             'menus' => $menus,
-            'categories' => MenuCategory::query()->orderBy('name')->get(),
+            'categories' => MenuCategory::query()
+                ->whereIn('id', $allowedCategoryIds)
+                ->withCount('menus')
+                ->orderBy('name')
+                ->get(),
+            'total_menus' => Menu::where('code', '!=', 'A01')->count(),
         ]);
     }
 
     public function create(): View
     {
+        $this->ensureFixedCategories();
+
         return view('superadmin.menus.create', [
             'menu' => new Menu(),
-            'categories' => MenuCategory::query()->orderBy('name')->get(),
+            'categories' => MenuCategory::query()
+                ->whereIn('name', self::FIXED_CATEGORIES)
+                ->orderBy('name')
+                ->get(),
             'mode' => 'create',
         ]);
     }
@@ -67,9 +112,14 @@ class SuperadminMenuController extends Controller
 
     public function edit(Menu $menu): View
     {
+        $this->ensureFixedCategories();
+
         return view('superadmin.menus.edit', [
             'menu' => $menu,
-            'categories' => MenuCategory::query()->orderBy('name')->get(),
+            'categories' => MenuCategory::query()
+                ->whereIn('name', self::FIXED_CATEGORIES)
+                ->orderBy('name')
+                ->get(),
             'mode' => 'edit',
         ]);
     }
@@ -99,8 +149,12 @@ class SuperadminMenuController extends Controller
 
     public function destroy(Menu $menu): RedirectResponse|JsonResponse
     {
-        $this->deleteImageIfExists($menu->image_path);
-        $menu->delete();
+        DB::transaction(function () use ($menu): void {
+            $this->deleteImageIfExists($menu->image_path);
+            $menu->foodPackages()->detach();
+            $menu->promos()->detach();
+            $menu->delete();
+        });
 
         if (request()->expectsJson() || request()->ajax()) {
             return response()->json(['message' => 'Menu berhasil dihapus.']);
@@ -122,8 +176,10 @@ class SuperadminMenuController extends Controller
 
     private function validateMenu(Request $request, ?int $ignoreId = null): array
     {
+        $allowedCategoryIds = $this->fixedCategoryIds();
+
         return $request->validate([
-            'menu_category_id' => ['nullable', 'exists:menu_categories,id'],
+            'menu_category_id' => ['nullable', Rule::in($allowedCategoryIds)],
             'code' => [
                 'required',
                 'string',
@@ -169,8 +225,33 @@ class SuperadminMenuController extends Controller
             'selling_price' => (float) $menu->selling_price,
             'cost_price' => (float) $menu->cost_price,
             'image_url' => $menu->image_path && Storage::disk('public')->exists($menu->image_path)
-                ? Storage::url($menu->image_path)
+                ? Storage::disk('public')->url($menu->image_path)
                 : asset('images/menu-placeholder.svg'),
         ];
+    }
+
+    private function ensureFixedCategories(): void
+    {
+        foreach (self::FIXED_CATEGORIES as $name) {
+            MenuCategory::firstOrCreate(
+                ['name' => $name],
+                ['slug' => $name]
+            );
+        }
+
+        MenuCategory::query()
+            ->whereNotIn('name', self::FIXED_CATEGORIES)
+            ->delete();
+    }
+
+    private function fixedCategoryIds(): array
+    {
+        $this->ensureFixedCategories();
+
+        return MenuCategory::query()
+            ->whereIn('name', self::FIXED_CATEGORIES)
+            ->orderBy('name')
+            ->pluck('id')
+            ->all();
     }
 }

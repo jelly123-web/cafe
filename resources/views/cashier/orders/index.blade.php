@@ -196,6 +196,7 @@
         };
 
         bindCancelForms();
+        window.addEventListener('cafe:order-sync', () => reloadOrders(true));
         startPolling();
     })();
 </script>

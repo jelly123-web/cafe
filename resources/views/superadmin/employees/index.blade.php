@@ -61,7 +61,7 @@
 
 @section('content')
     <section class="panel">
-        <form method="POST" action="{{ route('superadmin.employees.store') }}" class="employee-form">
+        <form method="POST" action="{{ route('superadmin.employees.store') }}" class="employee-form" id="employeeForm">
             @csrf
             <div class="field">
                 <label>Nama karyawan</label>
@@ -79,7 +79,7 @@
                 <label>Tanggal Masuk</label>
                 <input type="date" name="hire_date">
             </div>
-            <button type="submit" class="btn btn-primary">Tambah Karyawan</button>
+            <button type="submit" class="btn btn-primary" id="employeeSubmitBtn">Tambah Karyawan</button>
         </form>
     </section>
 
@@ -87,7 +87,7 @@
         <div class="panel-head">
             <h2>Daftar Karyawan</h2>
             @if ($employees->total() > 0)
-                <form method="POST" action="{{ route('superadmin.employees.destroy-all') }}" onsubmit="return confirm('Hapus semua data karyawan? Data gaji karyawan terkait juga ikut terhapus.')">
+                <form method="POST" action="{{ route('superadmin.employees.destroy-all') }}" id="destroyAllEmployeesForm">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Hapus Semua Karyawan</button>
@@ -106,9 +106,9 @@
                         <th>Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="employeesTableBody">
                     @forelse ($employees as $employee)
-                        <tr>
+                        <tr data-employee-id="{{ $employee->id }}">
                             <td><span class="emp-code">{{ $employee->employee_code }}</span></td>
                             <td><span class="emp-name">{{ $employee->name }}</span></td>
                             <td>{{ $employee->position ?: '-' }}</td>
@@ -116,7 +116,7 @@
                             <td>{{ $employee->hire_date?->format('d M Y') ?: '-' }}</td>
                             <td>
                                 <div class="row-actions">
-                                    <form method="POST" action="{{ route('superadmin.employees.destroy', $employee) }}" onsubmit="return confirm('Hapus karyawan ini? Data gaji terkait juga ikut terhapus.')">
+                                    <form method="POST" action="{{ route('superadmin.employees.destroy', $employee) }}" class="employee-delete-form">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger">Hapus</button>
@@ -133,3 +133,178 @@
         <div class="pagination-area">{{ $employees->links('components.pagination') }}</div>
     </section>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            const form = document.getElementById('employeeForm');
+            const submitBtn = document.getElementById('employeeSubmitBtn');
+            const tableBody = document.getElementById('employeesTableBody');
+            const destroyAllForm = document.getElementById('destroyAllEmployeesForm');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            if (!form || !tableBody) {
+                return;
+            }
+
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            }[char]));
+
+            const setButtonLoading = (button, loadingText, isLoading) => {
+                if (!button) {
+                    return;
+                }
+
+                if (!button.dataset.defaultText) {
+                    button.dataset.defaultText = button.textContent.trim();
+                }
+
+                button.disabled = isLoading;
+                button.textContent = isLoading ? loadingText : button.dataset.defaultText;
+            };
+
+            const employeeRow = (employee) => `
+                <tr data-employee-id="${employee.id}">
+                    <td><span class="emp-code">${escapeHtml(employee.employee_code)}</span></td>
+                    <td><span class="emp-name">${escapeHtml(employee.name)}</span></td>
+                    <td>${escapeHtml(employee.position)}</td>
+                    <td class="${employee.phone === '-' ? 'text-muted' : ''}">${escapeHtml(employee.phone)}</td>
+                    <td>${escapeHtml(employee.hire_date)}</td>
+                    <td>
+                        <div class="row-actions">
+                            <form method="POST" action="${escapeHtml(employee.delete_url)}" class="employee-delete-form">
+                                <input type="hidden" name="_token" value="${escapeHtml(csrfToken)}">
+                                <input type="hidden" name="_method" value="DELETE">
+                                <button type="submit" class="btn btn-danger">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            const renderEmptyState = () => {
+                tableBody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada data karyawan.</td></tr>';
+            };
+
+            const removeEmptyState = () => {
+                const emptyRow = tableBody.querySelector('.empty-state')?.closest('tr');
+                emptyRow?.remove();
+            };
+
+            const attachDeleteHandler = (deleteForm) => {
+                deleteForm.addEventListener('submit', async (event) => {
+                    if (!confirm('Hapus karyawan ini? Data gaji terkait juga ikut terhapus.')) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    event.preventDefault();
+                    const button = deleteForm.querySelector('button[type="submit"]');
+                    setButtonLoading(button, 'Menghapus...', true);
+
+                    try {
+                        const response = await fetch(deleteForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: new FormData(deleteForm),
+                        });
+
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            throw new Error(payload.message || 'Gagal menghapus karyawan.');
+                        }
+
+                        tableBody.querySelector(`[data-employee-id="${payload.employee_id}"]`)?.remove();
+                        if (!tableBody.querySelector('tr')) {
+                            renderEmptyState();
+                        }
+                        window.showToast?.(payload.message, 'success');
+                    } catch (error) {
+                        window.showToast?.(error.message || 'Terjadi kesalahan.', 'error');
+                    } finally {
+                        setButtonLoading(button, 'Menghapus...', false);
+                    }
+                });
+            };
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                setButtonLoading(submitBtn, 'Menyimpan...', true);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: new FormData(form),
+                    });
+
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        const firstError = payload.errors ? Object.values(payload.errors)[0]?.[0] : null;
+                        throw new Error(firstError || payload.message || 'Gagal menambah karyawan.');
+                    }
+
+                    removeEmptyState();
+                    tableBody.insertAdjacentHTML('afterbegin', employeeRow(payload.employee));
+                    attachDeleteHandler(tableBody.querySelector(`[data-employee-id="${payload.employee.id}"] .employee-delete-form`));
+                    form.reset();
+                    window.showToast?.(payload.message, 'success');
+                } catch (error) {
+                    window.showToast?.(error.message || 'Terjadi kesalahan.', 'error');
+                } finally {
+                    setButtonLoading(submitBtn, 'Menyimpan...', false);
+                }
+            });
+
+            destroyAllForm?.addEventListener('submit', async (event) => {
+                if (!confirm('Hapus semua data karyawan? Data gaji karyawan terkait juga ikut terhapus.')) {
+                    event.preventDefault();
+                    return;
+                }
+
+                event.preventDefault();
+                const button = destroyAllForm.querySelector('button[type="submit"]');
+                setButtonLoading(button, 'Menghapus...', true);
+
+                try {
+                    const response = await fetch(destroyAllForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: new FormData(destroyAllForm),
+                    });
+
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Gagal menghapus semua karyawan.');
+                    }
+
+                    renderEmptyState();
+                    destroyAllForm.remove();
+                    window.showToast?.(payload.message, 'success');
+                } catch (error) {
+                    window.showToast?.(error.message || 'Terjadi kesalahan.', 'error');
+                    setButtonLoading(button, 'Menghapus...', false);
+                }
+            });
+
+            tableBody.querySelectorAll('.employee-delete-form').forEach(attachDeleteHandler);
+        })();
+    </script>
+@endpush

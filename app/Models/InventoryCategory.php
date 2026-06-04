@@ -12,6 +12,7 @@ class InventoryCategory extends Model
 
     protected $fillable = [
         'name',
+        'type',
         'unit',
     ];
 

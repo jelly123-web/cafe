@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BarcodeScannerController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\SuperadminAccessController;
 use App\Http\Controllers\DashboardController;
@@ -14,6 +15,8 @@ use App\Http\Controllers\CashierReportController;
 use App\Http\Controllers\SuperadminDashboardController;
 use App\Http\Controllers\SuperadminMenuCategoryController;
 use App\Http\Controllers\SuperadminMenuController;
+use App\Http\Controllers\SuperadminPackageController;
+use App\Http\Controllers\SuperadminPromoController;
 use App\Http\Controllers\SuperadminEmployeeController;
 use App\Http\Controllers\SuperadminPayrollController;
 use App\Http\Controllers\SuperadminReportController;
@@ -23,6 +26,8 @@ use App\Http\Controllers\PublicTableMenuController;
 use App\Http\Controllers\SuperadminUserController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LeaderCashierController;
+use App\Http\Controllers\LiveSyncController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,17 +57,26 @@ Route::get('/brand-logo', function () {
 })->name('brand.logo');
 Route::get('/meja/{table:qr_token}', [PublicTableMenuController::class, 'show'])->name('tables.show');
 Route::post('/meja/{table:qr_token}/pesan', [PublicTableMenuController::class, 'order'])->name('tables.order');
+Route::get('/meja/{table:qr_token}/menus/live', [PublicTableMenuController::class, 'liveMenus'])->name('tables.menus.live');
 Route::get('/meja/{table:qr_token}/orders/live', [PublicTableMenuController::class, 'liveOrders'])->name('tables.orders.live');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/live-sync/orders', [LiveSyncController::class, 'orders'])->name('live-sync.orders');
+    Route::get('/csrf-token', function (\Illuminate\Http\Request $request) {
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'token' => csrf_token(),
+        ]);
+    })->name('csrf.token');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
 Route::prefix('dapur')
     ->name('kitchen.')
-    ->middleware(['auth', 'role:kitchen,superadmin,admin,leader_cashier'])
+    ->middleware(['auth', 'role:kitchen,dapur,kasir,staff,admin,superadmin,leader_cashier,inventory'])
     ->group(function () {
         Route::get('/dashboard', [KitchenDashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/dashboard/live', [KitchenDashboardController::class, 'dashboardLive'])->name('dashboard.live');
@@ -79,8 +93,15 @@ Route::prefix('dapur')
 
 Route::prefix('kasir')
     ->name('cashier.')
-    ->middleware(['auth', 'role:kasir,staff,admin,superadmin,leader_cashier'])
+    ->middleware(['auth', 'role:kasir,staff,admin,superadmin,leader_cashier,kitchen,inventory'])
     ->group(function () {
+        Route::get('/scanner', function () {
+            return redirect()->route('cashier.payments.index');
+        })->name('scanner.index');
+        Route::post('/scanner/scan', [BarcodeScannerController::class, 'scan'])->name('scanner.scan');
+        Route::post('/scanner/save', [BarcodeScannerController::class, 'store'])->name('scanner.save');
+        Route::post('/scanner/stock-in', [BarcodeScannerController::class, 'stockIn'])->name('scanner.stock-in');
+        Route::post('/scanner/cart', [BarcodeScannerController::class, 'addMenuToCart'])->name('scanner.cart');
         Route::get('/pesanan', [CashierOrderController::class, 'index'])->name('orders.index');
         Route::get('/pesanan/live', [CashierOrderController::class, 'live'])->name('orders.live');
         Route::post('/pesanan/{order}/cancel', [CashierOrderController::class, 'cancel'])->name('orders.cancel');
@@ -91,6 +112,8 @@ Route::prefix('kasir')
         Route::post('/transaksi/checkout', [CashierTransactionController::class, 'checkout'])->name('transactions.checkout');
         Route::get('/pembayaran', [CashierPaymentController::class, 'index'])->name('payments.index');
         Route::get('/pembayaran/live', [CashierPaymentController::class, 'live'])->name('payments.live');
+        Route::post('/pembayaran/checkout', [CashierPaymentController::class, 'checkoutFromCart'])->name('payments.checkout');
+        Route::delete('/pembayaran/cart/{menu}', [CashierPaymentController::class, 'removeCartItem'])->name('payments.cart.destroy');
         Route::post('/pembayaran/{order}', [CashierPaymentController::class, 'pay'])->name('payments.pay');
         Route::delete('/pembayaran', [CashierPaymentController::class, 'destroyAll'])->name('payments.destroy-all');
         Route::get('/struk', [CashierReceiptController::class, 'index'])->name('receipts.index');
@@ -111,10 +134,12 @@ Route::prefix('gudang')
     ->middleware(['auth', 'role:inventory,superadmin'])
     ->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::get('/live', [InventoryController::class, 'live'])->name('live');
         Route::get('/barang-masuk', [InventoryController::class, 'stockInPage'])->name('in.page');
         Route::get('/barang-keluar', [InventoryController::class, 'stockOutPage'])->name('out.page');
         Route::post('/categories', [InventoryController::class, 'storeCategory'])->name('categories.store');
         Route::post('/items', [InventoryController::class, 'storeItem'])->name('items.store');
+        Route::delete('/items/{item}', [InventoryController::class, 'destroyItem'])->name('items.destroy');
         Route::post('/stock-in', [InventoryController::class, 'stockIn'])->name('stock.in');
         Route::post('/stock-out', [InventoryController::class, 'stockOut'])->name('stock.out');
         Route::post('/stock-opname', [InventoryController::class, 'stockOpname'])->name('stock.opname');
@@ -138,6 +163,8 @@ Route::prefix('superadmin')
         Route::get('/dashboard', [SuperadminDashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/live', [SuperadminDashboardController::class, 'live'])->name('dashboard.live');
         Route::get('/dashboard/live/fragment', [SuperadminDashboardController::class, 'fragment'])->name('dashboard.live.fragment');
+        Route::post('/scanner/cart', [BarcodeScannerController::class, 'addMenuToCart'])->name('scanner.cart');
+        Route::post('/scanner/save', [BarcodeScannerController::class, 'store'])->name('scanner.save');
         Route::resource('users', SuperadminUserController::class)->except(['show']);
         Route::get('/access', [SuperadminAccessController::class, 'index'])->name('access.index');
         Route::get('/access/{user}/edit', [SuperadminAccessController::class, 'edit'])->name('access.edit');
@@ -145,6 +172,9 @@ Route::prefix('superadmin')
         Route::post('/access/matrix', [SuperadminAccessController::class, 'updateMatrix'])->name('access.matrix.update');
         Route::delete('/menus/all', [SuperadminMenuController::class, 'destroyAll'])->name('menus.destroy-all');
         Route::resource('menus', SuperadminMenuController::class)->except(['show']);
+        Route::delete('/packages/all', [SuperadminPackageController::class, 'destroyAll'])->name('packages.destroy-all');
+        Route::resource('packages', SuperadminPackageController::class)->except(['show']);
+        Route::resource('promos', SuperadminPromoController::class)->except(['show']);
         Route::get('/employees', [SuperadminEmployeeController::class, 'index'])->name('employees.index');
         Route::post('/employees', [SuperadminEmployeeController::class, 'store'])->name('employees.store');
         Route::delete('/employees/all', [SuperadminEmployeeController::class, 'destroyAll'])->name('employees.destroy-all');
@@ -168,4 +198,10 @@ Route::prefix('superadmin')
         Route::get('/reports/live', [SuperadminReportController::class, 'live'])->name('reports.live');
         Route::get('/reports/pdf', [SuperadminReportController::class, 'exportPdf'])->name('reports.pdf');
         Route::get('/reports/excel', [SuperadminReportController::class, 'exportExcel'])->name('reports.excel');
+        Route::get('/pembayaran-kasir', [CashierPaymentController::class, 'superadminIndex'])->name('payments.index');
+        Route::get('/pembayaran-kasir/live', [CashierPaymentController::class, 'superadminLive'])->name('payments.live');
+        Route::post('/pembayaran-kasir/checkout', [CashierPaymentController::class, 'checkoutFromCart'])->name('payments.checkout');
+        Route::delete('/pembayaran-kasir/cart/{menu}', [CashierPaymentController::class, 'removeCartItem'])->name('payments.cart.destroy');
+        Route::post('/pembayaran-kasir/{order}', [CashierPaymentController::class, 'pay'])->name('payments.pay');
+        Route::delete('/pembayaran-kasir', [CashierPaymentController::class, 'destroyAll'])->name('payments.destroy-all');
     });

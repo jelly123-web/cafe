@@ -17,6 +17,13 @@ class InventoryController extends Controller
     private const CONDITION_LESS_GOOD = 'less_good';
     private const CONDITION_DAMAGED = 'damaged';
 
+    public function live(): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'items' => \App\Models\InventoryItem::query()->with('category')->get(),
+        ]);
+    }
+
     public function index(): View
     {
         return $this->page('inventory');
@@ -32,19 +39,27 @@ class InventoryController extends Controller
         return $this->page('movement');
     }
 
-    public function storeCategory(Request $request): RedirectResponse
+    public function storeCategory(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
-            'unit' => ['required', 'in:kg,pcs'],
+            'type' => ['required', 'in:bahan,barang'],
+            'unit' => ['required', 'string', 'max:40'],
         ]);
 
-        InventoryCategory::query()->create($data);
+        $category = InventoryCategory::query()->create($data);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => 'Kategori inventory berhasil ditambahkan.',
+                'category' => $category,
+            ]);
+        }
 
         return back()->with('success', 'Kategori inventory berhasil ditambahkan.');
     }
 
-    public function storeItem(Request $request): RedirectResponse
+    public function storeItem(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'inventory_category_id' => ['required', 'exists:inventory_categories,id'],
@@ -54,9 +69,10 @@ class InventoryController extends Controller
 
         $category = InventoryCategory::query()->findOrFail($data['inventory_category_id']);
 
-        InventoryItem::query()->create([
+        $item = InventoryItem::query()->create([
             'inventory_category_id' => $category->id,
             'name' => $data['name'],
+            'type' => $category->type,
             'unit' => $category->unit,
             'min_stock' => (float) ($data['min_stock'] ?? 0),
             'stock' => 0,
@@ -65,7 +81,26 @@ class InventoryController extends Controller
             'stock_damaged' => 0,
         ]);
 
-        return back()->with('success', 'Bahan baru berhasil ditambahkan.');
+        if ($request->expectsJson() || $request->ajax()) {
+            $item->load('category');
+            return response()->json([
+                'message' => ($category->type === 'barang' ? 'Barang' : 'Bahan') . ' baru berhasil ditambahkan.',
+                'item' => $item,
+            ]);
+        }
+
+        return back()->with('success', ($category->type === 'barang' ? 'Barang' : 'Bahan') . ' baru berhasil ditambahkan.');
+    }
+
+    public function destroyItem(InventoryItem $item): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $item->delete();
+
+        if (request()->expectsJson() || request()->ajax()) {
+            return response()->json(['message' => 'Item berhasil dihapus.']);
+        }
+
+        return back()->with('success', 'Item berhasil dihapus.');
     }
 
     public function stockIn(Request $request): RedirectResponse

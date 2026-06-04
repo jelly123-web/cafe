@@ -27,7 +27,12 @@
                 const currentPage = urlParams.get('page') || 1;
                 const fetchUrl = `{{ route('superadmin.dashboard.live.fragment') }}?page=${currentPage}`;
 
-                fetch(fetchUrl)
+                fetch(fetchUrl, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html',
+                    },
+                })
                     .then(res => {
                         // If session expired, redirect to login
                         if (res.redirected && res.url.includes('/login')) {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -14,6 +15,7 @@ class Menu extends Model
     protected $fillable = [
         'menu_category_id',
         'code',
+        'barcode',
         'name',
         'selling_price',
         'cost_price',
@@ -38,5 +40,15 @@ class Menu extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleTransactionItem::class);
+    }
+
+    public function foodPackages(): BelongsToMany
+    {
+        return $this->belongsToMany(FoodPackage::class, 'food_package_menu')->withTimestamps();
+    }
+
+    public function promos(): BelongsToMany
+    {
+        return $this->belongsToMany(Promo::class, 'promo_menu');
     }
 }

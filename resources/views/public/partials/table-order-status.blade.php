@@ -19,7 +19,10 @@
         </div>
         <div class="order-status-items">
             @foreach ($order->items as $item)
-                <div>{{ $item->qty }}x {{ $item->menu?->name ?? 'Menu' }}</div>
+                @php
+                    $itemName = $item->food_package_id ? ($item->foodPackage?->name ?? 'Paket') : ($item->menu?->name ?? 'Menu');
+                @endphp
+                <div>{{ $item->qty }}x {{ $itemName }}</div>
             @endforeach
         </div>
     </article>

@@ -53,7 +53,7 @@
 
 @section('content')
     <section class="panel">
-        <form method="POST" action="{{ route('superadmin.payrolls.store') }}" class="payroll-form">
+        <form method="POST" action="{{ route('superadmin.payrolls.store') }}" class="payroll-form" id="payrollForm">
             @csrf
             <div class="field">
                 <label>Karyawan</label>
@@ -80,7 +80,7 @@
                 <label>Potongan</label>
                 <input type="number" step="0.01" min="0" name="deductions" placeholder="Opsional">
             </div>
-            <button type="submit" class="btn btn-primary">Simpan Gaji</button>
+            <button type="submit" class="btn btn-primary" id="payrollSubmitBtn">Simpan Gaji</button>
         </form>
     </section>
 
@@ -88,7 +88,7 @@
         <div class="panel-head">
             <h2>Daftar Gaji</h2>
             @if ($payrolls->total() > 0)
-                <form method="POST" action="{{ route('superadmin.payrolls.destroy-all') }}" onsubmit="return confirm('Hapus semua data gaji karyawan?')">
+                <form method="POST" action="{{ route('superadmin.payrolls.destroy-all') }}" id="destroyAllPayrollsForm">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Hapus Semua Gaji</button>
@@ -108,9 +108,9 @@
                         <th class="col-action">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="payrollTableBody">
                     @forelse ($payrolls as $payroll)
-                        <tr>
+                        <tr data-payroll-id="{{ $payroll->id }}">
                             <td class="col-period">{{ $payroll->period_month?->format('M Y') }}</td>
                             <td class="col-employee"><span class="employee-name">{{ $payroll->employee?->name }}</span></td>
                             <td class="col-money"><span class="amount">Rp {{ number_format((float) $payroll->base_salary, 0, ',', '.') }}</span></td>
@@ -118,7 +118,7 @@
                             <td class="col-money"><span class="amount">Rp {{ number_format((float) $payroll->deductions, 0, ',', '.') }}</span></td>
                             <td class="col-money"><span class="net-salary">Rp {{ number_format((float) $payroll->net_salary, 0, ',', '.') }}</span></td>
                             <td class="col-action">
-                                <form method="POST" action="{{ route('superadmin.payrolls.destroy', $payroll) }}" onsubmit="return confirm('Hapus data gaji ini?')">
+                                <form method="POST" action="{{ route('superadmin.payrolls.destroy', $payroll) }}" class="payroll-delete-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger">Hapus</button>
@@ -134,3 +134,182 @@
         <div class="pagination-area">{{ $payrolls->links('components.pagination') }}</div>
     </section>
 @endsection
+
+@push('scripts')
+    <script>
+        (function () {
+            const form = document.getElementById('payrollForm');
+            const submitBtn = document.getElementById('payrollSubmitBtn');
+            const tableBody = document.getElementById('payrollTableBody');
+            const destroyAllForm = document.getElementById('destroyAllPayrollsForm');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            if (!form || !tableBody) {
+                return;
+            }
+
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;',
+            }[char]));
+
+            const setButtonLoading = (button, loadingText, isLoading) => {
+                if (!button) {
+                    return;
+                }
+
+                if (!button.dataset.defaultText) {
+                    button.dataset.defaultText = button.textContent.trim();
+                }
+
+                button.disabled = isLoading;
+                button.textContent = isLoading ? loadingText : button.dataset.defaultText;
+            };
+
+            const payrollRow = (payroll) => `
+                <tr data-payroll-id="${payroll.id}">
+                    <td class="col-period">${escapeHtml(payroll.period_label)}</td>
+                    <td class="col-employee"><span class="employee-name">${escapeHtml(payroll.employee_name)}</span></td>
+                    <td class="col-money"><span class="amount">${escapeHtml(payroll.base_salary)}</span></td>
+                    <td class="col-money"><span class="amount">${escapeHtml(payroll.allowances)}</span></td>
+                    <td class="col-money"><span class="amount">${escapeHtml(payroll.deductions)}</span></td>
+                    <td class="col-money"><span class="net-salary">${escapeHtml(payroll.net_salary)}</span></td>
+                    <td class="col-action">
+                        <form method="POST" action="${escapeHtml(payroll.delete_url)}" class="payroll-delete-form">
+                            <input type="hidden" name="_token" value="${escapeHtml(csrfToken)}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="btn btn-danger">Hapus</button>
+                        </form>
+                    </td>
+                </tr>
+            `;
+
+            const renderEmptyState = () => {
+                tableBody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada data gaji.</td></tr>';
+            };
+
+            const removeEmptyState = () => {
+                const emptyRow = tableBody.querySelector('.empty-state')?.closest('tr');
+                emptyRow?.remove();
+            };
+
+            const attachDeleteHandler = (deleteForm) => {
+                deleteForm.addEventListener('submit', async (event) => {
+                    if (!confirm('Hapus data gaji ini?')) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    event.preventDefault();
+                    const button = deleteForm.querySelector('button[type="submit"]');
+                    setButtonLoading(button, 'Menghapus...', true);
+
+                    try {
+                        const response = await fetch(deleteForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRF-TOKEN': csrfToken,
+                            },
+                            body: new FormData(deleteForm),
+                        });
+
+                        const payload = await response.json();
+                        if (!response.ok) {
+                            throw new Error(payload.message || 'Gagal menghapus data gaji.');
+                        }
+
+                        tableBody.querySelector(`[data-payroll-id="${payload.payroll_id}"]`)?.remove();
+                        if (!tableBody.querySelector('tr')) {
+                            renderEmptyState();
+                        }
+                        window.showToast?.(payload.message, 'success');
+                    } catch (error) {
+                        window.showToast?.(error.message || 'Terjadi kesalahan.', 'error');
+                    } finally {
+                        setButtonLoading(button, 'Menghapus...', false);
+                    }
+                });
+            };
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                setButtonLoading(submitBtn, 'Menyimpan...', true);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: new FormData(form),
+                    });
+
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        const firstError = payload.errors ? Object.values(payload.errors)[0]?.[0] : null;
+                        throw new Error(firstError || payload.message || 'Gagal menyimpan gaji.');
+                    }
+
+                    removeEmptyState();
+                    const existingRow = tableBody.querySelector(`[data-payroll-id="${payload.payroll.id}"]`);
+                    if (existingRow) {
+                        existingRow.outerHTML = payrollRow(payload.payroll);
+                    } else {
+                        tableBody.insertAdjacentHTML('afterbegin', payrollRow(payload.payroll));
+                    }
+                    attachDeleteHandler(tableBody.querySelector(`[data-payroll-id="${payload.payroll.id}"] .payroll-delete-form`));
+                    form.reset();
+                    window.showToast?.(payload.message, 'success');
+                } catch (error) {
+                    window.showToast?.(error.message || 'Terjadi kesalahan.', 'error');
+                } finally {
+                    setButtonLoading(submitBtn, 'Menyimpan...', false);
+                }
+            });
+
+            destroyAllForm?.addEventListener('submit', async (event) => {
+                if (!confirm('Hapus semua data gaji karyawan?')) {
+                    event.preventDefault();
+                    return;
+                }
+
+                event.preventDefault();
+                const button = destroyAllForm.querySelector('button[type="submit"]');
+                setButtonLoading(button, 'Menghapus...', true);
+
+                try {
+                    const response = await fetch(destroyAllForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                        body: new FormData(destroyAllForm),
+                    });
+
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Gagal menghapus semua data gaji.');
+                    }
+
+                    renderEmptyState();
+                    destroyAllForm.remove();
+                    window.showToast?.(payload.message, 'success');
+                } catch (error) {
+                    window.showToast?.(error.message || 'Terjadi kesalahan.', 'error');
+                    setButtonLoading(button, 'Menghapus...', false);
+                }
+            });
+
+            tableBody.querySelectorAll('.payroll-delete-form').forEach(attachDeleteHandler);
+        })();
+    </script>
+@endpush

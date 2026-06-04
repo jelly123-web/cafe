@@ -3,15 +3,46 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function create(): View
+    private function normalizeRole(?string $role): string
     {
-        return view('auth.login');
+        return match (strtolower(trim((string) $role))) {
+            'dapur' => 'kitchen',
+            default => strtolower(trim((string) $role)),
+        };
+    }
+
+    private function homeUrlForRole(?string $role): string
+    {
+        return route(match ($this->normalizeRole($role)) {
+            'superadmin' => 'superadmin.dashboard',
+            'kitchen' => 'kitchen.orders.index',
+            'inventory' => 'inventory.index',
+            'leader_cashier' => 'leader-cashier.index',
+            'kasir', 'admin', 'staff' => 'cashier.orders.index',
+            default => 'dashboard',
+        });
+    }
+
+    public function create(Request $request): View|RedirectResponse|Response
+    {
+        if (Auth::check()) {
+            return redirect()->intended($this->homeUrlForRole(Auth::user()?->role));
+        }
+
+        $request->session()->regenerateToken();
+
+        return response()
+            ->view('auth.login')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function store(Request $request)
@@ -34,20 +65,15 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            $redirectUrl = route(match ($user->role) {
-                'superadmin' => 'superadmin.dashboard',
-                'kitchen' => 'kitchen.orders.index',
-                'inventory' => 'inventory.index',
-                'leader_cashier' => 'leader-cashier.index',
-                'kasir', 'admin', 'staff' => 'cashier.orders.index',
-                default => 'dashboard',
-            });
+            $redirectUrl = $this->homeUrlForRole($user->role);
+
+            $intendedUrl = session()->pull('url.intended', $redirectUrl);
 
             if ($request->ajax()) {
-                return response()->json(['redirect' => $redirectUrl]);
+                return response()->json(['redirect' => $intendedUrl]);
             }
 
-            return redirect()->to($redirectUrl);
+            return redirect()->to($intendedUrl);
         }
 
         if ($request->ajax()) {

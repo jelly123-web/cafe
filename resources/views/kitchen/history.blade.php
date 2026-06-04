@@ -19,7 +19,6 @@
         .table-num { font-weight: 600; color: var(--primary); }
         .duration { font-weight: 700; color: var(--primary); }
         .empty-state { color: var(--text-muted); font-style: italic; text-align: center; padding: 2.5rem 1rem; }
-        .pagination-area { margin-top: 1.5rem; }
         @media (max-width: 768px) {
             .page-title { font-size: 1.3rem; }
             .panel { padding: 1.25rem; }
@@ -58,7 +57,7 @@
                 </table>
             </div>
 
-            <div class="pagination-area" id="kitchenHistoryPagination">
+            <div id="kitchenHistoryPagination">
                 {{ $history->links('components.pagination') }}
             </div>
         </section>

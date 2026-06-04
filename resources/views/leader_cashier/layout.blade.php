@@ -254,6 +254,7 @@
             backdrop?.addEventListener('click', closeSidebar);
         })();
     </script>
+    @include('components.live-sync')
     @stack('scripts')
 </body>
 </html>

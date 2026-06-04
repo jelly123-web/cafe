@@ -15,20 +15,24 @@
             'resources/css/superadmin/users.css',
             'resources/css/superadmin/access.css',
             'resources/css/superadmin/menus.css',
+            'resources/css/superadmin/packages.css',
             'resources/js/superadmin/dashboard.js',
             'resources/js/superadmin/users.js',
             'resources/js/superadmin/access.js',
             'resources/js/superadmin/menus.js',
+            'resources/js/superadmin/packages.js',
         ])
     @else
         <link rel="stylesheet" href="{{ asset('css/superadmin/dashboard.css') }}">
         <link rel="stylesheet" href="{{ asset('css/superadmin/users.css') }}">
         <link rel="stylesheet" href="{{ asset('css/superadmin/access.css') }}">
         <link rel="stylesheet" href="{{ asset('css/superadmin/menus.css') }}">
+        <link rel="stylesheet" href="{{ asset('css/superadmin/packages.css') }}">
         <script defer src="{{ asset('js/superadmin/dashboard.js') }}"></script>
         <script defer src="{{ asset('js/superadmin/users.js') }}"></script>
         <script defer src="{{ asset('js/superadmin/access.js') }}"></script>
         <script defer src="{{ asset('js/superadmin/menus.js') }}"></script>
+        <script defer src="{{ asset('js/superadmin/packages.js') }}"></script>
     @endif
     @stack('head')
 
@@ -114,7 +118,7 @@
         @media (max-width: 1100px) {
             body.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
             body:not(.sidebar-collapsed) .sidebar-toggle { left: 16px; }
-            .app-shell { grid-template-columns: 1fr !important; }
+            .app-shell { flex-direction: column; }
             .sidebar {
                 position: fixed;
                 top: 0;
@@ -163,6 +167,32 @@
             from { transform: translateY(-10px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+
+        /* Global Pagination Styles */
+        .pagination-wrap { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; align-items: center; border-top: 1px dashed var(--accent); padding-top: 1.25rem; }
+        .pagination-meta { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
+        .pagination-links { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+        .pagination-link {
+            text-decoration: none;
+            color: var(--primary);
+            background: #fff;
+            border: 1px solid var(--accent);
+            padding: 0.5rem 0.85rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px var(--shadow);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            cursor: pointer;
+        }
+        .pagination-link:hover:not(.disabled) { border-color: var(--highlight); background: #fffaf5; transform: translateY(-1px); }
+        .pagination-link.active { background: var(--highlight); color: #fff; border-color: var(--highlight); box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3); }
+        .pagination-link.disabled { color: var(--secondary); opacity: 0.6; cursor: not-allowed; background: #fdfdfd; box-shadow: none; }
+        .pagination-dots { color: var(--text-muted); padding: 0 0.25rem; font-weight: 900; }
     </style>
 </head>
 <body data-turbo-prefetch="true">
@@ -204,11 +234,20 @@
                 <a class="nav-item {{ request()->routeIs('superadmin.menus.*') ? 'active' : '' }}" href="{{ route('superadmin.menus.index') }}">
                     Manajemen Menu
                 </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.packages.*') ? 'active' : '' }}" href="{{ route('superadmin.packages.index') }}">
+                    Paket Makanan
+                </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.promos.*') ? 'active' : '' }}" href="{{ route('superadmin.promos.index') }}" data-turbo="false">
+                    Manajemen Promo
+                </a>
                 <a class="nav-item {{ request()->routeIs('superadmin.employees.*') ? 'active' : '' }}" href="{{ route('superadmin.employees.index') }}">
                     Data Karyawan
                 </a>
                 <a class="nav-item {{ request()->routeIs('superadmin.payrolls.*') ? 'active' : '' }}" href="{{ route('superadmin.payrolls.index') }}">
                     Gaji Karyawan
+                </a>
+                <a class="nav-item {{ request()->routeIs('superadmin.payments.*') ? 'active' : '' }}" href="{{ route('superadmin.payments.index') }}">
+                    Pembayaran Kasir
                 </a>
                 <a class="nav-item {{ request()->routeIs('superadmin.menu-categories.*') ? 'active' : '' }}" href="{{ route('superadmin.menu-categories.index') }}">
                     Kategori Menu
@@ -219,7 +258,7 @@
                 <a class="nav-item {{ request()->routeIs('superadmin.reports.*') ? 'active' : '' }}" href="{{ route('superadmin.reports.index') }}">
                     Laporan
                 </a>
-                <a class="nav-item {{ request()->routeIs('superadmin.settings.*') ? 'active' : '' }}" href="{{ route('superadmin.settings.index') }}">
+                <a class="nav-item {{ request()->routeIs('superadmin.settings.*') ? 'active' : '' }}" href="{{ route('superadmin.settings.index') }}" data-turbo="false">
                     Pengaturan Sistem
                 </a>
             </nav>
@@ -264,12 +303,38 @@
             document.addEventListener('turbo:load', () => NProgress.done());
             document.addEventListener('turbo:before-render', () => NProgress.done());
 
+            const STORAGE_KEY = 'superadmin_sidebar_collapsed';
+            const MOBILE_BREAKPOINT = 1100;
+
+            const readSidebarState = () => {
+                try {
+                    return localStorage.getItem(STORAGE_KEY);
+                } catch (e) {
+                    return null;
+                }
+            };
+
+            const saveSidebarState = (collapsed) => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+                } catch (e) {}
+            };
+
+            const applySidebarState = () => {
+                const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+                const storedState = readSidebarState();
+                const shouldCollapse = storedState === '1' || (storedState === null && isMobile);
+
+                document.body.classList.toggle('sidebar-collapsed', shouldCollapse);
+                document.body.classList.toggle('sidebar-open', !shouldCollapse && isMobile);
+            };
+
             const initSidebar = () => {
                 const toggle = document.getElementById('sidebarToggle');
                 const backdrop = document.getElementById('sidebarBackdrop');
-                
+
                 if (!toggle) return;
-                
+
                 // Remove existing listeners if any (for turbo)
                 toggle.replaceWith(toggle.cloneNode(true));
                 const newToggle = document.getElementById('sidebarToggle');
@@ -277,28 +342,24 @@
                 const openSidebar = () => {
                     document.body.classList.remove('sidebar-collapsed');
                     document.body.classList.add('sidebar-open');
-                    try { localStorage.setItem('superadmin_sidebar_collapsed', '0'); } catch (e) {}
+                    saveSidebarState(false);
                 };
                 const closeSidebar = () => {
                     document.body.classList.add('sidebar-collapsed');
                     document.body.classList.remove('sidebar-open');
-                    try { localStorage.setItem('superadmin_sidebar_collapsed', '1'); } catch (e) {}
+                    saveSidebarState(true);
                 };
 
-                // Restore state from localStorage on load/turbo-load
-                const isCollapsed = localStorage.getItem('superadmin_sidebar_collapsed');
-                if (isCollapsed === '1' || (isCollapsed === null && window.innerWidth <= 1100)) {
-                    closeSidebar();
-                } else if (isCollapsed === '0' && window.innerWidth > 1100) {
-                    openSidebar();
-                }
+                applySidebarState();
 
-                if (window.innerWidth <= 1100) {
-                    backdrop?.addEventListener('click', closeSidebar);
-                }
+                backdrop?.addEventListener('click', closeSidebar);
 
                 newToggle.addEventListener('click', function () {
-                    if (document.body.classList.contains('sidebar-collapsed')) {
+                    if (window.innerWidth > MOBILE_BREAKPOINT) {
+                        const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                        document.body.classList.remove('sidebar-open');
+                        saveSidebarState(isCollapsed);
+                    } else if (document.body.classList.contains('sidebar-collapsed')) {
                         openSidebar();
                     } else {
                         closeSidebar();
@@ -307,10 +368,21 @@
             };
 
             document.addEventListener('turbo:load', initSidebar);
+            document.addEventListener('turbo:before-cache', () => {
+                const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+
+                if (!isMobile) {
+                    document.body.classList.remove('sidebar-open');
+                }
+
+                saveSidebarState(document.body.classList.contains('sidebar-collapsed'));
+            });
 
             window.addEventListener('resize', function () {
                 if (window.innerWidth > 1100) {
                     document.body.classList.remove('sidebar-open');
+                } else if (!document.body.classList.contains('sidebar-collapsed')) {
+                    document.body.classList.add('sidebar-open');
                 }
             });
 
@@ -337,8 +409,42 @@
                 if (status) window.showToast(status, 'success');
                 if (error) window.showToast(error, 'error', 4200);
             });
+
+            document.addEventListener('submit', (event) => {
+                if (event.defaultPrevented) {
+                    return;
+                }
+
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement) || form.dataset.skipSubmitState === 'true') {
+                    return;
+                }
+
+                const submitter = event.submitter;
+                if (!(submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement)) {
+                    return;
+                }
+
+                if (!submitter.dataset.defaultText) {
+                    submitter.dataset.defaultText = submitter.textContent?.trim() || submitter.value || '';
+                }
+
+                const method = String(form.method || 'GET').toUpperCase();
+                const spoofMethod = form.querySelector('input[name="_method"]')?.value?.toUpperCase() || '';
+                const effectiveMethod = spoofMethod || method;
+                const busyText = submitter.dataset.busyText
+                    || (effectiveMethod === 'DELETE' ? 'Menghapus...' : effectiveMethod === 'GET' ? 'Membuka...' : 'Menyimpan...');
+
+                submitter.disabled = true;
+                if (submitter instanceof HTMLInputElement) {
+                    submitter.value = busyText;
+                } else {
+                    submitter.textContent = busyText;
+                }
+            });
         })();
     </script>
+    @include('components.live-sync')
     @stack('scripts')
 </body>
 </html>

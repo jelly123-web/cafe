@@ -34,8 +34,11 @@
 
         <div class="items order-items">
             @foreach ($order->items as $item)
+                @php
+                    $itemName = $item->food_package_id ? ($item->foodPackage?->name ?? 'Paket') : ($item->menu?->name ?? 'Menu');
+                @endphp
                 <div class="item order-item">
-                    <span>{{ $item->qty }}x {{ $item->menu?->name ?? 'Menu' }}</span>
+                    <span>{{ $item->qty }}x {{ $itemName }}</span>
                     <strong>Rp {{ number_format((float) $item->line_total, 0, ',', '.') }}</strong>
                 </div>
             @endforeach

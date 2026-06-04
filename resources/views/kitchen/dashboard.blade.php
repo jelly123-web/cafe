@@ -46,17 +46,6 @@
         .empty-state { color: var(--text-muted); font-style: italic; text-align: center; padding: 2rem 0; }
         .live-pill { display:inline-flex; align-items:center; gap:0.4rem; border:1px solid var(--accent); border-radius:999px; padding:0.25rem 0.7rem; font-size:0.8rem; color:var(--text-muted); }
         .live-dot { width:8px; height:8px; border-radius:50%; background:#81C784; }
-        .pagination-wrap { margin-top: 1.1rem; }
-        .pagination-wrap .pagination { display: flex; gap: 0.45rem; justify-content: center; flex-wrap: wrap; }
-        .pagination-wrap .page-link,
-        .pagination-wrap .page-item span {
-            min-width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center;
-            border-radius: 10px; border: 1px solid var(--accent); color: var(--primary); background: #fff;
-            text-decoration: none; font-weight: 600; padding: 0 0.7rem;
-        }
-        .pagination-wrap .active .page-link,
-        .pagination-wrap .active span { background: var(--highlight); color: #fff; border-color: var(--highlight); }
-        .pagination-wrap .disabled span { color: var(--secondary); }
         @media (max-width: 768px) {
             .main-panel { padding: 1.5rem 1rem; }
             .page-title { font-size: 1.5rem; }
@@ -100,7 +89,7 @@
                 ])
             </div>
             <div class="pagination-wrap">
-                {{ $orders->links() }}
+                {{ $orders->links('components.pagination') }}
             </div>
         </section>
     </div>
@@ -225,6 +214,8 @@
                     poll();
                 }
             }, 4000);
+
+            window.addEventListener('cafe:order-sync', poll);
         })();
     </script>
 @endsection

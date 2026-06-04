@@ -9,6 +9,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureRole
 {
+    private function normalizeRole(?string $role): string
+    {
+        return match (strtolower(trim((string) $role))) {
+            'dapur' => 'kitchen',
+            default => strtolower(trim((string) $role)),
+        };
+    }
+
     private const ROUTE_PERMISSION_MAP = [
         'superadmin.dashboard' => 'superadmin_dashboard',
         'superadmin.users.' => 'superadmin_users',
@@ -70,11 +78,11 @@ class EnsureRole
         $user = Auth::user();
         
         // Robust bypass for superadmin
-        if ($user && ($user->role === 'superadmin' || strtolower(trim((string)$user->role)) === 'superadmin')) {
+        if ($user && ($this->normalizeRole($user->role) === 'superadmin')) {
             return $next($request);
         }
 
-        $userRole = strtolower(trim((string) $user?->role));
+        $userRole = $this->normalizeRole($user?->role);
         $normalizedRoles = array_map(static fn (string $role): string => strtolower(trim($role)), $roles);
         $hasRole = in_array($userRole, $normalizedRoles, true);
         if (! $hasRole) {

@@ -9,9 +9,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSuperadmin
 {
+    private function normalizeRole(?string $role): string
+    {
+        return strtolower(trim((string) $role));
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
-        if (! Auth::check() || Auth::user()?->role !== 'superadmin') {
+        if (! Auth::check()) {
+            return redirect()->guest(route('login'));
+        }
+
+        if ($this->normalizeRole(Auth::user()?->role) !== 'superadmin') {
             abort(403, 'Halaman ini khusus superadmin.');
         }
 

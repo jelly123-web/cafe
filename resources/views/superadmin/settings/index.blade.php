@@ -362,7 +362,7 @@
             <p>Atur nama cafe dan logo yang akan tampil di login, sidebar superadmin, dan halaman lain yang memakai brand utama.</p>
 
             <div class="settings-grid">
-                <form method="POST" action="{{ route('superadmin.settings.update') }}" class="settings-form" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('superadmin.settings.update') }}" class="settings-form" enctype="multipart/form-data" data-turbo="false">
                     @csrf
                     @method('PUT')
 

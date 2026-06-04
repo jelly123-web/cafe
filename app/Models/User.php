@@ -124,6 +124,11 @@ class User extends Authenticatable
 
     public function roleLabel(): string
     {
-        return self::ROLE_LABELS[$this->role] ?? $this->role;
+        $role = match (strtolower(trim((string) $this->role))) {
+            'dapur' => 'kitchen',
+            default => strtolower(trim((string) $this->role)),
+        };
+
+        return self::ROLE_LABELS[$role] ?? $role;
     }
 }

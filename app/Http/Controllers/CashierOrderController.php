@@ -10,10 +10,39 @@ use Illuminate\View\View;
 
 class CashierOrderController extends Controller
 {
+    private function normalizeRole(?string $role): string
+    {
+        return match (strtolower(trim((string) $role))) {
+            'dapur' => 'kitchen',
+            default => strtolower(trim((string) $role)),
+        };
+    }
+
+    private function canAccessOrders($user): bool
+    {
+        $role = $this->normalizeRole($user?->role);
+
+        return (bool) ($user && (
+            in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier', 'kitchen', 'inventory'], true)
+            || $user->hasPermission('cashier_orders')
+        ));
+    }
+
+    private function canCancelOrders($user): bool
+    {
+        $role = $this->normalizeRole($user?->role);
+
+        return (bool) ($user && (
+            in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier', 'kitchen', 'inventory'], true)
+            || $user->hasPermission('cancel_orders')
+            || $user->hasPermission('cashier_orders')
+        ));
+    }
+
     private function baseOrdersQuery()
     {
         return SaleTransaction::query()
-            ->with(['table', 'items.menu'])
+            ->with(['branch', 'table', 'items.menu', 'items.foodPackage'])
             ->withCount('items')
             ->whereIn('status', [
                 SaleTransaction::STATUS_PENDING,
@@ -27,32 +56,20 @@ class CashierOrderController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $role = strtolower(trim((string) $user?->role));
-        $canAccessOrders = $user && (
-            in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier'], true)
-            || $user->hasPermission('manage_orders')
-            || $user->hasPermission('view_all_orders')
-        );
-        abort_unless($canAccessOrders, 403, 'Anda tidak memiliki akses ke halaman pesanan.');
+        abort_unless($this->canAccessOrders($user), 403, 'Anda tidak memiliki akses ke halaman pesanan.');
 
         $orders = $this->baseOrdersQuery()->paginate(10);
 
         return view('cashier.orders.index', [
             'orders' => $orders,
-            'canCancelOrders' => in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier'], true) || $user->hasPermission('cancel_orders'),
+            'canCancelOrders' => $this->canCancelOrders($user),
         ]);
     }
 
     public function live(Request $request): JsonResponse
     {
         $user = $request->user();
-        $role = strtolower(trim((string) $user?->role));
-        $canAccessOrders = $user && (
-            in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier'], true)
-            || $user->hasPermission('manage_orders')
-            || $user->hasPermission('view_all_orders')
-        );
-        abort_unless($canAccessOrders, 403, 'Anda tidak memiliki akses ke halaman pesanan.');
+        abort_unless($this->canAccessOrders($user), 403, 'Anda tidak memiliki akses ke halaman pesanan.');
 
         $orders = $this->baseOrdersQuery()->paginate(10);
         $latestOrder = $orders->first();
@@ -61,7 +78,7 @@ class CashierOrderController extends Controller
             'ok' => true,
             'html' => view('cashier.orders._list', [
                 'orders' => $orders,
-                'canCancelOrders' => in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier'], true) || $user->hasPermission('cancel_orders'),
+                'canCancelOrders' => $this->canCancelOrders($user),
             ])->render(),
             'latest' => $latestOrder ? [
                 'id' => $latestOrder->id,
@@ -74,12 +91,7 @@ class CashierOrderController extends Controller
     public function cancel(Request $request, SaleTransaction $order): RedirectResponse|JsonResponse
     {
         $user = $request->user();
-        $role = strtolower(trim((string) $user?->role));
-        $canCancel = $user && (
-            in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier'], true)
-            || $user->hasPermission('cancel_orders')
-        );
-        abort_unless($canCancel, 403, 'Anda tidak memiliki izin membatalkan pesanan.');
+        abort_unless($this->canCancelOrders($user), 403, 'Anda tidak memiliki izin membatalkan pesanan.');
 
         if (! $order->canBeCancelled()) {
             if ($request->expectsJson() || $request->ajax()) {

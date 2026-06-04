@@ -15,11 +15,19 @@ use Illuminate\View\View;
 
 class CashierTransactionController extends Controller
 {
+    private function normalizeRole(?string $role): string
+    {
+        return match (strtolower(trim((string) $role))) {
+            'dapur' => 'kitchen',
+            default => strtolower(trim((string) $role)),
+        };
+    }
+
     public function index(Request $request): View
     {
         $user = $request->user();
-        $role = strtolower(trim((string) $user?->role));
-        abort_unless($user && in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier'], true), 403);
+        $role = $this->normalizeRole($user?->role);
+        abort_unless($user && in_array($role, ['kasir', 'staff', 'admin', 'superadmin', 'leader_cashier', 'kitchen', 'inventory'], true), 403);
 
         $catalog = Cache::remember('cashier.transaction.catalog', now()->addMinutes(1), function () {
             return [

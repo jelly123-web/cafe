@@ -69,7 +69,7 @@
             ctx.fillStyle = '#fffaf5';
             ctx.fillRect(0, 0, size, size);
             ctx.drawImage(img, offsetX, offsetY, img.width * b.scale, img.height * b.scale);
-            output.value = canvas.toDataURL('image/jpeg', 0.9);
+            output.value = canvas.toDataURL('image/jpeg', 0.7);
             updatePreview();
         }
 

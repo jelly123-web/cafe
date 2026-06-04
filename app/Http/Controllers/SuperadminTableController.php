@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\DiningTable;
 use App\Models\SaleTransaction;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -49,6 +49,7 @@ class SuperadminTableController extends Controller
 
         if ($request->expectsJson()) {
             $table->loadCount('sales');
+
             return response()->json([
                 'message' => 'Meja berhasil ditambahkan.',
                 'table' => $this->tablePayload($table),
@@ -78,6 +79,7 @@ class SuperadminTableController extends Controller
 
         if ($request->expectsJson()) {
             $table->loadCount('sales');
+
             return response()->json([
                 'message' => 'Meja berhasil diperbarui.',
                 'table' => $this->tablePayload($table),
@@ -90,7 +92,6 @@ class SuperadminTableController extends Controller
     public function destroy(DiningTable $table): RedirectResponse
     {
         SaleTransaction::query()->where('table_id', $table->id)->update(['table_id' => null]);
-
         $table->delete();
 
         return redirect()->route('superadmin.tables.index')->with('status', 'Meja berhasil dihapus.');
@@ -112,6 +113,20 @@ class SuperadminTableController extends Controller
         return redirect()
             ->route('superadmin.tables.index')
             ->with('status', "Semua meja berhasil dihapus ({$tableCount} meja).");
+    }
+
+    public function qr(DiningTable $table): Response
+    {
+        $svg = app('qrcode')
+            ->format('svg')
+            ->size(360)
+            ->margin(1)
+            ->generate(route('tables.show', $table));
+
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        ]);
     }
 
     private function validateTable(Request $request, ?int $ignoreId = null): array
@@ -140,19 +155,5 @@ class SuperadminTableController extends Controller
             'delete_url' => route('superadmin.tables.destroy', $table),
             'qr_url' => route('superadmin.tables.qr', $table),
         ];
-    }
-
-    public function qr(DiningTable $table): Response
-    {
-        $svg = app('qrcode')
-            ->format('svg')
-            ->size(360)
-            ->margin(1)
-            ->generate(route('tables.show', $table));
-
-        return response($svg, 200, [
-            'Content-Type' => 'image/svg+xml; charset=UTF-8',
-            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-        ]);
     }
 }

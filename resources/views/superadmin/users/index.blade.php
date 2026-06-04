@@ -297,6 +297,96 @@
         .btn-drawer-cancel:hover { background: #fffaf5; border-color: var(--highlight); color: var(--highlight); }
         .drawer-foot .primary-link { border: 0; }
         .drawer-foot .primary-link:hover { transform: translateY(-1px); }
+
+        .user-drawer .drawer-head {
+            padding: 1.25rem 1.4rem;
+        }
+
+        .user-drawer .drawer-body {
+            padding: 1.2rem 1.4rem 1.4rem;
+        }
+
+        .user-drawer .user-form {
+            gap: 1.25rem;
+        }
+
+        .user-drawer .form-grid {
+            gap: 1.4rem 1.2rem;
+        }
+
+        .user-drawer .drawer-field {
+            gap: 0.55rem;
+        }
+
+        .user-drawer .drawer-field input[type="text"],
+        .user-drawer .drawer-field input[type="password"],
+        .user-drawer .drawer-field select {
+            min-height: 48px;
+        }
+
+        .user-drawer .drawer-foot {
+            padding: 1.15rem 1.4rem;
+            gap: 0.9rem;
+            background: #fff;
+        }
+
+        .user-drawer .btn-drawer-cancel,
+        .user-drawer .primary-link {
+            min-height: 46px;
+            min-width: 104px;
+            padding-left: 1.15rem;
+            padding-right: 1.15rem;
+        }
+
+        .user-drawer .drawer-close {
+            min-height: 40px;
+            padding: 0.5rem 0.95rem;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #fff 0%, #fffaf6 100%);
+            box-shadow: 0 2px 8px rgba(121, 85, 72, 0.08);
+        }
+
+        .user-drawer .photo-picker-btn {
+            min-height: 46px;
+            padding: 0.72rem 1.05rem;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #fff 0%, #fff7f0 100%);
+            border: 1px solid var(--accent);
+            box-shadow: 0 2px 8px rgba(121, 85, 72, 0.06);
+        }
+
+        .user-drawer .drawer-field input[type="file"] {
+            min-height: 48px;
+            border-radius: 14px;
+        }
+
+        .user-drawer .switch-ui {
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);
+        }
+
+        .user-drawer .drawer-foot .primary-link {
+            background: linear-gradient(180deg, #e2b68c 0%, #d4a373 100%);
+            box-shadow: 0 6px 14px rgba(212, 163, 115, 0.22);
+        }
+
+        .user-drawer .btn-drawer-cancel {
+            background: linear-gradient(180deg, #fff 0%, #fffaf6 100%);
+            box-shadow: 0 2px 8px rgba(121, 85, 72, 0.06);
+        }
+
+        .user-drawer .btn-open-edit {
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            background: #fff8f1;
+            border: 1px solid rgba(198, 139, 89, 0.18);
+            box-shadow: 0 2px 6px rgba(121, 85, 72, 0.04);
+        }
+
+        .user-drawer .btn-open-edit:hover {
+            text-decoration: none;
+            background: #fff1e6;
+        }
+
         @media (max-width: 768px) {
             .content-toolbar { flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1.25rem; }
             .search-box { width: 100%; }
@@ -499,7 +589,7 @@
             const usersPagination = document.getElementById('usersPagination');
             const searchForm = document.getElementById('usersSearchForm');
             const searchInput = document.getElementById('usersSearchInput');
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const currentUserId = {{ (int) auth()->id() }};
 
             const openDrawer = () => {
@@ -655,7 +745,7 @@
                                 headers: {
                                     'X-Requested-With': 'XMLHttpRequest',
                                     'Accept': 'application/json',
-                                    'X-CSRF-TOKEN': csrf,
+                                    'X-CSRF-TOKEN': getCsrfToken(),
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({ _method: 'DELETE' })
@@ -725,10 +815,16 @@
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrf
+                            'X-CSRF-TOKEN': getCsrfToken()
                         },
                         body: formData
                     });
+
+                    if (res.status === 419) {
+                        window.showToast?.('Sesi telah berakhir, silakan refresh halaman.', 'error');
+                        return;
+                    }
+
                     const text = await res.text();
                     let payload = {};
                     try { payload = text ? JSON.parse(text) : {}; } catch (_) {}

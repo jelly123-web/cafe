@@ -13,7 +13,9 @@ class InventoryItem extends Model
 
     protected $fillable = [
         'inventory_category_id',
+        'barcode',
         'name',
+        'type',
         'unit',
         'stock',
         'min_stock',

@@ -1,75 +1,136 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.querySelector('form');
-    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const loginForm = document.getElementById('loginForm');
+    const submitBtn = loginForm?.querySelector('button[type="submit"]');
     const errorDiv = document.querySelector('.error');
     const usernameInput = document.getElementById('username');
+    const csrfInput = loginForm?.querySelector('input[name="_token"]');
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+
+    const setError = (message) => {
+        if (!errorDiv) return;
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = message;
+    };
+
+    const clearError = () => {
+        if (!errorDiv) return;
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+    };
+
+    const setBusy = (busy) => {
+        if (!submitBtn) return;
+        submitBtn.disabled = busy;
+        submitBtn.innerHTML = busy ? '<span class="spinner"></span> Memproses...' : 'Masuk Dashboard';
+        submitBtn.style.opacity = busy ? '0.8' : '';
+        submitBtn.style.cursor = busy ? 'not-allowed' : '';
+    };
+
+    const syncCsrfToken = async () => {
+        try {
+            const res = await fetch('/csrf-token', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                credentials: 'same-origin',
+                cache: 'no-store',
+            });
+
+            if (!res.ok) {
+                return null;
+            }
+
+            const data = await res.json();
+            if (data?.token) {
+                if (csrfInput) csrfInput.value = data.token;
+                if (csrfMeta) csrfMeta.setAttribute('content', data.token);
+                return data.token;
+            }
+        } catch (error) {
+            console.error('Failed to refresh CSRF token', error);
+        }
+
+        return null;
+    };
+
+    const submitLogin = async (event) => {
+        event.preventDefault();
+        clearError();
+        setBusy(true);
+
+        const sendRequest = async (retry = false) => {
+            if (!csrfInput?.value || retry) {
+                await syncCsrfToken();
+            }
+
+            const formData = new FormData(loginForm);
+            const response = await fetch(loginForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.status === 419 && !retry) {
+                await syncCsrfToken();
+                return sendRequest(true);
+            }
+
+            let payload = {};
+            try {
+                payload = await response.json();
+            } catch (error) {
+                payload = {};
+            }
+
+            if (response.ok && payload.redirect) {
+                window.location.href = payload.redirect;
+                return;
+            }
+
+            if (response.status === 422 && payload.errors?.username?.length) {
+                setError(payload.errors.username[0]);
+                return;
+            }
+
+            if (response.status === 403 && payload.error) {
+                setError(payload.error);
+                return;
+            }
+
+            if (payload.error) {
+                setError(payload.error);
+                return;
+            }
+
+            setError('Login gagal. Coba muat ulang halaman lalu login lagi.');
+        };
+
+        try {
+            await sendRequest(false);
+        } catch (error) {
+            console.error('Login submit failed', error);
+            setError('Terjadi gangguan saat login. Coba muat ulang halaman.');
+        } finally {
+            setBusy(false);
+        }
+    };
 
     if (usernameInput) {
         usernameInput.focus();
     }
 
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            // Reset state
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-                errorDiv.textContent = '';
+        window.addEventListener('pageshow', async (event) => {
+            if (event.persisted) {
+                window.location.reload();
+                return;
             }
-            
-            const originalBtnText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner"></span> Memproses...';
-            submitBtn.style.opacity = '0.8';
-            submitBtn.style.cursor = 'not-allowed';
 
-            const formData = new FormData(loginForm);
-            
-            try {
-                const response = await fetch(loginForm.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.redirect) {
-                    // Success! Immediate redirect
-                    submitBtn.innerHTML = 'Login Berhasil! Mengalihkan...';
-                    submitBtn.style.background = '#81C784'; // Success color
-                    window.location.href = data.redirect;
-                } else {
-                    // Handle errors
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                    submitBtn.style.opacity = '1';
-                    submitBtn.style.cursor = 'pointer';
-                    
-                    if (errorDiv) {
-                        errorDiv.textContent = data.error || data.message || 'Terjadi kesalahan. Silakan coba lagi.';
-                        errorDiv.style.display = 'block';
-                    } else {
-                        // If error div doesn't exist, create it
-                        const newError = document.createElement('div');
-                        newError.className = 'error';
-                        newError.textContent = data.error || data.message || 'Terjadi kesalahan.';
-                        loginForm.before(newError);
-                    }
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.style.opacity = '1';
-                submitBtn.style.cursor = 'pointer';
-                
-                alert('Gagal menghubungi server. Periksa koneksi internet Anda.');
-            }
+            await syncCsrfToken();
         });
+
+        loginForm.addEventListener('submit', submitLogin);
     }
 });

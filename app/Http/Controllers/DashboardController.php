@@ -8,23 +8,32 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    private function normalizeRole(?string $role): string
+    {
+        return match (strtolower(trim((string) $role))) {
+            'dapur' => 'kitchen',
+            default => strtolower(trim((string) $role)),
+        };
+    }
+
     public function index(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+        $role = $this->normalizeRole($user?->role);
 
-        if ($user?->role === 'kitchen') {
+        if ($role === 'kitchen') {
             return redirect()->route('kitchen.dashboard');
         }
 
-        if ($user?->role === 'inventory') {
+        if ($role === 'inventory') {
             return redirect()->route('inventory.index');
         }
 
-        if ($user?->role === 'leader_cashier') {
+        if ($role === 'leader_cashier') {
             return redirect()->route('leader-cashier.index');
         }
 
-        if (in_array((string) $user?->role, ['kasir', 'staff', 'admin'], true)) {
+        if (in_array($role, ['kasir', 'staff', 'admin'], true)) {
             return redirect()->route('cashier.orders.index');
         }
 

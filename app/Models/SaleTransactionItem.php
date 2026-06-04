@@ -13,6 +13,7 @@ class SaleTransactionItem extends Model
     protected $fillable = [
         'sale_transaction_id',
         'menu_id',
+        'food_package_id',
         'qty',
         'unit_price',
         'unit_cost',
@@ -39,5 +40,10 @@ class SaleTransactionItem extends Model
     public function menu(): BelongsTo
     {
         return $this->belongsTo(Menu::class);
+    }
+
+    public function foodPackage(): BelongsTo
+    {
+        return $this->belongsTo(FoodPackage::class, 'food_package_id');
     }
 }

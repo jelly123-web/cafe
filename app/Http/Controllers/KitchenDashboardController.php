@@ -60,7 +60,7 @@ class KitchenDashboardController extends Controller
         $hasStatus = Schema::hasColumn('sale_transactions', 'status');
 
         $orders = SaleTransaction::query()
-            ->with(['table', 'items.menu'])
+            ->with(['table', 'items.menu', 'items.foodPackage'])
             ->withCount('items')
             ->whereDate('sold_at', now()->toDateString())
             ->when($hasStatus, function ($q) {
@@ -87,7 +87,7 @@ class KitchenDashboardController extends Controller
         $hasStatus = Schema::hasColumn('sale_transactions', 'status');
 
         $orders = SaleTransaction::query()
-            ->with(['table', 'items.menu'])
+            ->with(['table', 'items.menu', 'items.foodPackage'])
             ->withCount('items')
             ->whereDate('sold_at', now()->toDateString())
             ->when($hasStatus, function ($q) {
@@ -119,7 +119,7 @@ class KitchenDashboardController extends Controller
         $hasStatus = Schema::hasColumn('sale_transactions', 'status');
 
         $history = SaleTransaction::query()
-            ->with(['table', 'items.menu'])
+            ->with(['table', 'items.menu', 'items.foodPackage'])
             ->when($hasStatus, fn ($q) => $q->whereIn('status', [
                 SaleTransaction::STATUS_COMPLETED,
                 SaleTransaction::STATUS_PAID,
@@ -137,7 +137,7 @@ class KitchenDashboardController extends Controller
     {
         $hasStatus = Schema::hasColumn('sale_transactions', 'status');
         $history = SaleTransaction::query()
-            ->with(['table', 'items.menu'])
+            ->with(['table', 'items.menu', 'items.foodPackage'])
             ->when($hasStatus, fn ($q) => $q->whereIn('status', [
                 SaleTransaction::STATUS_COMPLETED,
                 SaleTransaction::STATUS_PAID,
