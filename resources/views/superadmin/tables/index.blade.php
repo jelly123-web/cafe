@@ -1,518 +1,658 @@
 @extends('superadmin.layout')
 
-@section('title', 'Meja')
+@section('title', 'Meja Cafe — MakanYuk')
 @section('page_title', 'Meja Cafe')
 @section('page_description', 'Lihat, tambah, dan kelola meja yang dipakai pelanggan untuk scan QR.')
 
 @push('head')
     <style>
-        .table-toolbar {
-            background: var(--bg-card);
-            border: 1px solid var(--accent);
-            border-radius: 20px;
-            box-shadow: 0 4px 15px var(--shadow);
-            padding: 1.25rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
+    /* ===== VARIABEL DESAIN ===== */
+    :root {
+      --bg: #F4F5F7;
+      --bg-card: #FFFFFF;
+      --white: #FFFFFF;
+      --border: #E8EAED;
+      --border-light: #F0F1F3;
+      --fg: #1A1D23;
+      --fg-secondary: #5F6577;
+      --muted: #9CA3B4;
+      --accent: #D97706;
+      --accent-light: #FEF3C7;
+      --accent-dark: #B45309;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --blue: #2563EB;
+      --blue-light: #DBEAFE;
+      --purple: #7C3AED;
+      --purple-light: #EDE9FE;
+      --teal: #0D9488;
+      --teal-light: #CCFBF1;
+      --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.07);
+      --shadow-xl: 0 20px 60px rgba(0,0,0,0.1);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --transition: 0.2s ease;
+    }
 
-        .table-toolbar h2 {
-            font-family: 'Playfair Display', Georgia, serif;
-            color: var(--primary);
-            margin: 0 0 0.25rem;
-            font-size: 1.2rem;
-        }
+    /* ===== TABLE TOOLBAR ===== */
+    .table-toolbar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
 
-        .table-toolbar p {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
+    .table-toolbar h2 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--fg);
+      margin: 0 0 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.2px;
+    }
 
-        .table-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 1.5rem;
-        }
+    .table-toolbar h2 i { color: var(--accent); font-size: 16px; }
 
-        .table-card {
-            background: var(--bg-card);
-            border: 1px solid var(--accent);
-            border-radius: 20px;
-            box-shadow: 0 4px 15px var(--shadow);
-            padding: 1.25rem;
-            display: grid;
-            gap: 1.25rem;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-        }
+    .table-toolbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-        .table-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px var(--shadow);
-            border-color: rgba(212, 163, 115, 0.3);
-        }
+    .toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-        .table-card-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            align-items: start;
-        }
+    /* ===== SEARCH BOX ===== */
+    .search-box {
+      display: flex;
+      gap: 6px;
+    }
 
-        .table-card h3 {
-            font-family: 'Playfair Display', Georgia, serif;
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-            font-size: 1.2rem;
-        }
+    .search-box input {
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      min-width: 280px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg);
+      outline: none;
+      transition: all var(--transition);
+    }
 
-        .table-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            background: #efebe9;
-            color: var(--primary);
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
+    .search-box input::placeholder { color: var(--muted); }
 
-        .qr-box {
-            display: grid;
-            gap: 0.75rem;
-            justify-items: start;
-            padding-top: 0.75rem;
-            border-top: 1px dashed var(--accent);
-        }
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+    }
 
-        .qr-preview {
-            width: 140px;
-            height: 140px;
-            padding: 8px;
-            background: #fff;
-            border-radius: 12px;
-            border: 2px dashed var(--accent);
-            box-shadow: 0 2px 8px var(--shadow);
-            display: block;
-            object-fit: contain;
-            margin-bottom: 0.5rem;
-        }
+    /* ===== BUTTONS ===== */
+    .primary-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: white; text-decoration: none;
+      padding: 10px 20px; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 13px; border: none; cursor: pointer;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .primary-link:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(217,119,6,0.25); }
 
-        .qr-box small {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            margin-bottom: 0.5rem;
-        }
+    .secondary-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: transparent; color: var(--fg-secondary); text-decoration: none;
+      padding: 8px 14px; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 12px; border: 1.5px solid var(--border); cursor: pointer;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .secondary-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
-        .qr-token-label {
-            font-family: monospace;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            background: #f5f5f5;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            word-break: break-all;
-        }
+    .danger-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; color: var(--red); border: 1.5px solid #FECACA;
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .danger-link:hover { background: var(--red-light); border-color: var(--red); }
 
-        .table-actions {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
+    /* ===== TABLE GRID ===== */
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
 
-        .primary-link,
-        .secondary-link,
-        .danger-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            padding: 0.5rem 1rem;
-            font-weight: 600;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-family: inherit;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-        }
+    /* ===== TABLE CARD ===== */
+    .table-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.25s ease;
+      animation: cardIn 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
 
-        .primary-link {
-            background: var(--highlight);
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3);
-            border: none;
-        }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
-        .primary-link:hover {
-            background: #c68b59;
-            transform: translateY(-2px);
-        }
+    .table-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
 
-        .secondary-link {
-            background: transparent;
-            color: var(--primary);
-            border-color: var(--accent);
-        }
+    .table-card:hover {
+      border-color: transparent;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
 
-        .secondary-link:hover {
-            border-color: var(--highlight);
-            color: var(--highlight);
-            background: #fffaf5;
-        }
+    .table-card:hover::before {
+      opacity: 1;
+    }
 
-        .danger-link {
-            background: transparent;
-            color: var(--loss);
-            border-color: #f8d7da;
-        }
+    /* ===== TABLE CARD HEAD ===== */
+    .table-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
 
-        .danger-link:hover {
-            background: #fff0f0;
-            border-color: var(--loss);
-        }
+    .table-card h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--fg);
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
 
-        .pagination-area {
-            margin-top: 1.5rem;
-        }
+    /* ===== TABLE PILL ===== */
+    .table-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
 
-        .table-empty {
-            grid-column: 1 / -1;
-            color: var(--text-muted);
-            padding: 1.25rem;
-        }
+    .table-pill.active {
+      background: var(--green-light);
+      color: var(--green);
+    }
 
-        .table-actions form {
-            margin: 0;
-        }
+    .table-pill.inactive {
+      background: #F3F4F6;
+      color: var(--muted);
+    }
 
-        .drawer-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(56, 37, 30, 0.32);
-            backdrop-filter: blur(2px);
-            z-index: 1200;
-            opacity: 0;
-            visibility: hidden;
-            transition: 0.2s ease;
-        }
+    .table-pill .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
 
-        .drawer-backdrop.open {
-            opacity: 1;
-            visibility: visible;
-        }
+    .table-pill.active .pill-dot {
+      animation: dotPulse 2s infinite;
+    }
 
-        .table-drawer {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: min(560px, 95vw);
-            height: 100vh;
-            background: linear-gradient(180deg, #fffdfb 0%, #fff 100%);
-            z-index: 1201;
-            transform: translateX(102%);
-            transition: transform 0.2s ease;
-            box-shadow: -10px 0 34px rgba(79, 53, 43, 0.18);
-            display: grid;
-            grid-template-rows: auto 1fr auto;
-        }
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
 
-        .table-drawer.open {
-            transform: translateX(0);
-        }
+    /* ===== TABLE STATUS INFO ===== */
+    .table-status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
 
-        .drawer-head {
-            padding: 1.15rem 1.25rem;
-            border-bottom: 1px solid var(--accent);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fff;
-        }
+    .table-stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
 
-        .drawer-head h3 {
-            margin: 0;
-            font-family: 'Playfair Display', Georgia, serif;
-            color: var(--primary);
-            font-size: 1.35rem;
-        }
+    .table-stat i { font-size: 12px; }
 
-        .drawer-close {
-            border: 1px solid var(--accent);
-            background: #fff;
-            color: var(--primary);
-            border-radius: 12px;
-            padding: 0.45rem 0.85rem;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    /* ===== QR BOX ===== */
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
 
-        .drawer-body {
-            padding: 1rem 1.25rem 1.25rem;
-            overflow-y: auto;
-        }
+    .qr-preview-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      width: 100%;
+    }
 
-        .drawer-form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
+    .qr-preview {
+      width: 110px;
+      height: 110px;
+      padding: 6px;
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      display: block;
+      object-fit: contain;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
 
-        .drawer-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
+    .qr-preview:hover {
+      border-color: var(--accent);
+      transform: scale(1.03);
+    }
 
-        .drawer-field label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
+    .qr-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
 
-        .drawer-field input[type="text"] {
-            width: 100%;
-            padding: 0.65rem 1rem;
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            background: #fff;
-            color: var(--text-main);
-        }
+    .qr-info small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
 
-        .drawer-field input[type="text"]:focus {
-            border-color: var(--highlight);
-            box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.15);
-            outline: none;
-        }
+    .qr-token-label {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      color: var(--fg-secondary);
+      background: var(--bg);
+      padding: 4px 8px;
+      border-radius: 4px;
+      word-break: break-all;
+      border: 1px solid var(--border-light);
+    }
 
-        .switch-row {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-top: 0.35rem;
-            min-height: 28px;
-            cursor: pointer;
-        }
+    /* ===== TABLE ACTIONS ===== */
+    .table-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-light);
+    }
 
-        .switch-text {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-main);
-            line-height: 1;
-            white-space: nowrap;
-        }
+    .table-actions form { margin: 0; display: inline-flex; }
 
-        .switch-row input[type="checkbox"] {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
+    /* ===== EMPTY STATE ===== */
+    .table-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      font-size: 14px;
+      background: #fff;
+      border-radius: var(--radius-lg);
+    }
 
-        .switch-ui {
-            width: 44px;
-            height: 24px;
-            background-color: var(--accent);
-            border-radius: 50px;
-            position: relative;
-            display: inline-block;
-            transition: background-color 0.25s ease;
-            flex-shrink: 0;
-        }
+    .table-empty::before {
+      content: '\f0fc';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      display: block;
+      font-size: 36px;
+      margin-bottom: 10px;
+      color: var(--border);
+    }
 
-        .switch-ui::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 20px;
-            height: 20px;
-            background-color: #fff;
-            border-radius: 50%;
-            transition: transform 0.3s ease;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
+    .table-empty em { font-style: normal; font-weight: 700; color: var(--fg-secondary); }
 
-        .switch-row input[type="checkbox"]:checked + .switch-ui {
-            background-color: var(--highlight);
-        }
+    /* ===== PAGINATION ===== */
+    .pagination-area { margin-top: 20px; }
+    .pagination-wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .pagination-meta { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .pagination-links { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pagination-link, .pagination-dots {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 34px; height: 34px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 600; text-decoration: none;
+      border: 1px solid var(--border); color: var(--fg-secondary);
+      padding: 0 8px; background: var(--white); transition: all var(--transition);
+      font-family: var(--font); cursor: pointer;
+    }
+    .pagination-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .pagination-link.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .pagination-link.disabled { opacity: 0.35; pointer-events: none; }
 
-        .switch-row input[type="checkbox"]:checked + .switch-ui::after {
-            transform: translateX(20px);
-        }
+    /* ===== DRAWER ===== */
+    .drawer-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(2px); z-index: 1200;
+      opacity: 0; visibility: hidden; transition: all 0.25s ease;
+    }
+    .drawer-backdrop.open { opacity: 1; visibility: visible; }
 
-        .drawer-foot {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid var(--accent);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.7rem;
-            background: #fff;
-        }
+    .table-drawer {
+      position: fixed; top: 0; right: 0;
+      width: min(480px, 95vw); height: 100vh;
+      background: var(--white); z-index: 1201;
+      transform: translateX(108%);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, visibility 0.2s ease;
+      box-shadow: var(--shadow-xl);
+      display: flex; flex-direction: column;
+    }
+    .table-drawer.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; }
 
-        .btn-drawer-cancel {
-            border: 1px solid var(--accent);
-            background: #fff;
-            color: var(--primary);
-            border-radius: 12px;
-            padding: 0.6rem 1rem;
-            cursor: pointer;
-            font-weight: 600;
-        }
+    .drawer-head {
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .drawer-head h3 {
+      margin: 0; font-size: 16px; font-weight: 800; color: var(--fg);
+      display: flex; align-items: center; gap: 8px; letter-spacing: -0.2px;
+    }
+    .drawer-head h3 i { color: var(--accent); }
 
-        .btn-drawer-cancel:hover {
-            background: #fffaf5;
-        }
+    .drawer-close {
+      border: 1px solid var(--border); background: var(--white);
+      color: var(--fg-secondary); border-radius: var(--radius-sm);
+      padding: 8px 14px; cursor: pointer; font-weight: 700; font-size: 12px;
+      font-family: var(--font); transition: all var(--transition);
+    }
+    .drawer-close:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
 
-        .form-error {
-            font-size: 0.82rem;
-            color: var(--loss);
-            min-height: 1rem;
-        }
+    /* ===== DRAWER BODY ===== */
+    .drawer-body {
+      padding: 28px 24px; overflow-y: auto; flex: 1; min-height: 0;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    .drawer-body::-webkit-scrollbar { width: 5px; }
+    .drawer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
-        .qr-modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(56, 37, 30, 0.35);
-            backdrop-filter: blur(2px);
-            opacity: 0;
-            visibility: hidden;
-            transition: 0.2s ease;
-            z-index: 1300;
-        }
+    .drawer-form { display: flex; flex-direction: column; gap: 0; min-height: 100%; height: 100%; }
 
-        .qr-modal-backdrop.open { opacity: 1; visibility: visible; }
+    .drawer-field { display: flex; flex-direction: column; gap: 10px; }
 
-        .qr-modal {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -45%);
-            width: min(420px, 92vw);
-            background: #fff;
-            border: 1px solid var(--accent);
-            border-radius: 18px;
-            box-shadow: 0 14px 30px rgba(48, 28, 21, 0.22);
-            z-index: 1301;
-            opacity: 0;
-            visibility: hidden;
-            transition: 0.2s ease;
-        }
+    .drawer-field label {
+      font-size: 12px; font-weight: 700; color: var(--fg-secondary);
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+    }
 
-        .qr-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .qr-modal-head { padding: 12px 14px; border-bottom: 1px solid var(--accent); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .qr-modal-body { padding: 14px; display: grid; gap: 10px; justify-items: center; }
-        .qr-modal-img { width: 220px; height: 220px; border: 1px dashed var(--accent); border-radius: 14px; padding: 8px; background: #fff; object-fit: contain; }
-        .qr-url { width: 100%; font-size: 12px; color: var(--text-muted); word-break: break-all; text-align: center; }
+    .drawer-field input[type="text"] {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--white); color: var(--fg);
+      font-size: 14px; font-weight: 500; outline: none;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .drawer-field input::placeholder { color: var(--muted); font-weight: 400; }
+    .drawer-field input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
 
-        @media (max-width: 768px) {
-            .table-grid {
-                grid-template-columns: 1fr;
-            }
+    /* ===== SWITCH ===== */
+    .switch-row {
+      display: inline-flex; align-items: center; gap: 12px;
+      cursor: pointer; min-height: 32px; margin-top: 2px;
+    }
 
-            .table-toolbar {
-                padding: 1rem 1.1rem;
-            }
+    .switch-text {
+      font-size: 13px; font-weight: 600; color: var(--fg-secondary);
+      line-height: 1; white-space: nowrap;
+    }
 
-            .table-card {
-                padding: 1rem;
-            }
-        }
+    .switch-row input[type="checkbox"] {
+      position: absolute; opacity: 0; pointer-events: none;
+    }
 
-        @media (max-width: 768px) {
-            .table-toolbar { flex-direction: column; align-items: stretch; padding: 1rem; }
-            .table-toolbar div { width: 100%; }
-            .primary-link { width: 100%; justify-content: center; }
-            .table-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .table-card { padding: 1rem; }
-            .qr-preview { width: 100%; height: auto; aspect-ratio: 1/1; max-width: 200px; margin: 0 auto 0.5rem; }
-            .drawer-head h3 { font-size: 1.15rem; }
-            .drawer-body { padding: 1rem; }
-            .drawer-foot { padding: 1rem; }
-        }
+    .switch-ui {
+      width: 44px; height: 24px;
+      background-color: var(--border);
+      border-radius: 50px; position: relative;
+      display: inline-block; transition: background-color 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .switch-ui::after {
+      content: ''; position: absolute;
+      top: 2px; left: 2px; width: 20px; height: 20px;
+      background-color: var(--white); border-radius: 50%;
+      transition: transform 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .switch-row input[type="checkbox"]:checked + .switch-ui {
+      background-color: var(--accent);
+    }
+
+    .switch-row input[type="checkbox"]:checked + .switch-ui::after {
+      transform: translateX(20px);
+    }
+
+    /* ===== DRAWER FOOT ===== */
+    .drawer-foot {
+      padding: 20px 24px; border-top: 1px solid var(--border);
+      display: flex; gap: 12px; justify-content: flex-end;
+      background: #FAFBFC; flex-shrink: 0;
+    }
+
+    .btn-drawer-cancel {
+      border: 1.5px solid var(--border); background: var(--white);
+      color: var(--fg-secondary); border-radius: var(--radius-sm);
+      padding: 11px 22px; cursor: pointer; font-weight: 700; font-size: 13px;
+      font-family: var(--font); transition: all var(--transition); min-width: 116px;
+    }
+    .btn-drawer-cancel:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+
+    .form-error {
+      font-size: 12px; color: var(--red); min-height: 1rem;
+      font-weight: 600;
+    }
+
+    /* ===== QR MODAL ===== */
+    .qr-modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(2px); opacity: 0; visibility: hidden;
+      transition: all 0.25s ease; z-index: 1300;
+    }
+    .qr-modal-backdrop.open { opacity: 1; visibility: visible; }
+
+    .qr-modal {
+      position: fixed; left: 50%; top: 50%;
+      transform: translate(-50%, -45%);
+      width: min(400px, 92vw); background: var(--white);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl); z-index: 1301;
+      opacity: 0; visibility: hidden; transition: all 0.25s ease;
+    }
+    .qr-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
+
+    .qr-modal-head {
+      padding: 14px 20px; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    }
+    .qr-modal-head strong {
+      font-size: 14px; font-weight: 800; color: var(--fg);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .qr-modal-head strong i { color: var(--accent); }
+
+    .qr-modal-body {
+      padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: center;
+    }
+
+    .qr-modal-img {
+      width: 200px; height: 200px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-md);
+      padding: 8px; background: var(--white); object-fit: contain;
+      transition: all var(--transition);
+    }
+    .qr-modal-img:hover { border-color: var(--accent); }
+
+    .qr-url {
+      width: 100%; font-size: 11px; color: var(--muted);
+      word-break: break-all; text-align: center;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: var(--bg); padding: 8px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .table-toolbar { flex-direction: column; align-items: stretch; padding: 16px; gap: 12px; }
+      .toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .table-grid { grid-template-columns: 1fr; }
+      .table-card { padding: 16px; }
+      .qr-preview-wrap { flex-direction: column; align-items: center; }
+      .qr-info { align-items: center; text-align: center; }
+    }
+
+    @media (max-width: 480px) {
+      .toolbar-actions { grid-template-columns: 1fr; }
+      .table-actions { flex-direction: column; }
+      .table-actions .secondary-link,
+      .table-actions .danger-link { width: 100%; justify-content: center; }
+    }
     </style>
 @endpush
 
 @section('content')
-    <div class="table-toolbar">
+    <!-- TOOLBAR -->
+    <div class="table-toolbar fade-in">
         <div>
-            <h2>Daftar Meja</h2>
+            <h2><i class="fas fa-chair"></i> Daftar Meja</h2>
             <p>Setiap meja punya QR unik untuk scan pelanggan.</p>
         </div>
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-            <button type="button" class="primary-link" id="openCreateDrawer">+ Tambah Meja</button>
-            <form method="POST" action="{{ route('superadmin.tables.destroy-all') }}" onsubmit="return confirm('Hapus semua meja? Aksi ini tidak bisa dibatalkan.')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="danger-link">Hapus Semua Meja</button>
-            </form>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div class="search-box">
+                <input type="text" id="tableSearchInput" placeholder="Cari meja (cth: Meja 1)..." autocomplete="off">
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="primary-link" id="openCreateDrawer"><i class="fas fa-plus"></i> Tambah Meja</button>
+                <form method="POST" action="{{ route('superadmin.tables.destroy-all') }}" onsubmit="return confirm('Hapus semua meja? Aksi ini tidak bisa dibatalkan.')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="danger-link"><i class="fas fa-trash-can"></i> Hapus Semua Meja</button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div class="table-grid">
+    <!-- TABLE GRID -->
+    <div class="table-grid fade-in">
         @forelse ($tables as $table)
             <article class="table-card" data-table-id="{{ $table->id }}">
                 <div class="table-card-head">
                     <div>
-                        <span class="table-pill">Meja {{ $table->number }}</span>
+                        <span class="table-pill {{ $table->is_active ? 'active' : 'inactive' }}">
+                            <span class="pill-dot"></span> Meja {{ $table->number }}
+                        </span>
                         <h3>{{ $table->name }}</h3>
-                        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Status: {{ $table->is_active ? 'Aktif' : 'Nonaktif' }}</p>
-                        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Total transaksi: {{ $table->sales_count }}</p>
                     </div>
                 </div>
-
-                <div class="qr-box">
-                    <img
-                        class="qr-preview"
-                        src="{{ route('superadmin.tables.qr', $table) }}"
-                        alt="QR Meja {{ $table->number }}"
-                        loading="lazy"
-                    >
-                    <small>Scan QR untuk membuka halaman pelanggan meja ini.</small>
-                    <div class="qr-token-label">Token: {{ $table->qr_token }}</div>
+                <div class="table-status-row">
+                    <span class="table-stat">
+                        <i class="fas {{ $table->is_active ? 'fa-circle-check' : 'fa-circle-xmark' }}" style="color: {{ $table->is_active ? 'var(--green)' : 'var(--muted)' }};"></i> 
+                        {{ $table->is_active ? 'Aktif' : 'Nonaktif' }}
+                    </span>
+                    <span class="table-stat"><i class="fas fa-receipt"></i> {{ $table->sales_count }} transaksi</span>
                 </div>
-
+                <div class="qr-box">
+                    <div class="qr-preview-wrap">
+                        <img class="qr-preview" 
+                            src="{{ route('superadmin.tables.qr', $table->id) }}" 
+                            alt="QR Meja {{ $table->number }}" 
+                            loading="lazy"
+                            style="{{ !$table->is_active ? 'opacity:0.5;' : '' }}"
+                        >
+                        <div class="qr-info">
+                            <small>Scan QR untuk membuka halaman pelanggan meja ini.</small>
+                            <div class="qr-token-label">Token: {{ $table->qr_token }}</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="table-actions">
-                    <a class="secondary-link" href="{{ route('tables.show', $table) }}" target="_blank" rel="noopener">Buka Halaman</a>
-                    <button
-                        type="button"
-                        class="secondary-link btn-show-qr"
-                        data-show-url="{{ route('tables.show', $table) }}"
-                        data-qr-url="{{ route('superadmin.tables.qr', $table) }}"
-                    >Lihat QR</button>
-                    <button
-                        type="button"
-                        class="secondary-link btn-open-edit"
-                        data-id="{{ $table->id }}"
-                        data-number="{{ $table->number }}"
-                        data-name="{{ $table->name }}"
-                        data-active="{{ $table->is_active ? 1 : 0 }}"
-                    >Edit</button>
-                    <form method="POST" action="{{ route('superadmin.tables.destroy', $table) }}" onsubmit="return confirm('Hapus meja ini?')">
+                    <a class="secondary-link" href="{{ route('tables.show', $table) }}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Buka Halaman</a>
+                    <button type="button" class="secondary-link btn-show-qr" 
+                        data-show-url="{{ route('tables.show', $table) }}" 
+                        data-qr-url="{{ route('superadmin.tables.qr', $table->id) }}">
+                        <i class="fas fa-qrcode"></i> Lihat QR
+                    </button>
+                    <button type="button" class="secondary-link btn-open-edit" 
+                        data-id="{{ $table->id }}" 
+                        data-number="{{ $table->number }}" 
+                        data-name="{{ $table->name }}" 
+                        data-active="{{ $table->is_active ? 1 : 0 }}">
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                    <form method="POST" action="{{ route('superadmin.tables.destroy', $table->id) }}" onsubmit="return confirm('Hapus meja ini?')">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="danger-link">Hapus</button>
+                        <button type="submit" class="danger-link"><i class="fas fa-trash"></i> Hapus</button>
                     </form>
                 </div>
             </article>
         @empty
-            <div class="table-card table-empty">
-                <div>Belum ada meja.</div>
+            <div class="table-empty" id="emptyState">
+                <em>Belum ada meja.</em>
             </div>
         @endforelse
     </div>
 
-    <div class="pagination-area">
+    <!-- PAGINATION -->
+    <div class="pagination-area fade-in">
         {{ $tables->links('components.pagination') }}
     </div>
 
+    <!-- DRAWER BACKDROP -->
     <div id="drawerBackdrop" class="drawer-backdrop"></div>
+
+    <!-- TABLE DRAWER -->
     <aside id="tableDrawer" class="table-drawer" aria-hidden="true">
         <div class="drawer-head">
-            <h3 id="drawerTitle">Tambah Meja</h3>
+            <h3 id="drawerTitle"><i class="fas fa-plus-circle"></i> Tambah Meja</h3>
             <button type="button" class="drawer-close" id="closeDrawerBtn">Tutup</button>
         </div>
         <form id="drawerForm" class="drawer-form" method="POST" action="{{ route('superadmin.tables.store') }}">
@@ -521,14 +661,14 @@
             <div class="drawer-body">
                 <div class="drawer-field">
                     <label for="drawer_number">Nomor Meja</label>
-                    <input id="drawer_number" type="text" name="number" required>
+                    <input id="drawer_number" type="text" name="number" required placeholder="Cth: 7">
                 </div>
                 <div class="drawer-field">
                     <label for="drawer_name">Nama Meja</label>
-                    <input id="drawer_name" type="text" name="name" required>
+                    <input id="drawer_name" type="text" name="name" required placeholder="Cth: Meja Tengah 3">
                 </div>
                 <div class="drawer-field">
-                    <label for="drawer_is_active">Status</label>
+                    <label style="margin-top:4px;">Status</label>
                     <label class="switch-row" for="drawer_is_active">
                         <input id="drawer_is_active" type="checkbox" name="is_active" value="1" checked>
                         <span class="switch-ui" aria-hidden="true"></span>
@@ -539,15 +679,16 @@
             </div>
             <div class="drawer-foot">
                 <button type="button" class="btn-drawer-cancel" id="cancelDrawerBtn">Batal</button>
-                <button type="submit" class="primary-link" id="submitDrawerBtn">Buat Meja</button>
+                <button type="submit" class="primary-link" id="submitDrawerBtn"><i class="fas fa-check"></i> Buat Meja</button>
             </div>
         </form>
     </aside>
 
+    <!-- QR MODAL -->
     <div id="qrModalBackdrop" class="qr-modal-backdrop"></div>
     <section id="qrModal" class="qr-modal" aria-hidden="true">
         <div class="qr-modal-head">
-            <strong>QR Meja</strong>
+            <strong><i class="fas fa-qrcode"></i> QR Meja</strong>
             <button type="button" class="drawer-close" id="closeQrModalBtn">Tutup</button>
         </div>
         <div class="qr-modal-body">
@@ -556,6 +697,11 @@
         </div>
     </section>
 
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+@endsection
+
+@push('scripts')
     <script>
         (function () {
             const drawer = document.getElementById('tableDrawer');
@@ -569,6 +715,7 @@
             const submitBtn = document.getElementById('submitDrawerBtn');
             const errorEl = document.getElementById('drawerError');
             const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const grid = document.querySelector('.table-grid');
             const qrModal = document.getElementById('qrModal');
             const qrBackdrop = document.getElementById('qrModalBackdrop');
             const closeQrBtn = document.getElementById('closeQrModalBtn');
@@ -579,12 +726,14 @@
                 drawer.classList.add('open');
                 backdrop.classList.add('open');
                 drawer.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
             };
 
             const closeDrawer = () => {
                 drawer.classList.remove('open');
                 backdrop.classList.remove('open');
                 drawer.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
             };
 
             const openQrModal = (url, qrUrl) => {
@@ -602,70 +751,26 @@
             };
 
             const setCreateMode = () => {
-                title.textContent = 'Tambah Meja';
+                title.innerHTML = '<i class="fas fa-plus-circle"></i> Tambah Meja';
                 form.action = "{{ route('superadmin.tables.store') }}";
                 methodSpoof.value = '';
                 form.reset();
                 document.getElementById('drawer_is_active').checked = true;
-                submitBtn.textContent = 'Buat Meja';
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Buat Meja';
                 errorEl.textContent = '';
             };
 
             const setEditMode = (btn) => {
                 const id = btn.getAttribute('data-id');
-                title.textContent = 'Edit Meja';
+                title.innerHTML = '<i class="fas fa-pen-to-square"></i> Edit Meja';
                 form.action = "{{ url('superadmin/tables') }}/" + id;
                 methodSpoof.value = 'PUT';
                 document.getElementById('drawer_number').value = btn.getAttribute('data-number') || '';
                 document.getElementById('drawer_name').value = btn.getAttribute('data-name') || '';
                 document.getElementById('drawer_is_active').checked = btn.getAttribute('data-active') === '1';
-                submitBtn.textContent = 'Simpan Perubahan';
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Simpan Perubahan';
                 errorEl.textContent = '';
             };
-
-            const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (m) => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-            }[m]));
-
-            const cardMarkup = (payload) => `
-                <div class="table-card-head">
-                    <div>
-                        <span class="table-pill">Meja ${escapeHtml(payload.number)}</span>
-                        <h3>${escapeHtml(payload.name)}</h3>
-                        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Status: ${payload.is_active ? 'Aktif' : 'Nonaktif'}</p>
-                        <p style="margin:0;color:var(--text-muted);font-size:0.9rem;">Total transaksi: ${payload.sales_count ?? 0}</p>
-                    </div>
-                </div>
-
-                <div class="qr-box">
-                    <img
-                        class="qr-preview"
-                        src="${escapeHtml(payload.qr_url)}"
-                        alt="QR Meja ${escapeHtml(payload.number)}"
-                        loading="lazy"
-                    >
-                    <small>Scan QR untuk membuka halaman pelanggan meja ini.</small>
-                    <div class="qr-token-label">Token: ${escapeHtml(payload.qr_token)}</div>
-                </div>
-
-                <div class="table-actions">
-                    <a class="secondary-link" href="${escapeHtml(payload.show_url)}" target="_blank" rel="noopener">Buka Halaman</a>
-                    <button type="button" class="secondary-link btn-show-qr" data-show-url="${escapeHtml(payload.show_url)}" data-qr-url="${escapeHtml(payload.qr_url || '')}">Lihat QR</button>
-                    <button
-                        type="button"
-                        class="secondary-link btn-open-edit"
-                        data-id="${payload.id}"
-                        data-number="${escapeHtml(payload.number)}"
-                        data-name="${escapeHtml(payload.name)}"
-                        data-active="${payload.is_active ? 1 : 0}"
-                    >Edit</button>
-                    <form method="POST" action="${escapeHtml(payload.delete_url)}" onsubmit="return confirm('Hapus meja ini?')">
-                        <input type="hidden" name="_token" value="${escapeHtml(getCsrfToken())}">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <button type="submit" class="danger-link">Hapus</button>
-                    </form>
-                </div>
-            `;
 
             const bindActionButtons = (root = document) => {
                 root.querySelectorAll('.btn-open-edit').forEach((btn) => {
@@ -691,17 +796,22 @@
 
             [closeBtn, cancelBtn, backdrop].forEach((el) => el?.addEventListener('click', closeDrawer));
             [closeQrBtn, qrBackdrop].forEach((el) => el?.addEventListener('click', closeQrModal));
+            window.addEventListener('superadmin:sidebar-toggle', () => {
+                closeDrawer();
+                closeQrModal();
+            });
+            closeDrawer();
+            window.addEventListener('pageshow', closeDrawer);
             bindActionButtons();
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 errorEl.textContent = '';
                 submitBtn.disabled = true;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
 
                 const formData = new FormData(form);
-                if (!document.getElementById('drawer_is_active').checked) {
-                    formData.delete('is_active');
-                }
                 if (methodSpoof.value === 'PUT') {
                     formData.set('_method', 'PUT');
                 }
@@ -728,25 +838,78 @@
                         throw new Error(msg);
                     }
 
-                    const data = payload.table;
-                    const grid = document.querySelector('.table-grid');
-                    let card = grid.querySelector('[data-table-id="' + data.id + '"]');
-                    if (!card) {
-                        grid.querySelector('.table-empty')?.remove();
-                        card = document.createElement('article');
-                        card.className = 'table-card';
-                        card.setAttribute('data-table-id', data.id);
-                        grid.prepend(card);
+                    const table = payload.table;
+                    const existing = grid.querySelector('[data-table-id="' + table.id + '"]');
+                    const emptyState = document.getElementById('emptyState');
+                    const html = [
+                        '<article class="table-card" data-table-id="' + table.id + '">',
+                        '  <div class="table-card-head"><div><span class="table-pill ' + (table.is_active ? 'active' : 'inactive') + '"><span class="pill-dot"></span> Meja ' + table.number + '</span><h3>' + table.name + '</h3></div></div>',
+                        '  <div class="table-status-row">',
+                        '    <span class="table-stat"><i class="fas ' + (table.is_active ? 'fa-circle-check' : 'fa-circle-xmark') + '" style="color: ' + (table.is_active ? 'var(--green)' : 'var(--muted)') + ';"></i> ' + (table.is_active ? 'Aktif' : 'Nonaktif') + '</span>',
+                        '    <span class="table-stat"><i class="fas fa-receipt"></i> ' + table.sales_count + ' transaksi</span>',
+                        '  </div>',
+                        '  <div class="qr-box"><div class="qr-preview-wrap"><img class="qr-preview" src="' + table.qr_url + '" alt="QR Meja ' + table.number + '" loading="lazy" style="' + (table.is_active ? '' : 'opacity:0.5;') + '"><div class="qr-info"><small>Scan QR untuk membuka halaman pelanggan meja ini.</small><div class="qr-token-label">Token: ' + table.qr_token + '</div></div></div></div>',
+                        '  <div class="table-actions">',
+                        '    <a class="secondary-link" href="' + table.show_url + '" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Buka Halaman</a>',
+                        '    <button type="button" class="secondary-link btn-show-qr" data-show-url="' + table.show_url + '" data-qr-url="' + table.qr_url + '"><i class="fas fa-qrcode"></i> Lihat QR</button>',
+                        '    <button type="button" class="secondary-link btn-open-edit" data-id="' + table.id + '" data-number="' + table.number + '" data-name="' + table.name + '" data-active="' + (table.is_active ? '1' : '0') + '"><i class="fas fa-pen"></i> Edit</button>',
+                        '    <form method="POST" action="' + table.delete_url + '" onsubmit="return confirm('Hapus meja ini?')"><input type="hidden" name="_token" value="' + getCsrfToken() + '"><input type="hidden" name="_method" value="DELETE"><button type="submit" class="danger-link"><i class="fas fa-trash"></i> Hapus</button></form>',
+                        '  </div>',
+                        '</article>'
+                    ].join('');
+                    if (existing) {
+                        existing.outerHTML = html;
+                    } else {
+                        if (emptyState) emptyState.remove();
+                        grid.insertAdjacentHTML('afterbegin', html);
                     }
-                    card.innerHTML = cardMarkup(data);
-                    bindActionButtons(card);
+                    bindActionButtons(grid);
                     closeDrawer();
                 } catch (err) {
                     errorEl.textContent = err.message || 'Terjadi kesalahan.';
-                } finally {
                     submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
                 }
             });
+
+            /* ===== LIVE SEARCH ===== */
+            const searchInput = document.getElementById('tableSearchInput');
+            const tableGrid = document.querySelector('.table-grid');
+            
+            if (searchInput && tableGrid) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    const cards = tableGrid.querySelectorAll('.table-card:not(.table-empty)');
+                    let hasVisible = false;
+
+                    cards.forEach(card => {
+                        const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                        const number = card.querySelector('.table-pill')?.textContent.toLowerCase() || '';
+                        
+                        if (name.includes(query) || number.includes(query)) {
+                            card.style.display = '';
+                            hasVisible = true;
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    let emptyMsg = document.getElementById('searchEmptyMsg');
+                    if (!hasVisible && query !== '') {
+                        if (!emptyMsg) {
+                            emptyMsg = document.createElement('div');
+                            emptyMsg.id = 'searchEmptyMsg';
+                            emptyMsg.className = 'table-empty';
+                            emptyMsg.style.background = '#fff';
+                            emptyMsg.style.borderRadius = 'var(--radius-lg)';
+                            emptyMsg.innerHTML = `<em>Tidak ada meja ditemukan untuk "${query}"</em>`;
+                            tableGrid.appendChild(emptyMsg);
+                        }
+                    } else if (emptyMsg) {
+                        emptyMsg.remove();
+                    }
+                });
+            }
         })();
     </script>
-@endsection
+@endpush

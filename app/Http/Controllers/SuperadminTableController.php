@@ -67,8 +67,9 @@ class SuperadminTableController extends Controller
         ]);
     }
 
-    public function update(Request $request, DiningTable $table): RedirectResponse|JsonResponse
+    public function update(Request $request, $id): RedirectResponse|JsonResponse
     {
+        $table = DiningTable::findOrFail($id);
         $data = $this->validateTable($request, $table->id);
 
         $table->update([
@@ -89,8 +90,9 @@ class SuperadminTableController extends Controller
         return redirect()->route('superadmin.tables.index')->with('status', 'Meja berhasil diperbarui.');
     }
 
-    public function destroy(DiningTable $table): RedirectResponse
+    public function destroy($id): RedirectResponse
     {
+        $table = DiningTable::findOrFail($id);
         SaleTransaction::query()->where('table_id', $table->id)->update(['table_id' => null]);
         $table->delete();
 
@@ -115,8 +117,9 @@ class SuperadminTableController extends Controller
             ->with('status', "Semua meja berhasil dihapus ({$tableCount} meja).");
     }
 
-    public function qr(DiningTable $table): Response
+    public function qr($id): Response
     {
+        $table = DiningTable::findOrFail($id);
         $svg = app('qrcode')
             ->format('svg')
             ->size(360)

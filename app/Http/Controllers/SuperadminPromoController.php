@@ -126,6 +126,19 @@ class SuperadminPromoController extends Controller
         return redirect()->route('superadmin.promos.index')->with('status', 'Promo berhasil dihapus.');
     }
 
+    public function destroyAll(): RedirectResponse
+    {
+        $promos = Promo::all();
+        foreach ($promos as $promo) {
+            if ($promo->banner_path) {
+                Storage::disk('public')->delete($promo->banner_path);
+            }
+            $promo->delete();
+        }
+
+        return redirect()->route('superadmin.promos.index')->with('status', 'Semua promo berhasil dihapus.');
+    }
+
     private function promoPayload(Promo $promo): array
     {
         return [

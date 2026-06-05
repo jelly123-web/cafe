@@ -50,9 +50,11 @@
         (function () {
             const liveUrl = @json(route('live-sync.orders'));
             const storageKey = 'cafe_live_sync_last_order_id';
-            const pollDelay = 1500;
+            const pollDelay = 1000;
             let timer = null;
             let busy = false;
+            const channel = window.BroadcastChannel ? new BroadcastChannel('cafe-order-sync') : null;
+            let audioContext = null;
 
             const ensureToast = () => {
                 let wrap = document.getElementById('liveSyncToastWrap');
@@ -83,11 +85,39 @@
             const notify = (order) => {
                 const message = 'Pesanan baru masuk: ' + order.code;
                 const detail = [order.table_label, order.items_label].filter(Boolean).join(' - ');
+                try {
+                    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume().catch(() => {});
+                    }
+                    const now = audioContext.currentTime;
+                    [
+                        { time: now, frequency: 880, duration: 0.12 },
+                        { time: now + 0.14, frequency: 1175, duration: 0.12 },
+                    ].forEach(({ time, frequency, duration }) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = frequency;
+                        gain.gain.setValueAtTime(0.0001, time);
+                        gain.gain.exponentialRampToValueAtTime(0.06, time + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.start(time);
+                        osc.stop(time + duration + 0.02);
+                    });
+                } catch (_) {}
                 if (typeof window.showToast === 'function') {
                     window.showToast(detail ? message + ' | ' + detail : message, 'success', 4200);
                 } else {
                     fallbackToast(message, detail);
                 }
+            };
+
+            const requestPoll = () => {
+                if (document.visibilityState !== 'visible') return;
+                poll();
             };
 
             const poll = async () => {
@@ -145,6 +175,12 @@
                 poll();
                 timer = setInterval(poll, pollDelay);
             };
+
+            channel?.addEventListener('message', requestPoll);
+            window.addEventListener('storage', (event) => {
+                if (event.key === storageKey) requestPoll();
+            });
+            window.addEventListener('cafe:order-sync', requestPoll);
 
             document.addEventListener('turbo:load', start);
             document.addEventListener('DOMContentLoaded', start);

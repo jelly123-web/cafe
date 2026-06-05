@@ -6,220 +6,755 @@
 
 @push('head')
     <style>
-        :root { --cash-color:#6D4C41; --qris-color:#4DB6AC; --transfer-color:#7E57C2; --loss:#C62828; }
-        .main-panel { padding: 2rem 2.5rem; overflow-y: auto; }
-        .pos-shell { max-width: 100%; }
-        .panel { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 20px; padding: 1.75rem 2.15rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px var(--shadow); }
-        .page-title { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; margin: 0 0 0.5rem; }
-        .page-desc { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
-        .payment-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr); gap: 2.25rem; align-items: start; }
-        .payment-col { display: grid; gap: 1.25rem; min-width: 0; }
-        .split-section {
-            display: grid;
-            gap: 1.35rem;
-            padding: 0 0.1rem;
-        }
-        .split-section + .split-section {
-            border-left: 1px solid rgba(212, 163, 115, 0.2);
-            padding-left: 2rem;
-        }
-        .section-head {
-            display: grid;
-            gap: 0.65rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(212, 163, 115, 0.45);
-        }
-        .scan-box { display: grid; gap: 1.25rem; }
-        .scan-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 1rem; align-items: end; }
-        .field { display: flex; flex-direction: column; gap: 0.35rem; }
-        .field label { color: var(--text-muted); font-size: 0.85rem; font-weight: 700; }
-        .field input, .field select {
-            width: 100%;
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 0.9rem 1rem;
-            background: #fff;
-            color: var(--text-main);
-            font-family: inherit;
-            outline: none;
-            font-size: 1rem;
-        }
-        .field input:focus, .field select:focus { border-color: var(--highlight); box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.15); }
-        .btn-soft {
-            border: 1px solid var(--accent);
-            background: #fff;
-            color: var(--primary);
-            border-radius: 12px;
-            padding: 0.9rem 1.15rem;
-            cursor: pointer;
-            font-weight: 700;
-            font-family: inherit;
-        }
-        .btn-soft:hover { background: #FFF8F1; }
-        .btn-primary-wide {
-            width: 100%;
-            background: var(--highlight);
-            color: #fff;
-            border: none;
-            border-radius: 14px;
-            padding: 0.9rem 1rem;
-            font-weight: 800;
-            font-family: inherit;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3);
-        }
-        .btn-primary-wide:disabled { opacity: 0.55; cursor: not-allowed; }
-        .scan-result { border: 1px dashed var(--accent); border-radius: 18px; padding: 1.25rem 1.3rem; background: #FFFBF6; min-height: 108px; line-height: 1.65; display: grid; align-content: center; }
-        .register-box {
-            display: none;
-            gap: 0.95rem;
-            border: 1px solid rgba(212, 163, 115, 0.35);
-            border-radius: 18px;
-            background: #fffaf5;
-            padding: 1.15rem 1.2rem;
-        }
-        .register-box.open { display: grid; }
-        .register-head { display: grid; gap: 0.2rem; }
-        .register-title { margin: 0; color: var(--primary); font-size: 1rem; font-weight: 800; }
-        .register-subtitle { margin: 0; color: var(--text-muted); font-size: 0.88rem; }
-        .register-grid { display: grid; grid-template-columns: 1.3fr 0.8fr 0.8fr; gap: 0.85rem; }
-        .register-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
-        .register-link-btn {
-            border: none;
-            background: transparent;
-            padding: 0.35rem 0.15rem;
-            font-weight: 700;
-            font-family: inherit;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: opacity 0.18s ease;
-        }
-        .register-link-btn:hover { opacity: 0.74; }
-        .register-link-btn.cancel { color: #B07A4A; }
-        .register-link-btn.submit { color: #FF6F61; }
-        .cart-list { display: grid; gap: 1rem; margin-top: 0.35rem; }
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: 1.05rem 1.15rem;
-            border-radius: 16px;
-            border: 1px solid rgba(212, 163, 115, 0.22);
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-        .cart-item h4 { margin: 0 0 0.25rem; font-size: 1rem; color: var(--primary); }
-        .cart-item small { display: block; color: var(--text-muted); }
-        .cart-total {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1.5rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--accent);
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: var(--primary);
-        }
-        .cart-empty { color: var(--text-muted); font-style: italic; padding: 1.25rem 0; text-align: center; }
-        .alert { padding: 0.85rem 1.25rem; border-radius: 14px; margin-bottom: 1.25rem; font-weight: 500; font-size: 0.95rem; border: 1px solid transparent; }
-        .ok { background: #E8F5E9; color: #558B2F; border-color: #C8E6C9; }
-        .err { background: #FFEBEE; color: #C62828; border-color: #FFCDD2; }
-        .order { border: 1px solid var(--accent); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; background: #FFFAF5; transition: all 0.2s ease; box-shadow: 0 2px 8px var(--shadow); }
-        .order:hover { border-color: rgba(212, 163, 115, 0.4); box-shadow: 0 6px 15px var(--shadow); }
-        .order-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-        .order-code { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; color: var(--primary); font-weight: 700; display: block; margin-bottom: 0.25rem; }
-        .order-meta { color: var(--text-muted); font-size: 0.9rem; }
-        .order-total { color: var(--text-main); font-weight: 600; font-size: 0.95rem; display: block; margin-top: 0.25rem; }
-        .tag { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-        .tag-unpaid { background: #FFF3E0; color: #E65100; }
-        .tag-paid { background: #E8F5E9; color: #558B2F; }
-        .tag-cancelled { background: #FFEBEE; color: #C62828; }
-        .payment-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px dashed var(--accent); }
-        .payment-actions form { display: inline-flex; }
-        .btn { border: none; border-radius: 12px; padding: 0.65rem 1.25rem; cursor: pointer; font-weight: 700; font-family: inherit; font-size: 0.9rem; color: #fff; transition: all 0.2s ease; }
-        .btn-cash { background-color: var(--cash-color); box-shadow: 0 2px 8px rgba(109, 76, 65, 0.25); }
-        .btn-cash:hover { background-color: #5D4037; transform: translateY(-2px); }
-        .btn-qris { background-color: var(--qris-color); box-shadow: 0 2px 8px rgba(77, 182, 172, 0.25); }
-        .btn-qris:hover { background-color: #009688; transform: translateY(-2px); }
-        .btn-transfer { background-color: var(--transfer-color); box-shadow: 0 2px 8px rgba(126, 87, 194, 0.25); }
-        .btn-transfer:hover { background-color: #673AB7; transform: translateY(-2px); }
-        .pagination-area { margin-top: 1.5rem; }
-        .pagination-wrap { margin-top: 1.5rem; }
-        .pagination-meta { color: var(--text-muted); font-size: .9rem; margin-bottom: .75rem; text-align: center; }
-        .pagination-links { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
-        .pagination-link, .pagination-dots { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; border-radius: 10px; font-size: .9rem; font-weight: 600; text-decoration: none; border: 1px solid var(--accent); color: var(--primary); padding: 0 .65rem; }
-        .pagination-link:hover { background: var(--highlight); color: #fff; border-color: var(--highlight); }
-        .pagination-link.active { background: var(--highlight); color: #fff; border-color: var(--highlight); box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); }
-        .pagination-link.disabled { color: var(--secondary); pointer-events: none; }
-        .toolbar { display:flex; justify-content:flex-end; margin-bottom:1rem; }
-        .btn-delete-all { background: transparent; color: #C62828; border: 1px solid #FFCDD2; border-radius: 10px; padding: .55rem .9rem; font-weight: 700; cursor: pointer; }
-        .btn-delete-all:hover { background: #FFEBEE; }
-        .history-panel { display: grid; gap: 1.25rem; }
-        .history-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            gap: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(212, 163, 115, 0.24);
-        }
-        .history-title {
-            margin: 0;
-            font-family: 'Playfair Display', Georgia, serif;
-            color: var(--primary);
-            font-size: 1.4rem;
-        }
-        .history-subtitle {
-            margin: 0.35rem 0 0;
-            color: var(--text-muted);
-            font-size: 0.92rem;
-        }
-        .history-empty {
-            min-height: 180px;
-            border: 1px dashed rgba(212, 163, 115, 0.38);
-            border-radius: 18px;
-            background: linear-gradient(180deg, #fffdfb 0%, #fff8f2 100%);
-            display: grid;
-            place-items: center;
-            text-align: center;
-            padding: 2rem 1.25rem;
-            color: var(--text-muted);
-            font-size: 1rem;
-        }
-        .history-empty strong {
-            display: block;
-            color: var(--primary);
-            font-size: 1.1rem;
-            margin-bottom: 0.35rem;
-        }
-        .history-list {
-            display: grid;
-            gap: 1rem;
-        }
-        @media (max-width: 900px) {
-            .payment-grid { grid-template-columns: 1fr; }
-            .split-section + .split-section {
-                border-left: none;
-                border-top: 1px solid rgba(212, 163, 115, 0.2);
-                padding-left: 0.1rem;
-                padding-top: 1.5rem;
-            }
-        }
-        @media (max-width: 768px) {
-            .main-panel { padding: 1.5rem 1rem; }
-            .page-title { font-size: 1.5rem; }
-            .panel { padding: 1.25rem; }
-            .scan-row { grid-template-columns: 1fr; gap: 0.85rem; }
-            .register-grid { grid-template-columns: 1fr; }
-            .history-head { align-items: stretch; flex-direction: column; }
-            .payment-actions { flex-direction: column; }
-            .payment-actions form { width: 100%; }
-            .payment-actions .btn { width: 100%; justify-content: center; }
-            .register-actions { flex-direction: column; }
-            .register-actions button { width: 100%; }
-            .scan-result { min-height: 84px; }
-        }
+    /* ===== VARIABEL DESAIN ===== */
+    :root {
+      --bg: #F4F5F7;
+      --bg-card: #FFFFFF;
+      --white: #FFFFFF;
+      --border: #E8EAED;
+      --border-light: #F0F1F3;
+      --fg: #1A1D23;
+      --fg-secondary: #5F6577;
+      --muted: #9CA3B4;
+      --accent: #D97706;
+      --accent-light: #FEF3C7;
+      --accent-dark: #B45309;
+      --green: #059669;
+      --green-light: #D1FAE5;
+      --red: #DC2626;
+      --red-light: #FEE2E2;
+      --blue: #2563EB;
+      --blue-light: #DBEAFE;
+      --purple: #7C3AED;
+      --purple-light: #EDE9FE;
+      --teal: #0D9488;
+      --teal-light: #CCFBF1;
+      --cash-color: #78350F;
+      --cash-bg: #FEF3C7;
+      --qris-color: #0F766E;
+      --qris-bg: #CCFBF1;
+      --transfer-color: #6D28D9;
+      --transfer-bg: #EDE9FE;
+      --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.07);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+      --radius-full: 999px;
+      --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --transition: 0.2s ease;
+    }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header { margin-bottom: 24px; }
+    .page-header-title { font-size: 22px; font-weight: 900; letter-spacing: -0.4px; color: var(--fg); margin-bottom: 4px; }
+    .page-header-desc { font-size: 14px; color: var(--fg-secondary); line-height: 1.6; }
+
+    /* ===== ALERT ===== */
+    .alert {
+      padding: 12px 18px; border-radius: var(--radius-md);
+      margin-bottom: 20px; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 10px;
+      border: 1px solid transparent;
+    }
+    .alert.ok { background: var(--green-light); color: var(--green); border-color: #A7F3D0; }
+    .alert.ok::before { content: '\f058'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
+    .alert.err { background: var(--red-light); color: var(--red); border-color: #FECACA; }
+    .alert.err::before { content: '\f06a'; font-family: 'Font Awesome 6 Free'; font-weight: 900; }
+
+    /* ===== SECTION CARD (mengganti .panel) ===== */
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    /* ===== PAYMENT GRID ===== */
+    .payment-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 0;
+      align-items: stretch;
+    }
+
+    .payment-col {
+      padding: 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Garis pemisah kolom */
+    .split-section + .split-section {
+      border-left: 1px solid var(--border);
+    }
+
+    /* ===== SECTION HEAD ===== */
+    .section-head {
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .section-head h2 {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: var(--fg);
+    }
+
+    .section-head h2 i {
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    /* ===== SCAN BOX ===== */
+    .scan-box { display: flex; flex-direction: column; gap: 14px; }
+
+    .scan-row {
+      display: grid;
+      grid-template-columns: 1fr 100px auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    /* ===== FORM FIELDS ===== */
+    .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--fg-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      background: var(--white);
+      color: var(--fg);
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 500;
+      outline: none;
+      transition: all var(--transition);
+      -webkit-appearance: none;
+    }
+
+    .field input::placeholder { color: var(--muted); font-weight: 400; }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+    }
+
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239CA3B4' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    /* ===== SCAN RESULT ===== */
+    .scan-result {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      background: #FAFBFC;
+      min-height: 80px;
+      line-height: 1.7;
+      font-size: 13px;
+      color: var(--fg-secondary);
+      display: grid;
+      align-content: center;
+      transition: all 0.25s ease;
+    }
+
+    .scan-result strong { color: var(--fg); font-size: 14px; }
+
+    .scan-result.error-state {
+      border-color: #FECACA;
+      background: #FEF2F2;
+      color: var(--red);
+    }
+
+    .scan-result.success-state {
+      border-color: #A7F3D0;
+      background: #F0FDF4;
+      color: var(--green);
+    }
+
+    /* ===== REGISTER BOX ===== */
+    .register-box {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      border: 1.5px solid var(--accent);
+      border-radius: var(--radius-md);
+      background: var(--accent-light);
+      padding: 18px 20px;
+      animation: slideDown 0.25s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .register-box.open { display: flex; }
+
+    .register-head { display: flex; flex-direction: column; gap: 2px; }
+
+    .register-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .register-title i { font-size: 14px; }
+
+    .register-subtitle {
+      font-size: 12px;
+      color: var(--fg-secondary);
+    }
+
+    .register-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.8fr 0.8fr;
+      gap: 10px;
+    }
+
+    .register-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .register-link-btn {
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      font-weight: 700;
+      font-family: var(--font);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition);
+    }
+
+    .register-link-btn.cancel {
+      color: var(--fg-secondary);
+    }
+
+    .register-link-btn.cancel:hover {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .register-link-btn.submit {
+      background: var(--accent);
+      color: white;
+    }
+
+    .register-link-btn.submit:hover {
+      background: var(--accent-dark);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-soft {
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      color: var(--fg-secondary);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: var(--font);
+      font-size: 13px;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-soft:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .btn-primary-wide {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 13px 20px;
+      font-weight: 800;
+      font-family: var(--font);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary-wide:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+    }
+
+    .btn-primary-wide:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ===== CART LIST ===== */
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+      background: var(--white);
+      transition: all var(--transition);
+      animation: cartItemIn 0.25s ease;
+    }
+
+    @keyframes cartItemIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .cart-item:hover {
+      border-color: var(--border);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .cart-item h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 2px;
+    }
+
+    .cart-item small {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .cart-item-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .cart-item-right strong {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cart-item .btn-soft {
+      padding: 5px 10px;
+      font-size: 11px;
+      border-radius: 6px;
+    }
+
+    .cart-item .btn-soft:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-light);
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 2px solid var(--border);
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--fg);
+    }
+
+    .cart-total span:last-child {
+      color: var(--accent);
+      font-size: 20px;
+    }
+
+    .cart-empty {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 28px 16px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-md);
+      background: #FAFBFC;
+    }
+
+    .cart-empty::before {
+      content: '\f07a';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      display: block;
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: var(--border);
+    }
+
+    /* ===== ORDER CARDS (riwayat/live) ===== */
+    .history-section { padding: 22px 24px; }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .history-head-left { display: flex; flex-direction: column; gap: 2px; }
+
+    .history-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--fg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.2px;
+      margin: 0;
+    }
+
+    .history-title i { color: var(--accent); font-size: 16px; }
+
+    .history-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .toolbar { display: flex; gap: 8px; }
+
+    .btn-delete-all {
+      background: transparent;
+      color: var(--red);
+      border: 1px solid #FECACA;
+      border-radius: var(--radius-sm);
+      padding: 7px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      font-family: var(--font);
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-delete-all:hover { background: var(--red-light); }
+
+    .history-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .history-empty {
+      min-height: 200px;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-md);
+      background: #FAFBFC;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 32px 20px;
+    }
+
+    .history-empty i { font-size: 36px; color: var(--border); margin-bottom: 8px; }
+    .history-empty strong { display: block; font-size: 14px; color: var(--fg-secondary); margin-bottom: 4px; }
+    .history-empty p { font-size: 13px; color: var(--muted); }
+
+    /* ===== ORDER CARD ===== */
+    .order {
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      background: var(--white);
+      transition: all 0.25s ease;
+    }
+
+    .order:hover {
+      border-color: var(--border);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .order-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .order-code {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--fg);
+      display: block;
+      margin-bottom: 3px;
+      letter-spacing: -0.2px;
+    }
+
+    .order-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .order-total {
+      color: var(--fg);
+      font-weight: 700;
+      font-size: 14px;
+      display: block;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ===== STATUS TAG ===== */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    .tag .tag-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .tag-unpaid { background: var(--accent-light); color: var(--accent-dark); }
+    .tag-unpaid .tag-dot { animation: dotBlink 1.5s infinite; }
+
+    .tag-paid { background: var(--green-light); color: var(--green); }
+    .tag-cancelled { background: var(--red-light); color: var(--red); }
+
+    @keyframes dotBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ===== PAYMENT ACTION BUTTONS ===== */
+    .payment-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .payment-actions form { display: inline-flex; }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 9px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      font-family: var(--font);
+      font-size: 12px;
+      color: white;
+      transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-cash {
+      background: var(--cash-color);
+      box-shadow: 0 2px 8px rgba(120, 53, 15, 0.2);
+    }
+    .btn-cash:hover { background: #92400E; }
+
+    .btn-qris {
+      background: var(--qris-color);
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.2);
+    }
+    .btn-qris:hover { background: #115E59; }
+
+    .btn-transfer {
+      background: var(--transfer-color);
+      box-shadow: 0 2px 8px rgba(109, 40, 217, 0.2);
+    }
+    .btn-transfer:hover { background: #5B21B6; }
+
+    /* ===== PAGINATION ===== */
+    .pagination-area { margin-top: 18px; }
+    .pagination-wrap { margin-top: 18px; }
+
+    .pagination-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .pagination-links {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .pagination-link, .pagination-dots {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      color: var(--fg-secondary);
+      padding: 0 8px;
+      background: var(--white);
+      transition: all var(--transition);
+      font-family: var(--font);
+      cursor: pointer;
+    }
+
+    .pagination-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .pagination-link.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
+    }
+
+    .pagination-link.disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* ===== LIVE INDICATOR ===== */
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: livePulse 1.5s infinite;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(5,150,105,0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(5,150,105,0); }
+      100% { box-shadow: 0 0 0 0 rgba(5,150,105,0); }
+    }
+
+    /* ===== ENTRANCE ANIMATION ===== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1024px) {
+      .payment-grid { grid-template-columns: 1fr; }
+      .split-section + .split-section { border-left: none; border-top: 1px solid var(--border); }
+    }
+
+    @media (max-width: 768px) {
+      .page-body { padding: 16px; }
+      .payment-col { padding: 16px; }
+      .scan-row { grid-template-columns: 1fr; }
+      .register-grid { grid-template-columns: 1fr; }
+      .register-actions { flex-direction: column; }
+      .register-actions button { width: 100%; justify-content: center; }
+      .payment-actions { flex-direction: column; }
+      .payment-actions form { width: 100%; }
+      .payment-actions .btn { width: 100%; justify-content: center; }
+      .history-head { flex-direction: column; align-items: stretch; }
+    }
+
+    @media (max-width: 480px) {
+      .cart-item { flex-direction: column; align-items: flex-start; }
+      .cart-item-right { flex-direction: row; width: 100%; justify-content: space-between; align-items: center; }
+    }
     </style>
 @endpush
 
@@ -342,7 +877,7 @@
                             <small>${esc(row.code)} | Barcode: ${esc(row.barcode)}</small>
                             <small>Qty: <span data-cart-qty>${row.qty}</span> x ${formatRp(row.unit_price)}</small>
                         </div>
-                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;">
+                        <div class="cart-item-right">
                             <strong data-cart-line-total>${formatRp(row.line_total)}</strong>
                             <button type="button" class="btn-soft" data-remove-cart="${row.menu_id}" style="padding:.45rem .75rem;font-size:.8rem;">Hapus</button>
                         </div>
@@ -604,113 +1139,117 @@
 @endpush
 
 @section('content')
-    <div class="pos-shell">
-        <section class="panel">
-            <h1 class="page-title">Pembayaran Kasir</h1>
-            <p class="page-desc">Scan barcode menu di sini, masukkan ke keranjang pembayaran, lalu buat tagihan dan proses pembayaran.</p>
-        </section>
+    <!-- PAGE HEADER -->
+    <div class="page-header fade-in">
+        <h1 class="page-header-title">Pembayaran Kasir</h1>
+        <p class="page-header-desc">Scan barcode menu, masukkan ke keranjang pembayaran, lalu buat tagihan dan proses pembayaran.</p>
+    </div>
 
-        @if (session('success'))
-            <div class="alert ok">{{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-            <div class="alert err">{{ session('error') }}</div>
-        @endif
+    @if (session('success'))
+        <div class="alert ok">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert err">{{ session('error') }}</div>
+    @endif
 
-        <section class="panel" style="margin-bottom: 1.5rem;">
-            <div class="payment-grid">
-                <div class="payment-col split-section">
-                    <div class="section-head">
-                        <h2 class="page-title" style="font-size: 1.35rem; margin: 0;">Scan Barcode Pembayaran</h2>
+    <!-- SCAN + CART PANEL -->
+    <div class="panel fade-in">
+        <div class="payment-grid">
+            <!-- KOLOM KIRI: SCAN -->
+            <div class="payment-col split-section">
+                <div class="section-head">
+                    <h2><i class="fas fa-barcode"></i> Scan Barcode Pembayaran</h2>
+                </div>
+                <div class="scan-box">
+                    <div class="scan-row">
+                        <div class="field">
+                            <label for="barcodeInput">Barcode</label>
+                            <input id="barcodeInput" type="text" inputmode="none" autocomplete="off" placeholder="Arahkan scanner ke barcode..." autofocus>
+                        </div>
+                        <div class="field">
+                            <label for="qtyInput">Qty</label>
+                            <input id="qtyInput" type="number" min="1" step="1" value="1">
+                        </div>
+                        <button id="scanBtn" class="btn-soft" type="button"><i class="fas fa-barcode"></i> Scan</button>
                     </div>
 
-                    <div class="scan-box">
-                        <div class="scan-row">
-                            <div class="field" style="flex: 1;">
-                                <label for="barcodeInput">Barcode</label>
-                                <input id="barcodeInput" type="text" inputmode="none" autocomplete="off" placeholder="Arahkan scanner ke barcode..." autofocus>
+                    <div id="scanResult" class="scan-result">
+                        <span>Siap untuk scan barcode.</span>
+                    </div>
+
+                    <div id="registerBox" class="register-box">
+                        <div class="register-head">
+                            <p class="register-title"><i class="fas fa-circle-plus"></i> Barcode belum terdaftar</p>
+                            <p class="register-subtitle">Isi data barang sekali, setelah itu scan berikutnya langsung masuk ke pembayaran.</p>
+                        </div>
+                        <div class="register-grid">
+                            <div class="field">
+                                <label for="registerName">Nama barang</label>
+                                <input id="registerName" type="text" placeholder="Contoh: Teh Botol">
                             </div>
                             <div class="field">
-                                <label for="qtyInput">Qty</label>
-                                <input id="qtyInput" type="number" min="1" step="1" value="1">
+                                <label for="registerCategory">Kategori</label>
+                                <select id="registerCategory">
+                                    @foreach ($menuCategories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <button id="scanBtn" class="btn-soft" type="button">Scan</button>
+                            <div class="field">
+                                <label for="registerPrice">Harga jual</label>
+                                <input id="registerPrice" type="number" min="0" step="1" placeholder="0">
+                            </div>
                         </div>
-                        <div id="scanResult" class="scan-result">
-                            <span>Siap untuk scan barcode.</span>
-                        </div>
-                        <div id="registerBox" class="register-box">
-                            <div class="register-head">
-                                <p class="register-title">Barcode belum terdaftar</p>
-                                <p class="register-subtitle">Isi data barang sekali, setelah itu scan berikutnya langsung masuk ke pembayaran.</p>
-                            </div>
-                            <div class="register-grid">
-                                <div class="field">
-                                    <label for="registerName">Nama barang</label>
-                                    <input id="registerName" type="text" placeholder="Contoh: Teh Botol">
-                                </div>
-                                <div class="field">
-                                    <label for="registerCategory">Kategori</label>
-                                    <select id="registerCategory">
-                                        @foreach ($menuCategories as $category)
-                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="field">
-                                    <label for="registerPrice">Harga jual</label>
-                                    <input id="registerPrice" type="number" min="0" step="1" placeholder="0">
-                                </div>
-                            </div>
-                            <input id="registerBarcode" type="hidden">
-                            <div class="register-actions">
-                                <button id="cancelRegisterBtn" class="register-link-btn cancel" type="button">Batal</button>
-                                <button id="saveNewItemBtn" class="register-link-btn submit" type="button">Simpan & Masukkan</button>
-                            </div>
+                        <input id="registerBarcode" type="hidden">
+                        <div class="register-actions">
+                            <button id="cancelRegisterBtn" class="register-link-btn cancel" type="button">Batal</button>
+                            <button id="saveNewItemBtn" class="register-link-btn submit" type="button">Simpan & Masukkan</button>
                         </div>
                     </div>
-                </div>
-
-                <div class="payment-col split-section">
-                    <div class="section-head">
-                        <h2 class="page-title" style="font-size: 1.35rem; margin: 0;">Keranjang Pembayaran</h2>
-                    </div>
-
-                    <form method="POST" action="{{ route('superadmin.payments.checkout') }}" id="checkoutCartForm">
-                        @csrf
-                        <div id="cartList" class="cart-list">
-                            @forelse ($cart['items'] as $row)
-                                <div class="cart-item" data-menu-id="{{ $row['menu_id'] }}" data-unit-price="{{ $row['unit_price'] }}" data-qty="{{ $row['qty'] }}">
-                                    <div>
-                                        <h4>{{ $row['name'] }}</h4>
-                                        <small>{{ $row['code'] }} | Barcode: {{ $row['barcode'] }}</small>
-                                        <small>Qty: <span data-cart-qty>{{ $row['qty'] }}</span> x Rp {{ number_format((float) $row['unit_price'], 0, ',', '.') }}</small>
-                                    </div>
-                                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;">
-                                        <strong data-cart-line-total>Rp {{ number_format((float) $row['line_total'], 0, ',', '.') }}</strong>
-                                        <button type="button" class="btn-soft" data-remove-cart="{{ $row['menu_id'] }}" style="padding:.45rem .75rem;font-size:.8rem;">Hapus</button>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="cart-empty">Belum ada item discan.</div>
-                            @endforelse
-                        </div>
-                        <div class="cart-total">
-                            <span>Total</span>
-                            <span id="cartTotal">Rp {{ number_format((float) $cart['total'], 0, ',', '.') }}</span>
-                        </div>
-                        <div style="margin-top: 1rem;">
-                            <button id="checkoutCartBtn" class="btn-primary-wide" type="submit" {{ empty($cart['items']) ? 'disabled' : '' }}>
-                                Buat Tagihan
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
-        </section>
 
-        <section class="panel" id="live-payment-container">
-            @include('superadmin.payments.live')
-        </section>
+            <!-- KOLOM KANAN: KERANJANG -->
+            <div class="payment-col split-section">
+                <div class="section-head">
+                    <h2><i class="fas fa-cart-shopping"></i> Keranjang Pembayaran</h2>
+                </div>
+
+                <form method="POST" action="{{ route('superadmin.payments.checkout') }}" id="checkoutCartForm">
+                    @csrf
+                    <div id="cartList" class="cart-list">
+                        @forelse ($cart['items'] as $row)
+                            <div class="cart-item" data-menu-id="{{ $row['menu_id'] }}" data-unit-price="{{ $row['unit_price'] }}" data-qty="{{ $row['qty'] }}">
+                                <div>
+                                    <h4>{{ $row['name'] }}</h4>
+                                    <small>{{ $row['code'] }} | Barcode: {{ $row['barcode'] }}</small>
+                                    <small>Qty: <span data-cart-qty>{{ $row['qty'] }}</span> x Rp {{ number_format((float) $row['unit_price'], 0, ',', '.') }}</small>
+                                </div>
+                                <div class="cart-item-right">
+                                    <strong data-cart-line-total>Rp {{ number_format((float) $row['line_total'], 0, ',', '.') }}</strong>
+                                    <button type="button" class="btn-soft" data-remove-cart="{{ $row['menu_id'] }}"><i class="fas fa-trash"></i> Hapus</button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="cart-empty">Belum ada item discan.</div>
+                        @endforelse
+                    </div>
+                    <div class="cart-total">
+                        <span>Total</span>
+                        <span id="cartTotal">Rp {{ number_format((float) $cart['total'], 0, ',', '.') }}</span>
+                    </div>
+                    <div style="margin-top:14px;">
+                        <button id="checkoutCartBtn" class="btn-primary-wide" type="submit" {{ empty($cart['items']) ? 'disabled' : '' }}>
+                            <i class="fas fa-receipt"></i> Buat Tagihan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTORY / LIVE PAYMENTS -->
+    <div class="panel fade-in" id="live-payment-container">
+        @include('superadmin.payments.live')
     </div>
 @endsection

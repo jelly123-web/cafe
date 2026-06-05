@@ -8,7 +8,7 @@
         data-menu-id="{{ $menu->id }}"
         data-menu-name="{{ $menu->name }}"
         data-menu-category="{{ $menu->category?->name ?? 'Tanpa kategori' }}"
-        data-menu-category-key="{{ $menu->menu_category_id ? 'cat-'.$menu->menu_category_id : 'all' }}"
+        data-menu-category-key="{{ str_contains(strtolower($menu->category?->name ?? ''), 'minum') || str_contains(strtolower($menu->category?->name ?? ''), 'teh') || str_contains(strtolower($menu->category?->name ?? ''), 'kopi') ? 'minuman' : 'makanan' }}"
         data-menu-price="{{ (float) ($menu->display_price ?? $menu->selling_price) }}"
         data-menu-original-price="{{ (float) ($menu->original_price ?? $menu->selling_price) }}"
         data-menu-promo-meta='@json($menu->promo_meta)'

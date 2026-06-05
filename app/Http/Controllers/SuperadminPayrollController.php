@@ -16,6 +16,7 @@ class SuperadminPayrollController extends Controller
         return view('superadmin.payrolls.index', [
             'employees' => Employee::query()->where('is_active', true)->orderBy('name')->get(),
             'payrolls' => Payroll::query()->with('employee')->orderByDesc('period_month')->paginate(12),
+            'payrolls_summary' => Payroll::query()->get(),
         ]);
     }
 

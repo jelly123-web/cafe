@@ -1,9 +1,21 @@
 @extends('superadmin.layout')
 
 @section('title', 'Dashboard Superadmin')
-@section('kicker', 'Halo, ' . (auth()->user()->name ?? 'User') . ' 👋')
+@section('kicker', $cafeBrand['name'] ?? 'cafecaf')
 @section('page_title', 'Kontrol Semua Cabang')
-@section('page_description', 'Ringkasan penjualan, transaksi hari ini, laba/rugi, dan menu terlaris.')
+@section('topbar_right')
+    <div class="topbar-right dashboard-topbar-right">
+        <div class="topbar-search dashboard-hello-pill">
+            <span>Hallo, {{ auth()->user()->name ?? 'Super Admin' }}</span>
+        </div>
+        <button class="topbar-btn" title="Notifikasi">
+            <i class="far fa-bell"></i>
+            <span class="notif-dot"></span>
+        </button>
+        <a href="{{ route('superadmin.settings.index') }}" class="topbar-btn" title="Pengaturan"><i class="fas fa-gear"></i></a>
+    </div>
+@endsection
+
 
 @section('content')
     <div id="live-dashboard-container">
@@ -25,7 +37,8 @@
                 // Get current page from URL to keep pagination consistent
                 const urlParams = new URLSearchParams(window.location.search);
                 const currentPage = urlParams.get('page') || 1;
-                const fetchUrl = `{{ route('superadmin.dashboard.live.fragment') }}?page=${currentPage}`;
+                const period = urlParams.get('period') || 'today';
+                const fetchUrl = `{{ route('superadmin.dashboard.live.fragment') }}?page=${currentPage}&period=${period}`;
 
                 fetch(fetchUrl, {
                     headers: {
@@ -51,15 +64,36 @@
                         }
 
                         const target = document.getElementById('live-dashboard-container');
-                        if (target) target.innerHTML = html;
+                        if (target) {
+                            target.innerHTML = html;
+                            document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible'));
+                            bindPeriodPills();
+                        }
                     })
                     .catch(err => console.error('Error fetching live dashboard data:', err));
+            };
+
+            const bindPeriodPills = () => {
+                const container = document.getElementById('dashboardPeriodPills');
+                if (!container || container.dataset.bound === '1') return;
+                container.dataset.bound = '1';
+                container.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-period]');
+                    if (!btn) return;
+                    const period = btn.getAttribute('data-period') || 'today';
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('period', period);
+                    url.searchParams.delete('page');
+                    history.replaceState({}, '', url.toString());
+                    fetchLiveData();
+                });
             };
 
             const startPolling = () => {
                 clearInterval(interval);
                 const container = document.getElementById('live-dashboard-container');
                 if (container) {
+                    bindPeriodPills();
                     // Handle pagination clicks via AJAX
                     container.addEventListener('click', (e) => {
                         const link = e.target.closest('.pagination-link');
@@ -69,7 +103,9 @@
                             const newPage = url.searchParams.get('page');
                             if (newPage) {
                                 // Update URL without reloading or scrolling
-                                const newUrl = window.location.pathname + '?page=' + newPage;
+                                const currentUrl = new URL(window.location.href);
+                                currentUrl.searchParams.set('page', newPage);
+                                const newUrl = currentUrl.toString();
                                 window.history.pushState({ path: newUrl }, '', newUrl);
                                 fetchLiveData();
                             }
@@ -80,7 +116,7 @@
                         if (document.visibilityState === 'visible') {
                             fetchLiveData();
                         }
-                    }, 15000);
+                    }, 30000); // 30 seconds for superadmin dashboard to reduce load
                 }
             };
 

@@ -144,6 +144,7 @@
         .pagination-dots { color: var(--text-muted); padding: 0 0.25rem; font-weight: 900; }
     </style>
     @stack('head')
+  @include('components.page-transition-guard')
 </head>
 <body data-turbo-prefetch="true">
     <script>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FoodPackage;
 use App\Models\Menu;
 use App\Models\MenuCategory;
 use App\Support\CroppedImageStore;
@@ -66,13 +67,22 @@ class SuperadminMenuController extends Controller
 
         $menus = $query->paginate(12)->withQueryString();
 
+        $categories = MenuCategory::query()
+            ->whereIn('id', $allowedCategoryIds)
+            ->withCount('menus')
+            ->orderBy('name')
+            ->get()
+            ->map(function (MenuCategory $category) {
+                $category->display_count = $category->name === 'paket'
+                    ? FoodPackage::query()->count()
+                    : $category->menus_count;
+
+                return $category;
+            });
+
         return view('superadmin.menus.index', [
             'menus' => $menus,
-            'categories' => MenuCategory::query()
-                ->whereIn('id', $allowedCategoryIds)
-                ->withCount('menus')
-                ->orderBy('name')
-                ->get(),
+            'categories' => $categories,
             'total_menus' => Menu::where('code', '!=', 'A01')->count(),
         ]);
     }

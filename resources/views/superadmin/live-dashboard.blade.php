@@ -1,108 +1,141 @@
-<div class="grid">
-    <div class="card">
-        <span>Total penjualan semua cabang</span>
-        <strong>Rp {{ number_format((float) $totalSales, 0, ',', '.') }}</strong>
-        <small>Akumulasi seluruh transaksi pada semua cabang.</small>
+<!-- STAT CARDS -->
+<div class="stats-grid">
+  <div class="stat-card fade-in" style="--stat-color: var(--accent);">
+    <div class="stat-header">
+      <div class="stat-icon amber"><i class="fas fa-coins"></i></div>
+      <div class="stat-trend up"><i class="fas fa-arrow-up"></i> 12.5%</div>
     </div>
-    <div class="card">
-        <span>Transaksi hari ini</span>
-        <strong>{{ number_format($todayTransactions, 0, ',', '.') }}</strong>
-        <small>Jumlah transaksi yang masuk pada tanggal ini.</small>
+    <div class="stat-value">Rp {{ number_format($totalSales, 0, ',', '.') }}</div>
+    <div class="stat-label">Total Penjualan {{ $periodLabel ?? 'Hari Ini' }}</div>
+  </div>
+  <div class="stat-card fade-in" style="--stat-color: var(--blue);">
+    <div class="stat-header">
+      <div class="stat-icon blue"><i class="fas fa-receipt"></i></div>
+      <div class="stat-trend up"><i class="fas fa-arrow-up"></i> 8.3%</div>
     </div>
-    <div class="card">
-        <span>Laba / rugi</span>
-        <strong class="{{ $profitLoss >= 0 ? 'profit' : 'loss' }}">
-            {{ $profitLoss >= 0 ? 'Laba' : 'Rugi' }} Rp {{ number_format(abs((float) $profitLoss), 0, ',', '.') }}
-        </strong>
-        <small>Total penjualan dikurangi total modal barang terjual.</small>
+    <div class="stat-value">{{ number_format($todayTransactions, 0, ',', '.') }}</div>
+    <div class="stat-label">Transaksi {{ $periodLabel ?? 'Hari Ini' }}</div>
+  </div>
+  <div class="stat-card fade-in" style="--stat-color: var(--green);">
+    <div class="stat-header">
+      <div class="stat-icon green"><i class="fas fa-chart-line"></i></div>
+      <div class="stat-trend up"><i class="fas fa-arrow-up"></i> 5.1%</div>
     </div>
-    <div class="card">
-        <span>Menu terlaris</span>
-        <strong>{{ $topMenu?->name ?? '-' }}</strong>
-        <small>{{ number_format((int) ($topMenu?->sold_qty ?? 0), 0, ',', '.') }} porsi terjual</small>
+    <div class="stat-value">Rp {{ number_format(abs($profitLoss), 0, ',', '.') }}</div>
+    <div class="stat-label">Laba Bersih {{ $periodLabel ?? 'Hari Ini' }}</div>
+  </div>
+  <div class="stat-card fade-in" style="--stat-color: var(--teal);">
+    <div class="stat-header">
+      <div class="stat-icon teal"><i class="fas fa-store"></i></div>
+      @if($totalBranchesCount - $activeBranchesCount > 0)
+        <div class="stat-trend down"><i class="fas fa-arrow-down"></i> {{ $totalBranchesCount - $activeBranchesCount }} cabang</div>
+      @else
+        <div class="stat-trend up"><i class="fas fa-check"></i> Live</div>
+      @endif
     </div>
+    <div class="stat-value">{{ $activeBranchesCount }} / {{ $totalBranchesCount }}</div>
+    <div class="stat-label">Cabang Aktif</div>
+  </div>
 </div>
 
-<div class="section">
-    <div class="panel">
-        <h2>Penjualan per cabang</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Cabang</th>
-                    <th class="muted">Kode</th>
-                    <th>Total penjualan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($branchSales as $branch)
-                    <tr>
-                        <td>{{ $branch->name }}</td>
-                        <td class="muted">{{ $branch->code }}</td>
-                        <td>Rp {{ number_format((float) $branch->total_sales, 0, ',', '.') }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+<!-- TWO COLUMN: TABLE + BESTSELLER -->
+<div class="two-col">
 
-    <div class="panel">
-        <h2>Komposisi cabang</h2>
-        <div class="bars">
-            @php
-                $maxSales = max(1, (float) $branchSales->max('total_sales'));
-            @endphp
-            @foreach ($branchSales as $branch)
-                @php
-                    $percent = $maxSales > 0 ? ((float) $branch->total_sales / $maxSales) * 100 : 0;
-                @endphp
-                <div class="bar-row">
-                    <div class="bar-label">
-                        <span>{{ $branch->name }}</span>
-                        <span>Rp {{ number_format((float) $branch->total_sales, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="bar-track">
-                        <div class="bar-fill" style="width: {{ $percent }}%;"></div>
-                    </div>
-                </div>
-            @endforeach
+  <!-- TABEL PENJUALAN PER CABANG -->
+  <section class="section-card fade-in">
+    <div class="section-card-header">
+      <div class="section-card-title">
+        <i class="fas fa-ranking-star" style="color: var(--accent);"></i> Penjualan Per Cabang
+        <span class="live-indicator"><span class="live-dot"></span> LIVE</span>
+      </div>
+      <div class="section-card-actions">
+        <div class="filter-pills" id="dashboardPeriodPills">
+          <button class="filter-pill {{ ($currentPeriod ?? 'today') === 'today' ? 'active' : '' }}" data-period="today" type="button">Hari Ini</button>
+          <button class="filter-pill {{ ($currentPeriod ?? 'today') === 'week' ? 'active' : '' }}" data-period="week" type="button">Minggu</button>
+          <button class="filter-pill {{ ($currentPeriod ?? 'today') === 'month' ? 'active' : '' }}" data-period="month" type="button">Bulan</button>
         </div>
+      </div>
     </div>
-</div>
-
-<div class="panel panel-wide">
-    <h2>Transaksi terbaru semua akun</h2>
-    <table>
+    <div class="section-card-body" style="position:relative;">
+      <table class="data-table">
         <thead>
-            <tr>
-                <th>Kode</th>
-                <th>Cabang</th>
-                <th>Meja</th>
-                <th>Waktu</th>
-                <th>Status</th>
-                <th>Total</th>
-            </tr>
+          <tr>
+            <th>CABANG</th>
+            <th>PENJUALAN</th>
+            <th>TARGET</th>
+            <th>STATUS</th>
+          </tr>
         </thead>
         <tbody>
-            @forelse ($recentTransactions as $transaction)
+            @php
+                $maxSales = max(1, (float) $branchSales->max('total_sales'));
+                $branchColors = ['#D97706', '#2563EB', '#7C3AED', '#DC2626', '#6B7280'];
+            @endphp
+            @foreach ($branchSales as $index => $branch)
+                @php
+                    $percent = $maxSales > 0 ? ((float) $branch->total_sales / $maxSales) * 100 : 0;
+                    $color = $branchColors[$index % count($branchColors)];
+                @endphp
                 <tr>
-                    <td><span class="order-code">{{ $transaction->code }}</span></td>
-                    <td>{{ $transaction->branch?->name ?? '-' }}</td>
-                    <td>{{ $transaction->table?->name ?? $transaction->table?->number ?? '-' }}</td>
-                    <td>{{ optional($transaction->sold_at)->format('d M Y H:i') }}</td>
                     <td>
-                        <span class="status-pill status-{{ $transaction->status ?? 'unknown' }}">
-                            {{ $transaction->statusLabel() }}
+                        <div class="cell-branch">
+                            <div class="cell-branch-dot" style="background: {{ $color }};">{{ strtoupper(substr($branch->name, 0, 2)) }}</div>
+                            <div>
+                                <div class="cell-branch-name">{{ $branch->name }}</div>
+                                <div class="cell-branch-loc">Kode: {{ $branch->code }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="cell-money positive">Rp {{ number_format($branch->total_sales, 0, ',', '.') }}</span></td>
+                    <td>
+                        <div class="cell-bar">
+                            <div class="cell-bar-track">
+                                <div class="cell-bar-fill" style="width:{{ $percent }}%; background: {{ $percent > 80 ? 'var(--green)' : ($percent > 50 ? 'var(--accent)' : 'var(--red)') }};"></div>
+                            </div>
+                            <span class="cell-bar-value" style="color: {{ $percent > 80 ? 'var(--green)' : ($percent > 50 ? 'var(--accent-dark)' : 'var(--red)') }};">{{ round($percent) }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge {{ $branch->total_sales > 0 ? 'active' : 'inactive' }}">
+                            <span class="status-dot"></span> {{ $branch->total_sales > 0 ? 'Aktif' : 'Tutup' }}
                         </span>
                     </td>
-                    <td>Rp {{ number_format((float) $transaction->total_amount, 0, ',', '.') }}</td>
                 </tr>
-            @empty
-                <tr>
-                    <td colspan="6" class="empty-state">Belum ada transaksi yang tercatat.</td>
-                </tr>
-            @endforelse
+            @endforeach
         </tbody>
-    </table>
-    {{ $recentTransactions->links('components.pagination') }}
+      </table>
+    </div>
+  </section>
+
+  <!-- MENU TERLARIS -->
+  <section class="section-card fade-in">
+    <div class="section-card-header">
+      <div class="section-card-title"><i class="fas fa-fire" style="color: var(--accent);"></i> Menu Terlaris</div>
+      <a href="{{ route('superadmin.menus.index') }}" class="btn-sm"><i class="fas fa-external-link-alt"></i> Detail</a>
+    </div>
+    <div class="section-card-body">
+      <ul class="bestseller-list">
+        @forelse($topMenus as $index => $menu)
+            <li class="bestseller-item">
+                <div class="bestseller-rank {{ $index == 0 ? 'gold' : ($index == 1 ? 'silver' : ($index == 2 ? 'bronze' : 'normal')) }}">
+                    {{ $index + 1 }}
+                </div>
+                <div class="bestseller-info">
+                    <div class="bestseller-name">{{ $menu->name }}</div>
+                    <div class="bestseller-meta">Rp {{ number_format($menu->price, 0, ',', '.') }}</div>
+                </div>
+                <div class="bestseller-qty">
+                    <div class="bestseller-qty-num">{{ number_format($menu->sold_qty, 0, ',', '.') }}</div>
+                    <div class="bestseller-qty-label">terjual</div>
+                </div>
+            </li>
+        @empty
+            <li class="empty-state">
+                <i class="fas fa-utensils"></i>
+                <p>Belum ada data menu terlaris.</p>
+            </li>
+        @endforelse
+      </ul>
+    </div>
+  </section>
 </div>

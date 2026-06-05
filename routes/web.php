@@ -174,6 +174,7 @@ Route::prefix('superadmin')
         Route::resource('menus', SuperadminMenuController::class)->except(['show']);
         Route::delete('/packages/all', [SuperadminPackageController::class, 'destroyAll'])->name('packages.destroy-all');
         Route::resource('packages', SuperadminPackageController::class)->except(['show']);
+        Route::delete('/promos/all', [SuperadminPromoController::class, 'destroyAll'])->name('promos.destroy-all');
         Route::resource('promos', SuperadminPromoController::class)->except(['show']);
         Route::get('/employees', [SuperadminEmployeeController::class, 'index'])->name('employees.index');
         Route::post('/employees', [SuperadminEmployeeController::class, 'store'])->name('employees.store');

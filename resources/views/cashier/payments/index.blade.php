@@ -28,6 +28,67 @@
             border-bottom: 1px solid rgba(212, 163, 115, 0.45);
         }
         .scan-box { display: grid; gap: 1.25rem; }
+        .barcode-camera-box {
+            display: grid;
+            gap: 0.85rem;
+            padding: 1rem;
+            border: 1px solid rgba(212, 163, 115, 0.22);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fffdf9 0%, #fff7ef 100%);
+        }
+        .barcode-camera-preview {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+            min-height: 220px;
+            background: #120d0b;
+            border: 1px solid rgba(121, 85, 72, 0.12);
+        }
+        .barcode-camera-video {
+            width: 100%;
+            height: 100%;
+            min-height: 220px;
+            object-fit: cover;
+            display: block;
+            background: #120d0b;
+        }
+        .barcode-camera-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            text-align: center;
+            color: #fff;
+            background: linear-gradient(180deg, rgba(18,13,11,0.12), rgba(18,13,11,0.35));
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .barcode-camera-controls {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .barcode-camera-status {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .barcode-camera-btn {
+            border: 1px solid rgba(212, 163, 115, 0.45);
+            background: #fff;
+            color: var(--primary);
+            border-radius: 999px;
+            padding: 0.65rem 1rem;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        .barcode-camera-btn:hover { background: rgba(212, 163, 115, 0.1); border-color: var(--highlight); }
+        .barcode-camera-btn:disabled { opacity: 0.55; cursor: not-allowed; }
         .scan-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 1rem; align-items: end; }
         .field { display: flex; flex-direction: column; gap: 0.35rem; }
         .field label { color: var(--text-muted); font-size: 0.85rem; font-weight: 700; }
@@ -225,6 +286,11 @@
             const qtyInput = document.getElementById('qtyInput');
             const scanBtn = document.getElementById('scanBtn');
             const scanResult = document.getElementById('scanResult');
+            const barcodeVideo = document.getElementById('barcodeVideo');
+            const startCameraBtn = document.getElementById('startCameraBtn');
+            const stopCameraBtn = document.getElementById('stopCameraBtn');
+            const barcodeCameraStatus = document.getElementById('barcodeCameraStatus');
+            const barcodeCameraOverlay = document.getElementById('barcodeCameraOverlay');
             const registerBox = document.getElementById('registerBox');
             const registerBarcode = document.getElementById('registerBarcode');
             const registerName = document.getElementById('registerName');
@@ -238,6 +304,12 @@
             const initialCart = @json($cart['items']);
             const cartState = new Map((initialCart || []).map((item) => [Number(item.menu_id), { ...item }]));
             let pendingBarcode = '';
+            let cameraStream = null;
+            let barcodeDetector = null;
+            let cameraScanning = false;
+            let cameraBusy = false;
+            let lastCameraBarcode = '';
+            let cameraFrameHandle = null;
 
             const esc = (value) => String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -280,6 +352,104 @@
             };
 
             const focusBarcode = () => setTimeout(() => barcodeInput?.focus(), 60);
+
+            const setCameraStatus = (message, type = 'info') => {
+                if (barcodeCameraStatus) {
+                    barcodeCameraStatus.textContent = message;
+                    barcodeCameraStatus.style.color = type === 'error' ? '#c62828' : 'var(--text-muted)';
+                }
+                if (barcodeCameraOverlay) {
+                    barcodeCameraOverlay.textContent = message;
+                }
+            };
+
+            const stopCameraScanner = async () => {
+                cameraScanning = false;
+                cameraBusy = false;
+                lastCameraBarcode = '';
+                if (cameraFrameHandle) {
+                    cancelAnimationFrame(cameraFrameHandle);
+                    cameraFrameHandle = null;
+                }
+                if (barcodeVideo) {
+                    barcodeVideo.srcObject = null;
+                }
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach((track) => track.stop());
+                    cameraStream = null;
+                }
+                if (startCameraBtn) startCameraBtn.disabled = false;
+                if (stopCameraBtn) stopCameraBtn.disabled = true;
+                setCameraStatus('Kamera belum aktif.');
+            };
+
+            const ensureBarcodeDetector = async () => {
+                if (barcodeDetector) return barcodeDetector;
+                if (!('BarcodeDetector' in window)) return null;
+                try {
+                    barcodeDetector = new BarcodeDetector({
+                        formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e', 'qr_code'],
+                    });
+                } catch (_) {
+                    barcodeDetector = null;
+                }
+                return barcodeDetector;
+            };
+
+            const startCameraScanner = async () => {
+                if (!navigator.mediaDevices?.getUserMedia) {
+                    setCameraStatus('Kamera tidak didukung browser ini.', 'error');
+                    return;
+                }
+
+                const detector = await ensureBarcodeDetector();
+                if (!detector) {
+                    setCameraStatus('BarcodeDetector tidak tersedia. Gunakan Chrome di HP atau input manual.', 'error');
+                    return;
+                }
+
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: 'environment' } },
+                        audio: false,
+                    });
+                    if (!barcodeVideo) throw new Error('Video scanner tidak ditemukan.');
+                    barcodeVideo.srcObject = cameraStream;
+                    await barcodeVideo.play();
+                    cameraScanning = true;
+                    cameraBusy = false;
+                    lastCameraBarcode = '';
+                    if (startCameraBtn) startCameraBtn.disabled = true;
+                    if (stopCameraBtn) stopCameraBtn.disabled = false;
+                    setCameraStatus('Kamera aktif. Arahkan barcode ke kotak kamera.');
+
+                    const detectFrame = async () => {
+                        if (!cameraScanning || !barcodeDetector || !barcodeVideo) return;
+                        cameraFrameHandle = requestAnimationFrame(detectFrame);
+                        if (cameraBusy || barcodeVideo.readyState < 2) return;
+                        try {
+                            cameraBusy = true;
+                            const codes = await barcodeDetector.detect(barcodeVideo);
+                            const raw = String(codes?.[0]?.rawValue || '').trim();
+                            if (!raw || raw === lastCameraBarcode) return;
+                            lastCameraBarcode = raw;
+                            barcodeInput.value = raw;
+                            setCameraStatus('Barcode terbaca: ' + raw);
+                            await scanBarcode(raw);
+                            await stopCameraScanner();
+                        } catch (error) {
+                            setCameraStatus(error?.message || 'Gagal membaca barcode.', 'error');
+                        } finally {
+                            cameraBusy = false;
+                        }
+                    };
+
+                    detectFrame();
+                } catch (error) {
+                    await stopCameraScanner();
+                    setCameraStatus(error?.message || 'Gagal membuka kamera.', 'error');
+                }
+            };
 
             const showResult = (html, error = false) => {
                 if (!scanResult) return;
@@ -436,8 +606,8 @@
                 }
             };
 
-            const scanBarcode = async () => {
-                const barcode = barcodeInput?.value?.trim();
+            const scanBarcode = async (barcodeValue = null) => {
+                const barcode = String(barcodeValue ?? barcodeInput?.value?.trim() ?? '').trim();
                 const qty = Math.max(1, parseInt(qtyInput?.value || '1', 10) || 1);
                 if (!barcode) {
                     showResult('<span>Barcode masih kosong.</span>', true);
@@ -474,12 +644,17 @@
             };
 
             renderCart();
-            scanBtn?.addEventListener('click', scanBarcode);
+            scanBtn?.addEventListener('click', () => scanBarcode());
+            startCameraBtn?.addEventListener('click', startCameraScanner);
+            stopCameraBtn?.addEventListener('click', stopCameraScanner);
             saveNewItemBtn?.addEventListener('click', saveAndAddBarcodeItem);
             cancelRegisterBtn?.addEventListener('click', () => {
                 hideRegisterBox();
                 showResult('<span>Input barang baru dibatalkan.</span>');
                 focusBarcode();
+            });
+            window.addEventListener('beforeunload', () => {
+                stopCameraScanner();
             });
             cartList?.addEventListener('click', async (event) => {
                 const btn = event.target.closest('[data-remove-cart]');
@@ -615,6 +790,17 @@
                     </div>
 
                     <div class="scan-box">
+                        <div class="barcode-camera-box">
+                            <div class="barcode-camera-preview">
+                                <video id="barcodeVideo" class="barcode-camera-video" playsinline muted></video>
+                                <div id="barcodeCameraOverlay" class="barcode-camera-overlay">Arahkan barcode ke kamera HP lalu tekan &quot;Buka Kamera&quot;.</div>
+                            </div>
+                            <div class="barcode-camera-controls">
+                                <button id="startCameraBtn" class="barcode-camera-btn" type="button">Buka Kamera HP</button>
+                                <button id="stopCameraBtn" class="barcode-camera-btn" type="button" disabled>Tutup Kamera</button>
+                                <span id="barcodeCameraStatus" class="barcode-camera-status">Kamera belum aktif.</span>
+                            </div>
+                        </div>
                         <div class="scan-row">
                             <div class="field" style="flex: 1;">
                                 <label for="barcodeInput">Barcode</label>

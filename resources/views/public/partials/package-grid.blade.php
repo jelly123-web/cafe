@@ -10,7 +10,7 @@
             data-package-price="{{ (float) ($package->display_price ?? $package->selling_price) }}"
             data-package-original-price="{{ (float) ($package->original_price ?? $package->selling_price) }}"
             data-package-promo-meta='@json($package->promo_meta)'
-            data-menu-category-key="{{ $package->menu_category_id ? 'cat-'.$package->menu_category_id : 'all' }}"
+            data-menu-category-key="paket"
         >
             <img src="{{ $packageImage }}" alt="{{ $package->name }}" class="menu-img">
             <div class="menu-info">

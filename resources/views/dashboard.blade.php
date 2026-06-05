@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
         <script defer src="{{ asset('js/dashboard.js') }}"></script>
     @endif
+  @include('components.page-transition-guard')
 </head>
 <body>
     <main class="dashboard-shell">

@@ -17,6 +17,7 @@
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
     <script defer src="{{ asset('js/auth/login.js') }}"></script>
+  @include('components.page-transition-guard')
 </head>
 <body>
     <main class="shell">

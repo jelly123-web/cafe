@@ -30,6 +30,10 @@
         .item-row:last-child { border-bottom: none; }
         .item-qty { font-weight: 700; color: var(--highlight); margin-right: 0.5rem; }
         .order-note { padding: 0.75rem 1rem; background: #FFF8E1; border-left: 4px solid var(--highlight); border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.9rem; color: #8D6E63; font-style: italic; }
+        .order-note-text { margin-bottom: 0.55rem; }
+        .note-speak-btn { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid rgba(212, 163, 115, 0.45); background: #fff; color: var(--primary); border-radius: 999px; padding: 0.4rem 0.75rem; font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.18s ease; }
+        .note-speak-btn:hover { background: rgba(212, 163, 115, 0.1); border-color: var(--highlight); transform: translateY(-1px); }
+        .note-speak-btn.is-playing { background: var(--highlight); color: #fff; border-color: var(--highlight); }
         .action-group { display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .btn { border: 1px solid transparent; border-radius: 12px; padding: 0.65rem 1.2rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.9rem; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
         .btn-primary { background: var(--highlight); color: #fff; border: none; box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); }
@@ -100,20 +104,8 @@
             if (!wrap) return;
             const onPageOne = Number(@json((int) request()->query('page', 1))) === 1;
             let lastTs = Number(@json(optional($orders->first()?->sold_at)?->timestamp ?? 0));
-            const beep = () => {
-                try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = 880;
-                    gain.gain.value = 0.07;
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start();
-                    setTimeout(function () { osc.stop(); ctx.close(); }, 180);
-                } catch (e) {}
-            };
+            const storageKey = 'cafe_live_sync_last_order_id';
+            const channel = window.BroadcastChannel ? new BroadcastChannel('cafe-order-sync') : null;
             const poll = async () => {
                 if (!onPageOne) return;
                 liveText.textContent = 'Sync...';
@@ -124,13 +116,17 @@
                     wrap.innerHTML = payload.html || '';
                     if (Number(payload.latest_ts || 0) > lastTs) {
                         lastTs = Number(payload.latest_ts || 0);
-                        beep();
                         if (window.showToast) window.showToast('Pesanan baru masuk ke dapur.', 'success');
                     }
                     liveText.textContent = 'Live';
                 } catch (e) {
                     liveText.textContent = 'Offline';
                 }
+            };
+
+            const requestPoll = () => {
+                if (document.visibilityState !== 'visible') return;
+                poll();
             };
 
             const statusClassMap = {
@@ -140,7 +136,57 @@
                 completed: 'tag-done',
             };
 
+            let noteUtterance = null;
+            const stopNoteSpeech = () => {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                noteUtterance = null;
+                document.querySelectorAll('.note-speak-btn.is-playing').forEach((btn) => {
+                    btn.classList.remove('is-playing');
+                    btn.textContent = '🔊 Dengar catatan';
+                });
+            };
+
+            const speakNote = (button) => {
+                const note = String(button?.dataset?.note || '').trim();
+                if (!note) {
+                    if (window.showToast) window.showToast('Catatan kosong.', 'error');
+                    return;
+                }
+                const SpeechSynthesisUtteranceCtor = window.SpeechSynthesisUtterance;
+                if (!window.speechSynthesis || !SpeechSynthesisUtteranceCtor) {
+                    if (window.showToast) window.showToast('Browser ini tidak mendukung pembacaan suara.', 'error');
+                    return;
+                }
+
+                stopNoteSpeech();
+                const utterance = new SpeechSynthesisUtteranceCtor(note);
+                utterance.lang = 'id-ID';
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                utterance.onend = () => stopNoteSpeech();
+                utterance.onerror = () => stopNoteSpeech();
+                noteUtterance = utterance;
+                button.classList.add('is-playing');
+                button.textContent = '⏹ Hentikan bacaan';
+                window.speechSynthesis.speak(utterance);
+            };
+
             wrap.addEventListener('click', async (e) => {
+                const noteButton = e.target.closest('button[data-speak-note]');
+                if (noteButton) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (noteButton.classList.contains('is-playing')) {
+                        stopNoteSpeech();
+                    } else {
+                        speakNote(noteButton);
+                    }
+                    return;
+                }
+
                 const button = e.target.closest('button[type="submit"][name="status"]');
                 if (!button) return;
 
@@ -213,9 +259,14 @@
                 if (document.visibilityState === 'visible') {
                     poll();
                 }
-            }, 4000);
+            }, 1000);
 
-            window.addEventListener('cafe:order-sync', poll);
+            window.addEventListener('beforeunload', stopNoteSpeech);
+            window.addEventListener('cafe:order-sync', requestPoll);
+            window.addEventListener('storage', (event) => {
+                if (event.key === storageKey) requestPoll();
+            });
+            channel?.addEventListener('message', requestPoll);
         })();
     </script>
 @endsection

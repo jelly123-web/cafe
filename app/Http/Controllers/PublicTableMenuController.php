@@ -34,10 +34,8 @@ class PublicTableMenuController extends Controller
                     ->orWhereDate('start_at', '<=', today());
             })
             ->where(function ($query) {
-                $today = today();
-
                 $query->whereNull('end_at')
-                    ->orWhereDate('end_at', '>=', $today);
+                    ->orWhereDate('end_at', '>=', today());
             })
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
@@ -455,17 +453,48 @@ class PublicTableMenuController extends Controller
     {
         abort_unless($table->is_active, 404);
 
+        $normalizedItems = collect($request->input('items', []))
+            ->map(function ($row): array {
+                return [
+                    'menu_id' => (int) ($row['menu_id'] ?? 0),
+                    'qty' => (int) ($row['qty'] ?? 0),
+                    'addon_name' => trim((string) ($row['addon_name'] ?? '')),
+                    'addon_qty' => (int) ($row['addon_qty'] ?? 0),
+                    'addon_price' => (float) ($row['addon_price'] ?? 0),
+                    'addon_cost' => (float) ($row['addon_cost'] ?? 0),
+                ];
+            })
+            ->filter(fn (array $row) => $row['menu_id'] > 0 && $row['qty'] > 0)
+            ->values()
+            ->all();
+
+        $normalizedPackages = collect($request->input('packages', []))
+            ->map(function ($row): array {
+                return [
+                    'package_id' => (int) ($row['package_id'] ?? 0),
+                    'qty' => (int) ($row['qty'] ?? 0),
+                ];
+            })
+            ->filter(fn (array $row) => $row['package_id'] > 0 && $row['qty'] > 0)
+            ->values()
+            ->all();
+
+        $request->merge([
+            'items' => $normalizedItems,
+            'packages' => $normalizedPackages,
+        ]);
+
         $data = $request->validate([
             'notes' => ['nullable', 'string', 'max:500'],
             'items' => ['nullable', 'array'],
-            'items.*.menu_id' => ['required', 'exists:menus,id'],
+            'items.*.menu_id' => ['required', 'integer', 'min:1', 'exists:menus,id'],
             'items.*.qty' => ['nullable', 'integer', 'min:0'],
             'items.*.addon_name' => ['nullable', 'string', 'max:100'],
             'items.*.addon_qty' => ['nullable', 'integer', 'min:0'],
             'items.*.addon_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.addon_cost' => ['nullable', 'numeric', 'min:0'],
             'packages' => ['nullable', 'array'],
-            'packages.*.package_id' => ['required', 'exists:food_packages,id'],
+            'packages.*.package_id' => ['required', 'integer', 'min:1', 'exists:food_packages,id'],
             'packages.*.qty' => ['required', 'integer', 'min:1'],
         ]);
 

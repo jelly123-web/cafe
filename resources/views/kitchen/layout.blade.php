@@ -141,6 +141,7 @@
         #nprogress .bar { background: #795548 !important; height: 3px !important; }
         #nprogress .spinner-icon { border-top-color: #795548 !important; border-left-color: #795548 !important; }
     </style>
+  @include('components.page-transition-guard')
 </head>
 <body data-turbo-prefetch="true">
     <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-label="Toggle Sidebar">=</button>

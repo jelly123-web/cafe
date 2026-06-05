@@ -161,7 +161,7 @@ class SuperadminReportController extends Controller
          $paginatedTransactions = $transactionsQuery->paginate(5)->withQueryString();
 
         // Chart Data Logic
-        $chartData = [];
+        $chartData = ['labels' => [], 'values' => []];
         if ($period === 'yearly') {
             // Group by month
             for ($i = 1; $i <= 12; $i++) {

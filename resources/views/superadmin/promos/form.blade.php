@@ -6,7 +6,7 @@
 
     <div class="drawer-field full">
         <label for="f_description">Deskripsi</label>
-        <textarea id="f_description" name="description" style="width:100%;padding:0.75rem;border:1.5px solid var(--accent);border-radius:14px;font-family:inherit;">{{ old('description', $promo->description) }}</textarea>
+        <textarea id="f_description" name="description" rows="3" placeholder="Jelaskan detail promo...">{{ old('description', $promo->description) }}</textarea>
     </div>
 
     <div class="drawer-field">
@@ -26,7 +26,7 @@
 
     <div class="drawer-field">
         <label for="f_min">Minimal Belanja (Opsional)</label>
-        <input id="f_min" type="number" step="0.01" name="min_spend" value="{{ old('min_spend', $promo->min_spend) }}" placeholder="Cth: 50000">
+        <input id="f_min" type="number" step="0.01" name="min_spend" id="f_min_spend" value="{{ old('min_spend', $promo->min_spend) }}" placeholder="Cth: 50000">
     </div>
 
     <div class="drawer-field" id="field_buy" style="display:none;">
@@ -51,7 +51,7 @@
     <div class="drawer-field">
         <label for="f_status">Status</label>
         <select id="f_status" name="is_active">
-            <option value="1" {{ old('is_active', $promo->is_active) ? 'selected' : '' }}>Aktif</option>
+            <option value="1" {{ old('is_active', $promo->is_active) !== false ? 'selected' : '' }}>Aktif</option>
             <option value="0" {{ old('is_active', $promo->is_active) === false ? 'selected' : '' }}>Nonaktif</option>
         </select>
     </div>
@@ -114,54 +114,59 @@
 </div>
 
 <script>
-    function togglePromoFields(type) {
-        const fieldVal = document.getElementById('field_value');
-        const fieldBuy = document.getElementById('field_buy');
-        const fieldGet = document.getElementById('field_get');
+    (function() {
+        window.togglePromoFields = function(type) {
+            const fieldVal = document.getElementById('field_value');
+            const fieldBuy = document.getElementById('field_buy');
+            const fieldGet = document.getElementById('field_get');
+            const fieldMin = document.getElementById('f_min')?.closest('.drawer-field');
 
-        if (type === 'buy_x_get_y') {
-            fieldVal.style.display = 'none';
-            fieldBuy.style.display = 'block';
-            fieldGet.style.display = 'block';
-        } else if (type === 'free_shipping') {
-            fieldVal.style.display = 'none';
-            fieldBuy.style.display = 'none';
-            fieldGet.style.display = 'none';
-        } else {
-            fieldVal.style.display = 'block';
-            fieldBuy.style.display = 'none';
-            fieldGet.style.display = 'none';
-        }
-    }
+            if (type === 'buy_x_get_y') {
+                if(fieldVal) fieldVal.style.display = 'none';
+                if(fieldBuy) fieldBuy.style.display = 'block';
+                if(fieldGet) fieldGet.style.display = 'block';
+            } else if (type === 'free_shipping') {
+                if(fieldVal) fieldVal.style.display = 'none';
+                if(fieldBuy) fieldBuy.style.display = 'none';
+                if(fieldGet) fieldGet.style.display = 'none';
+            } else {
+                if(fieldVal) fieldVal.style.display = 'block';
+                if(fieldBuy) fieldBuy.style.display = 'none';
+                if(fieldGet) fieldGet.style.display = 'none';
+            }
+        };
 
-    function toggleScopeFields(appliesTo) {
-        const fieldScope = document.getElementById('field_scope');
-        const isSpecific = appliesTo === 'specific';
-        fieldScope.style.display = isSpecific ? 'block' : 'none';
-        fieldScope.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-            checkbox.disabled = !isSpecific;
-        });
-        updateScopeSelectionMeta();
-    }
+        window.toggleScopeFields = function(appliesTo) {
+            const fieldScope = document.getElementById('field_scope');
+            if(!fieldScope) return;
+            const isSpecific = appliesTo === 'specific';
+            fieldScope.style.display = isSpecific ? 'block' : 'none';
+            fieldScope.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+                checkbox.disabled = !isSpecific;
+            });
+            window.updateScopeSelectionMeta?.();
+        };
 
-    function updateScopeSelectionMeta() {
-        const meta = document.getElementById('scopeSelectionMeta');
-        const fieldScope = document.getElementById('field_scope');
-        if (!meta || !fieldScope) return;
+        window.updateScopeSelectionMeta = function() {
+            const meta = document.getElementById('scopeSelectionMeta');
+            const fieldScope = document.getElementById('field_scope');
+            if (!meta || !fieldScope) return;
 
-        const checkedCount = fieldScope.querySelectorAll('input[type="checkbox"]:checked').length;
-        meta.textContent = checkedCount > 0
-            ? `${checkedCount} item dipilih`
-            : 'Belum ada menu atau paket dipilih';
-    }
+            const checkedCount = fieldScope.querySelectorAll('input[type="checkbox"]:checked').length;
+            meta.textContent = checkedCount > 0
+                ? `${checkedCount} item dipilih`
+                : 'Belum ada menu atau paket dipilih';
+        };
 
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', function() {
-        togglePromoFields(document.getElementById('f_type').value);
-        toggleScopeFields(document.getElementById('f_applies').value);
+        // Initialize on load
+        const typeEl = document.getElementById('f_type');
+        const appliesEl = document.getElementById('f_applies');
+        if(typeEl) window.togglePromoFields(typeEl.value);
+        if(appliesEl) window.toggleScopeFields(appliesEl.value);
+        
         document.querySelectorAll('#field_scope input[type="checkbox"]').forEach((checkbox) => {
-            checkbox.addEventListener('change', updateScopeSelectionMeta);
+            checkbox.addEventListener('change', window.updateScopeSelectionMeta);
         });
-        updateScopeSelectionMeta();
-    });
+        window.updateScopeSelectionMeta();
+    })();
 </script>

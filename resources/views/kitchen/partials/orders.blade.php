@@ -35,9 +35,20 @@
             @endforeach
         </div>
 
-        <div class="order-note">
-            Catatan: {{ $order->notes ?: 'Tidak ada catatan.' }}
-        </div>
+        @if (!empty($order->notes))
+            <div class="order-note">
+                <div class="order-note-text">Catatan: {{ $order->notes }}</div>
+                <button
+                    type="button"
+                    class="note-speak-btn"
+                    data-speak-note
+                    data-note=@json($order->notes)
+                    data-order-code="{{ $order->code }}"
+                >
+                    🔊 Dengar catatan
+                </button>
+            </div>
+        @endif
 
         @if ($hasStatus)
             <form method="POST" action="{{ route('kitchen.orders.status', $order) }}" class="action-group">

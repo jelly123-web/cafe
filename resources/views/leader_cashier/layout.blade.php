@@ -132,6 +132,7 @@
             }
         }
     </style>
+  @include('components.page-transition-guard')
 </head>
 <body data-turbo-prefetch="true">
     <script>
