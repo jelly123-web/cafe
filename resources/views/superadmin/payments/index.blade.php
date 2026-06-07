@@ -2,7 +2,7 @@
 
 @section('title', ($cafeBrand['name'] ?? config('app.name')) . ' - Pembayaran Kasir')
 @section('page_title', 'Pembayaran Kasir')
-@section('page_description', 'Superadmin dapat melihat dan memproses pembayaran tanpa pindah ke panel kasir.')
+@section('page_description', 'Scan barcode menu, masukkan ke keranjang pembayaran, lalu buat tagihan dan proses pembayaran.')
 
 @push('head')
     <style>
@@ -47,11 +47,6 @@
       --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
       --transition: 0.2s ease;
     }
-
-    /* ===== PAGE HEADER ===== */
-    .page-header { margin-bottom: 24px; }
-    .page-header-title { font-size: 22px; font-weight: 900; letter-spacing: -0.4px; color: var(--fg); margin-bottom: 4px; }
-    .page-header-desc { font-size: 14px; color: var(--fg-secondary); line-height: 1.6; }
 
     /* ===== ALERT ===== */
     .alert {
@@ -119,6 +114,50 @@
 
     /* ===== SCAN BOX ===== */
     .scan-box { display: flex; flex-direction: column; gap: 14px; }
+    .scan-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .camera-box {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #FAFBFC;
+    }
+    .camera-box.open { display: flex; }
+    .camera-preview {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      background: #111827;
+      aspect-ratio: 4 / 3;
+    }
+    .camera-preview video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .camera-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .camera-frame {
+      width: min(72%, 320px);
+      height: min(42%, 180px);
+      border: 2px solid rgba(255,255,255,0.95);
+      border-radius: 18px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.2);
+    }
+    .camera-status {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--fg-secondary);
+    }
 
     .scan-row {
       display: grid;
@@ -780,9 +819,18 @@
             const cartList = document.getElementById('cartList');
             const cartTotal = document.getElementById('cartTotal');
             const checkoutBtn = document.getElementById('checkoutCartBtn');
+            const cameraBtn = document.getElementById('cameraBtn');
+            const stopCameraBtn = document.getElementById('stopCameraBtn');
+            const cameraBox = document.getElementById('cameraBox');
+            const cameraVideo = document.getElementById('cameraVideo');
+            const cameraStatus = document.getElementById('cameraStatus');
             const initialCart = @json($cart['items']);
             const cartState = new Map((initialCart || []).map((item) => [Number(item.menu_id), { ...item }]));
             let pendingBarcode = '';
+            let barcodeDetector = null;
+            let cameraStream = null;
+            let cameraFrame = null;
+            let cameraBusy = false;
 
             const esc = (value) => String(value ?? '')
                 .replace(/&/g, '&amp;')
@@ -938,6 +986,99 @@
                 return data;
             };
 
+            const ensureDetector = async () => {
+                if (barcodeDetector) return barcodeDetector;
+                if (!window.isSecureContext) {
+                    throw new Error('Scan kamera butuh HTTPS atau localhost yang aman.');
+                }
+                if (!('mediaDevices' in navigator) || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Browser ini tidak mendukung akses kamera.');
+                }
+                if (!('BarcodeDetector' in window)) {
+                    throw new Error('Browser ini belum mendukung scan barcode kamera.');
+                }
+
+                const preferredFormats = ['ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e', 'itf', 'codabar', 'qr_code'];
+                let formats = preferredFormats;
+                if (typeof window.BarcodeDetector.getSupportedFormats === 'function') {
+                    const supported = await window.BarcodeDetector.getSupportedFormats();
+                    const filtered = preferredFormats.filter((format) => supported.includes(format));
+                    if (filtered.length) formats = filtered;
+                }
+
+                barcodeDetector = new window.BarcodeDetector({ formats });
+                return barcodeDetector;
+            };
+
+            const stopCamera = () => {
+                if (cameraFrame) {
+                    cancelAnimationFrame(cameraFrame);
+                    cameraFrame = null;
+                }
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach((track) => track.stop());
+                    cameraStream = null;
+                }
+                cameraBusy = false;
+                if (cameraVideo) {
+                    cameraVideo.pause?.();
+                    cameraVideo.srcObject = null;
+                }
+                cameraBox?.classList.remove('open');
+                if (cameraBtn) cameraBtn.hidden = false;
+                if (stopCameraBtn) stopCameraBtn.hidden = true;
+            };
+
+            const detectFromCamera = async () => {
+                if (!cameraVideo || !barcodeDetector || cameraBusy) {
+                    cameraFrame = requestAnimationFrame(detectFromCamera);
+                    return;
+                }
+
+                cameraBusy = true;
+                try {
+                    const results = await barcodeDetector.detect(cameraVideo);
+                    const rawValue = results?.find((result) => String(result.rawValue || '').trim())?.rawValue?.trim();
+                    if (rawValue) {
+                        barcodeInput.value = rawValue;
+                        if (cameraStatus) cameraStatus.textContent = `Barcode terdeteksi: ${rawValue}`;
+                        stopCamera();
+                        await scanBarcode();
+                        return;
+                    }
+                } catch (error) {
+                    if (cameraStatus) cameraStatus.textContent = 'Kamera aktif. Arahkan ke barcode dengan pencahayaan cukup.';
+                } finally {
+                    cameraBusy = false;
+                }
+
+                cameraFrame = requestAnimationFrame(detectFromCamera);
+            };
+
+            const startCamera = async () => {
+                try {
+                    await ensureDetector();
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: { ideal: 'environment' },
+                        },
+                        audio: false,
+                    });
+                    if (cameraVideo) {
+                        cameraVideo.srcObject = cameraStream;
+                        await cameraVideo.play();
+                    }
+                    cameraBox?.classList.add('open');
+                    if (cameraBtn) cameraBtn.hidden = true;
+                    if (stopCameraBtn) stopCameraBtn.hidden = false;
+                    if (cameraStatus) cameraStatus.textContent = 'Kamera aktif. Arahkan barcode ke dalam kotak.';
+                    cameraFrame = requestAnimationFrame(detectFromCamera);
+                } catch (error) {
+                    stopCamera();
+                    showResult(`<span>${esc(error.message || 'Tidak bisa membuka kamera.')}</span>`, true);
+                }
+            };
+
             const saveAndAddBarcodeItem = async () => {
                 const barcode = pendingBarcode || registerBarcode?.value?.trim() || barcodeInput?.value?.trim();
                 const qty = Math.max(1, parseInt(qtyInput?.value || '1', 10) || 1);
@@ -1020,6 +1161,8 @@
 
             renderCart();
             scanBtn?.addEventListener('click', scanBarcode);
+            cameraBtn?.addEventListener('click', startCamera);
+            stopCameraBtn?.addEventListener('click', stopCamera);
             saveNewItemBtn?.addEventListener('click', saveAndAddBarcodeItem);
             cancelRegisterBtn?.addEventListener('click', () => {
                 hideRegisterBox();
@@ -1069,6 +1212,7 @@
             });
             window.addEventListener('focus', focusBarcode);
             document.addEventListener('turbo:load', focusBarcode);
+            document.addEventListener('turbo:before-cache', stopCamera);
             focusBarcode();
 
             let interval;
@@ -1139,12 +1283,6 @@
 @endpush
 
 @section('content')
-    <!-- PAGE HEADER -->
-    <div class="page-header fade-in">
-        <h1 class="page-header-title">Pembayaran Kasir</h1>
-        <p class="page-header-desc">Scan barcode menu, masukkan ke keranjang pembayaran, lalu buat tagihan dan proses pembayaran.</p>
-    </div>
-
     @if (session('success'))
         <div class="alert ok">{{ session('success') }}</div>
     @endif
@@ -1170,11 +1308,23 @@
                             <label for="qtyInput">Qty</label>
                             <input id="qtyInput" type="number" min="1" step="1" value="1">
                         </div>
-                        <button id="scanBtn" class="btn-soft" type="button"><i class="fas fa-barcode"></i> Scan</button>
+                        <div class="scan-actions">
+                            <button id="scanBtn" class="btn-soft" type="button"><i class="fas fa-barcode"></i> Scan</button>
+                            <button id="cameraBtn" class="btn-soft" type="button"><i class="fas fa-camera"></i> Scan Kamera</button>
+                            <button id="stopCameraBtn" class="btn-soft" type="button" hidden><i class="fas fa-circle-stop"></i> Tutup Kamera</button>
+                        </div>
                     </div>
 
                     <div id="scanResult" class="scan-result">
                         <span>Siap untuk scan barcode.</span>
+                    </div>
+
+                    <div id="cameraBox" class="camera-box">
+                        <div class="camera-preview">
+                            <video id="cameraVideo" playsinline muted></video>
+                            <div class="camera-overlay"><div class="camera-frame"></div></div>
+                        </div>
+                        <div id="cameraStatus" class="camera-status">Arahkan kamera HP ke barcode menu.</div>
                     </div>
 
                     <div id="registerBox" class="register-box">

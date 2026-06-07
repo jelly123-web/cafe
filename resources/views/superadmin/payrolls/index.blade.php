@@ -145,7 +145,11 @@
     .btn-danger-sm:hover { background: var(--red-light); border-color: var(--red); }
 
     /* ===== TABLE ===== */
-    .table-wrap { overflow-x: auto; }
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 16px;
+      border-top: 1px solid var(--border-light);
+    }
 
     .payroll-table {
       width: 100%; min-width: 900px; border-collapse: collapse; table-layout: fixed;
@@ -233,6 +237,8 @@
     .summary-strip {
       display: flex; gap: 0; padding: 0 24px;
       border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+      background: #fff;
     }
 
     .summary-item {

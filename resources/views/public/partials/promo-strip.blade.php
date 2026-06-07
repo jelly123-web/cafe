@@ -29,9 +29,11 @@
     <div class="promo-grid" id="promoScroll">
         @foreach ($promos as $promo)
             @php
-                $periodLabel = $promo->ends_at
-                    ? 'Berlaku sampai ' . $formatIdDate($promo->ends_at)
-                    : ($promo->starts_at ? 'Mulai ' . $formatIdDate($promo->starts_at) : 'Promo aktif');
+                $periodLabel = $promo->starts_at && $promo->ends_at
+                    ? $promo->starts_at->format('d/m/y') . ' s/d ' . $promo->ends_at->format('d/m/y')
+                    : ($promo->ends_at
+                        ? 'Sampai ' . $promo->ends_at->format('d/m/y')
+                        : ($promo->starts_at ? 'Mulai ' . $promo->starts_at->format('d/m/y') : 'Promo aktif'));
 
                 $promoBadge = match ($promo->type) {
                     'percentage' => 'Diskon',
@@ -55,21 +57,74 @@
 
                 $featuredItem = $promo->menus->first() ?: $promo->foodPackages->first();
                 $featuredName = $featuredItem?->name ?? $promo->name;
+                $featuredType = $promo->menus->first() ? 'menu' : ($promo->foodPackages->first() ? 'package' : null);
+                $featuredPrice = (float) ($featuredItem?->selling_price ?? 0);
+                $promoPrice = null;
+                $priceLabel = null;
 
-                if ($featuredItem && ! empty($featuredItem->image_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($featuredItem->image_path)) {
+                if ($featuredItem && in_array($promo->type, ['percentage', 'fixed_discount'], true)) {
+                    $promoPrice = $promo->type === 'percentage'
+                        ? max(0, $featuredPrice - ($featuredPrice * ((float) $promo->value / 100)))
+                        : max(0, $featuredPrice - (float) $promo->value);
+
+                    $priceLabel = 'Rp ' . number_format($promoPrice, 0, ',', '.');
+                } elseif ($featuredItem && $promo->type === 'buy_x_get_y') {
+                    $priceLabel = 'Beli ' . ((int) ($promo->buy_qty ?? 1)) . ' Gratis ' . ((int) ($promo->get_qty ?? 1));
+                }
+
+                if (! empty($promo->banner_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($promo->banner_path)) {
+                    $featuredImagePath = \Illuminate\Support\Facades\Storage::disk('public')->url($promo->banner_path);
+                } elseif (! empty($promo->banner_path)) {
+                    $featuredImagePath = asset('storage/' . ltrim($promo->banner_path, '/'));
+                } elseif ($featuredItem && ! empty($featuredItem->image_path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($featuredItem->image_path)) {
                     $featuredImagePath = asset('storage/' . $featuredItem->image_path);
                 } elseif ($featuredItem && ! empty($featuredItem->image_path)) {
                     $featuredImagePath = $featuredItem->image_path;
                 } else {
-                    $featuredImagePath = 'https://picsum.photos/seed/promo-' . $promo->id . '/400/200.jpg';
+                    $featuredImagePath = asset('images/menu-placeholder.svg');
                 }
+
+                $promoMetaJson = json_encode([
+                    'id' => $promo->id,
+                    'name' => $promo->name,
+                    'type' => $promo->type,
+                    'value' => (float) $promo->value,
+                    'buy_qty' => (int) ($promo->buy_qty ?? 0),
+                    'get_qty' => (int) ($promo->get_qty ?? 0),
+                    'unit_price' => $promoPrice,
+                    'period_label' => $periodLabel,
+                ], JSON_HEX_APOS | JSON_HEX_QUOT);
             @endphp
-            <article class="promo-card">
+            <article
+                class="promo-card"
+                @if($featuredItem && $featuredType)
+                    data-promo-action="quick-add"
+                    data-item-type="{{ $featuredType }}"
+                    data-id="{{ $featuredItem->id }}"
+                    data-name="{{ $featuredItem->name }}"
+                    data-price="{{ $promoPrice ?? $featuredPrice }}"
+                    data-original-price="{{ $featuredPrice }}"
+                    data-promo-meta="{{ $promoMetaJson }}"
+                    style="cursor:pointer"
+                @endif
+            >
                 <img class="promo-img" src="{{ $featuredImagePath }}" alt="{{ $featuredName }}" loading="lazy">
                 <div class="promo-body">
                     <span class="promo-badge {{ $badgeClass }}">{{ $promoBadge }}</span>
                     <div class="promo-name">{{ $promo->name }}</div>
                     <div class="promo-detail">{{ $promo->description ?: $promoSubtext }}</div>
+                    @if ($priceLabel)
+                        <div class="promo-detail" style="margin-top:4px;">
+                            @if($promoPrice !== null)
+                                <strong style="color:var(--accent);">{{ $priceLabel }}</strong>
+                                @if($featuredPrice > ($promoPrice ?? 0))
+                                    <span style="margin-left:6px;color:var(--muted);text-decoration:line-through;">Rp {{ number_format($featuredPrice, 0, ',', '.') }}</span>
+                                @endif
+                            @else
+                                <strong style="color:var(--accent);">{{ $priceLabel }}</strong>
+                            @endif
+                        </div>
+                    @endif
                     <div class="promo-expire"><i class="far fa-clock"></i> {{ $periodLabel }}</div>
                 </div>
             </article>

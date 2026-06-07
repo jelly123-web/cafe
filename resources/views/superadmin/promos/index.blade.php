@@ -3,46 +3,13 @@
 @section('title', 'Manajemen Promo — cafecaf')
 @section('page_title', 'Manajemen Promo')
 @section('page_description', '')
+@section('page_icon')
+    <i class="fas fa-tags"></i>
+@endsection
+@section('kicker', 'Utama')
 
 @push('head')
     <style>
-    /* ===== VARIABEL DESAIN ===== */
-    :root {
-      --bg: #F4F5F7;
-      --bg-card: #FFFFFF;
-      --white: #FFFFFF;
-      --border: #E8EAED;
-      --border-light: #F0F1F3;
-      --fg: #1A1D23;
-      --fg-secondary: #5F6577;
-      --muted: #9CA3B4;
-      --accent: #D97706;
-      --accent-light: #FEF3C7;
-      --accent-dark: #B45309;
-      --green: #059669;
-      --green-light: #D1FAE5;
-      --red: #DC2626;
-      --red-light: #FEE2E2;
-      --blue: #2563EB;
-      --blue-light: #DBEAFE;
-      --purple: #7C3AED;
-      --purple-light: #EDE9FE;
-      --teal: #0D9488;
-      --teal-light: #CCFBF1;
-      --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
-      --shadow-lg: 0 8px 30px rgba(0,0,0,0.07);
-      --shadow-xl: 0 20px 60px rgba(0,0,0,0.1);
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-      --radius-full: 999px;
-      --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
-      --transition: 0.2s ease;
-    }
-
     /* ===== CONTENT TOOLBAR ===== */
     .content-toolbar {
       display: flex;
@@ -69,13 +36,6 @@
     }
     .search-box input::placeholder { color: var(--muted); }
     .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,6,0.1); }
-    .search-box button {
-      background: var(--accent); color: white; border: none;
-      padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer;
-      font-weight: 700; font-size: 13px; font-family: var(--font);
-      transition: all var(--transition); display: inline-flex; align-items: center; gap: 6px;
-    }
-    .search-box button:hover { background: var(--accent-dark); transform: translateY(-1px); }
 
     .toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
@@ -86,16 +46,7 @@
       font-weight: 700; font-size: 13px; border: none; cursor: pointer;
       transition: all var(--transition); font-family: var(--font);
     }
-    .primary-link:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25); }
-
-    .secondary-link {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: transparent; color: var(--fg-secondary); text-decoration: none;
-      padding: 9px 18px; border-radius: var(--radius-sm);
-      font-weight: 700; font-size: 13px; border: 1.5px solid var(--border); cursor: pointer;
-      transition: all var(--transition); font-family: var(--font);
-    }
-    .secondary-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .primary-link:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(217,119,6,0.25); }
 
     .danger-link {
       display: inline-flex; align-items: center; gap: 6px;
@@ -160,8 +111,6 @@
       background-color: var(--bg); color: var(--fg-secondary); letter-spacing: 0.2px;
     }
     .tag-success { background-color: var(--green-light); color: var(--green); }
-    .tag-muted { background-color: #F3F4F6; color: var(--muted); }
-    .tag-category { background-color: var(--accent-light); color: var(--accent-dark); }
     .tag-free { background-color: #FFF7ED; color: #C2410C; }
 
     .promo-item-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
@@ -170,6 +119,216 @@
       border-radius: 6px; font-size: 11px; font-weight: 600;
       background: var(--bg); color: var(--fg-secondary);
       border: 1px solid var(--border-light);
+    }
+    .promo-item-tag.buy-tag {
+      background: #FFF7ED;
+      color: #C2410C;
+      border-color: #FED7AA;
+    }
+    .promo-item-tag.get-tag {
+      background: #ECFDF5;
+      color: #047857;
+      border-color: #A7F3D0;
+    }
+
+    .scope-help {
+      display: block;
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .package-menu-selector-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .package-menu-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      background: var(--white);
+      transition: all var(--transition);
+    }
+
+    .package-menu-option:hover {
+      border-color: var(--accent);
+      background: #FFFBF5;
+    }
+
+    .package-menu-option.selected {
+      border-color: #FCD34D;
+      background: #FFFDF7;
+      box-shadow: 0 0 0 1px rgba(217,119,6,0.06);
+    }
+
+    .package-menu-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .package-menu-checkbox {
+      width: 18px !important;
+      height: 18px !important;
+      margin: 0;
+      flex-shrink: 0;
+      accent-color: #D97706;
+    }
+
+    .package-menu-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .package-menu-info strong {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--fg);
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .package-menu-info small {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .qty-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .qty-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--fg-secondary);
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+    }
+
+    .qty-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .qty-input {
+      width: 58px !important;
+      min-width: 58px;
+      padding: 7px 8px !important;
+      text-align: center;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+    }
+
+    .bxgy-builder {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .bxgy-column {
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        background: #FAFBFC;
+        padding: 14px;
+    }
+    .bxgy-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .bxgy-head strong { font-size: 13px; font-weight: 800; color: var(--fg); }
+    .bxgy-head span { font-size: 11px; color: var(--muted); font-weight: 700; }
+    
+    .bxgy-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 380px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    
+    .bxgy-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        background: var(--white);
+        border: 1px solid var(--border-light);
+        min-height: 58px;
+    }
+    .bxgy-item-info {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex: 1;
+        overflow: hidden;
+    }
+    .bxgy-item-name { font-size: 12px; font-weight: 700; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bxgy-item-meta { font-size: 10px; color: var(--muted); }
+    
+    .bxgy-counter {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+    .bxgy-btn {
+        width: 28px; height: 28px; border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--white); color: var(--fg-secondary);
+        cursor: pointer; font-weight: 800; font-size: 14px;
+        transition: all var(--transition);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .bxgy-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .bxgy-qty {
+        width: 56px !important;
+        min-width: 56px;
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px 8px !important;
+        background: var(--white);
+        color: var(--fg);
+        font-size: 13px !important;
+        font-weight: 700;
     }
 
     /* ===== ACTIONS ===== */
@@ -187,8 +346,37 @@
     /* ===== EMPTY STATE ===== */
     .empty-state { padding: 40px 24px; text-align: center; color: var(--muted); font-size: 14px; background: #fff; border-radius: var(--radius-lg); }
     .empty-state::before { content: '\f56e'; font-family: 'Font Awesome 6 Free'; font-weight: 900; display: block; font-size: 32px; margin-bottom: 8px; color: var(--border); }
+    .empty-state em { font-style: normal; font-weight: 700; color: var(--fg-secondary); }
 
-    /* ===== DRAWER ===== */
+    /* ===== DRAWER FORM ===== */
+    .drawer-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .drawer-field { display: flex; flex-direction: column; gap: 6px; }
+    .drawer-field.full { grid-column: 1 / -1; }
+    .drawer-field label { font-size: 12px; font-weight: 700; color: var(--fg-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .drawer-field input, .drawer-field select, .drawer-field textarea {
+        width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+        background: var(--white); color: var(--fg); font-size: 14px; font-weight: 500; outline: none;
+        transition: all var(--transition); font-family: var(--font);
+    }
+    .drawer-field input[readonly] {
+        background: #F8FAFC;
+        color: var(--fg-secondary);
+    }
+    .drawer-field input:focus, .drawer-field select:focus, .drawer-field textarea:focus {
+        border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,6,0.1);
+    }
+    .promo-preview-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .promo-preview-note {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.45;
+    }
     .drawer-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.3); backdrop-filter:blur(2px); z-index:1200; opacity:0; visibility:hidden; transition:all 0.25s ease; }
     .drawer-backdrop.open { opacity: 1; visibility: visible; }
 
@@ -220,95 +408,20 @@
     .btn-drawer-cancel { border: 1.5px solid var(--border); background: var(--white); color: var(--fg-secondary); border-radius: var(--radius-sm); padding: 10px 20px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: var(--font); transition: all var(--transition); }
     .btn-drawer-cancel:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
 
-    .drawer-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .drawer-field { display: flex; flex-direction: column; gap: 6px; }
-    .drawer-field.full { grid-column: 1 / -1; }
-    .drawer-field label { font-size: 12px; font-weight: 700; color: var(--fg-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-    .drawer-field input, .drawer-field select, .drawer-field textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--white); color: var(--fg); font-size: 14px; font-weight: 500; outline: none; transition: all var(--transition); font-family: var(--font); -webkit-appearance: none; }
-    .drawer-field input:focus, .drawer-field select:focus, .drawer-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
-    
-    .scope-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 4px; background: var(--bg); padding: 1rem; border-radius: 16px; border: 1.5px solid var(--border); }
-    .scope-column { min-width: 0; background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .scope-column-title { display: block; padding: 0.85rem 1rem; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; color: var(--fg-secondary); background: #f6f8fa; border-bottom: 1px solid var(--border); text-transform: uppercase; }
-    .scope-list { max-height: 220px; overflow-y: auto; display: grid; gap: 0.65rem; padding: 0.9rem; }
-    .scope-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--border); background: #fff; cursor: pointer; transition: all .18s ease; }
-    .scope-item:hover { border-color: var(--accent); background: var(--accent-light); }
-    .scope-item input[type="checkbox"] { width: 18px; height: 18px; margin: 0.1rem 0 0; accent-color: var(--accent); flex-shrink: 0; }
-    .scope-item-name { font-size: 13px; font-weight: 700; color: var(--fg); line-height: 1.35; }
-    .scope-item-meta { font-size: 11px; color: var(--muted); }
     .drawer-error { background: #fff5f5; color: var(--red); padding: 0.85rem 1.15rem; border-radius: 12px; border-left: 4px solid var(--red); font-weight: 600; margin-top: 0.5rem; display: none; }
-    
-    /* ===== CATEGORY FILTER BAR ===== */
-    .category-filter-bar {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      scrollbar-width: none;
+
+    @media (max-width: 768px) {
+      .bxgy-builder { grid-template-columns: 1fr; }
+      .promo-preview-grid { grid-template-columns: 1fr; }
+      .package-menu-option {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .qty-control,
+      .bxgy-counter {
+        justify-content: flex-end;
+      }
     }
-    .category-filter-bar::-webkit-scrollbar { display: none; }
-
-    .filter-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 24px;
-      background: var(--white);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-full);
-      color: var(--fg-secondary);
-      font-size: 14px;
-      font-weight: 700;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: all var(--transition);
-      font-family: var(--font);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .filter-pill:hover {
-      background: var(--bg);
-      transform: translateY(-1px);
-    }
-
-    .filter-pill.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
-    }
-
-    .filter-pill i {
-      font-size: 16px;
-      opacity: 0.8;
-    }
-
-    .filter-pill.active i { opacity: 1; }
-
-    .filter-pill span {
-      font-size: 12px;
-      margin-left: 2px;
-      opacity: 0.7;
-      font-weight: 500;
-    }
-
-    .filter-pill.active span { opacity: 0.9; }
-
-    .promo-date-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 10px;
-      border-radius: var(--radius-full);
-      font-size: 11px;
-      font-weight: 600;
-      background: var(--bg);
-      color: var(--fg-secondary);
-      border: 1px solid var(--border-light);
-    }
-    .promo-date-badge i { font-size: 10px; }
-
     </style>
 @endpush
 
@@ -317,7 +430,6 @@
     <div class="content-toolbar fade-in">
         <form method="GET" action="{{ route('superadmin.promos.index') }}" class="search-box" id="promoSearchForm" onsubmit="return false;">
             <input type="text" name="search" id="promoSearchInput" placeholder="Cari promo..." value="{{ request('search') }}" autocomplete="off">
-            <button type="button" id="promoSearchBtn"><i class="fas fa-search"></i> Cari</button>
         </form>
         <div class="toolbar-actions">
             <form method="POST" action="{{ route('superadmin.promos.destroy-all') }}" onsubmit="return confirm('Hapus semua promo? Tindakan ini tidak bisa dibatalkan.')">
@@ -351,15 +463,26 @@
                 <div class="promo-card" data-promo-id="{{ $promo->id }}">
                     <img class="promo-thumb" src="{{ $bannerImage }}" alt="{{ $promo->name }}">
                     <div class="promo-meta">
+                        <h3 class="promo-title">{{ $promo->name }}</h3>
+                        @if($promo->description)
+                            <p>{{ $promo->description }}</p>
+                        @endif
                         <div class="promo-pricing">
                             <span class="tag tag-success">{{ $valLabel }}</span>
-                            @if($promo->min_spend > 0)
+                            @if($promo->type !== 'buy_x_get_y' && $promo->min_spend > 0)
                                 <span class="tag tag-free"><i class="fas fa-gift" style="margin-right:3px;"></i> Min. Rp {{ number_format($promo->min_spend, 0, ',', '.') }}</span>
                             @endif
-                            <span class="promo-date-badge"><i class="far fa-calendar-alt"></i> {{ $promo->start_at?->format('d/m/y') ?? '—' }} s/d {{ $promo->end_at?->format('d/m/y') ?? '—' }}</span>
+                            <span class="tag tag-muted"><i class="far fa-calendar-alt" style="margin-right:3px;"></i> {{ $promo->start_at?->format('d/m/y') ?? '—' }} s/d {{ $promo->end_at?->format('d/m/y') ?? '—' }}</span>
                         </div>
                         <div class="promo-item-list">
-                            @if($promo->applies_to === 'all')
+                            @if($promo->type === 'buy_x_get_y')
+                                @foreach(($promo->buy_targets ?? []) as $target)
+                                    <span class="promo-item-tag buy-tag">Beli {{ (int) ($target['qty'] ?? 0) }}x {{ $target['name'] ?? 'Item' }}</span>
+                                @endforeach
+                                @foreach(($promo->get_targets ?? []) as $target)
+                                    <span class="promo-item-tag get-tag">Gratis {{ (int) ($target['qty'] ?? 0) }}x {{ $target['name'] ?? 'Item' }}</span>
+                                @endforeach
+                            @elseif($promo->applies_to === 'all')
                                 <span class="promo-item-tag">Semua Produk</span>
                             @else
                                 @foreach($promo->menus as $m) <span class="promo-item-tag">({{ $promo->type === 'buy_x_get_y' ? $promo->buy_qty : '1' }}x) {{ $m->name }}</span> @endforeach
@@ -384,6 +507,8 @@
                             data-image-url="{{ $bannerImage }}"
                             data-menu-ids="{{ json_encode($promo->menus->pluck('id')->all()) }}"
                             data-package-ids="{{ json_encode($promo->foodPackages->pluck('id')->all()) }}"
+                            data-buy-targets="{{ json_encode($promo->buy_targets ?? []) }}"
+                            data-get-targets="{{ json_encode($promo->get_targets ?? []) }}"
                         ><i class="fas fa-pen"></i> Edit</button>
                         <button type="button" class="btn-delete-promo" data-id="{{ $promo->id }}"><i class="fas fa-trash"></i> Hapus</button>
                     </div>
@@ -391,11 +516,6 @@
             @empty
                 <div class="empty-state" id="emptyState"><em>Belum ada promo terdaftar.</em></div>
             @endforelse
-        </div>
-
-        <!-- Pagination -->
-        <div class="menu-pagination">
-            {{ $promos->links('components.pagination') }}
         </div>
     </div>
 
@@ -453,6 +573,9 @@
                 const appliesSelect = document.getElementById('f_applies');
                 if (appliesSelect) appliesSelect.value = 'all';
                 if (window.toggleScopeFields) window.toggleScopeFields('all');
+                form.querySelectorAll('.bxgy-hidden-qty').forEach((input) => { input.value = '0'; });
+                form.querySelectorAll('.bxgy-qty').forEach((input) => { input.value = '0'; });
+                window.syncBxgySummary?.();
             };
 
             document.getElementById('btnOpenCreate').addEventListener('click', () => {
@@ -474,9 +597,14 @@
                 else if (p.type === 'fixed_discount') valLabel = formatMoney(p.value);
                 else if (p.type === 'buy_x_get_y') valLabel = `Beli ${p.buy_qty} Gratis ${p.get_qty}`;
 
-                const scopeTags = p.applies_to === 'all' 
-                    ? '<span class="promo-item-tag">Semua Produk</span>'
-                    : (p.items || []).map(i => `<span class="promo-item-tag">(1x) ${escapeHtml(i.name)}</span>`).join('');
+                const scopeTags = p.type === 'buy_x_get_y'
+                    ? [
+                        ...(p.buy_targets || []).map(i => `<span class="promo-item-tag buy-tag">Beli ${Number(i.qty || 0)}x ${escapeHtml(i.name)}</span>`),
+                        ...(p.get_targets || []).map(i => `<span class="promo-item-tag get-tag">Gratis ${Number(i.qty || 0)}x ${escapeHtml(i.name)}</span>`)
+                    ].join('')
+                    : (p.applies_to === 'all'
+                        ? '<span class="promo-item-tag">Semua Produk</span>'
+                        : (p.items || []).map(i => `<span class="promo-item-tag">(1x) ${escapeHtml(i.name)}</span>`).join(''));
 
                 return `
                     <img class="promo-thumb" src="${img}" alt="${escapeHtml(p.name)}">
@@ -484,7 +612,8 @@
                         <h3>${escapeHtml(p.name)}</h3>
                         <div class="promo-pricing">
                             <span class="tag tag-success">${valLabel}</span>
-                            ${p.min_spend > 0 ? `<span class="tag tag-free"><i class="fas fa-gift" style="margin-right:3px;"></i> Min. ${formatMoney(p.min_spend)}</span>` : ''}
+                            ${p.type !== 'buy_x_get_y' && p.min_spend > 0 ? `<span class="tag tag-free"><i class="fas fa-gift" style="margin-right:3px;"></i> Min. ${formatMoney(p.min_spend)}</span>` : ''}
+                            <span class="tag tag-muted"><i class="far fa-calendar-alt" style="margin-right:3px;"></i> ${p.start_at || '—'} s/d ${p.end_at || '—'}</span>
                         </div>
                         <div class="promo-item-list">${scopeTags}</div>
                     </div>
@@ -499,6 +628,8 @@
                             data-image-url="${img}"
                             data-menu-ids='${JSON.stringify(p.menu_ids)}'
                             data-package-ids='${JSON.stringify(p.package_ids)}'
+                            data-buy-targets='${JSON.stringify(p.buy_targets || [])}'
+                            data-get-targets='${JSON.stringify(p.get_targets || [])}'
                         ><i class="fas fa-pen"></i> Edit</button>
                         <button type="button" class="btn-delete-promo" data-id="${p.id}"><i class="fas fa-trash"></i> Hapus</button>
                     </div>
@@ -522,19 +653,32 @@
                         if (window.togglePromoFields) window.togglePromoFields(type);
                         document.getElementById('f_value').value = btn.getAttribute('data-value');
                         document.getElementById('f_min').value = btn.getAttribute('data-min-spend');
-                        document.getElementById('f_buy').value = btn.getAttribute('data-buy-qty');
-                        document.getElementById('f_get').value = btn.getAttribute('data-get-qty');
                         const appliesTo = btn.getAttribute('data-applies-to') || 'all';
                         document.getElementById('f_applies').value = appliesTo;
                         if (window.toggleScopeFields) window.toggleScopeFields(appliesTo);
                         document.getElementById('f_status').value = btn.getAttribute('data-is-active');
                         document.getElementById('f_start').value = btn.getAttribute('data-start-at') || '';
                         document.getElementById('f_end').value = btn.getAttribute('data-end-at') || '';
+                        const buyTargets = JSON.parse(btn.getAttribute('data-buy-targets') || '[]');
+                        const getTargets = JSON.parse(btn.getAttribute('data-get-targets') || '[]');
                         const menuIds = JSON.parse(btn.getAttribute('data-menu-ids') || '[]');
                         const packageIds = JSON.parse(btn.getAttribute('data-package-ids') || '[]');
                         menuIds.forEach(mid => { const cb = form.querySelector(`input[name="menu_ids[]"][value="${mid}"]`); if (cb) cb.checked = true; });
                         packageIds.forEach(pid => { const cb = form.querySelector(`input[name="package_ids[]"][value="${pid}"]`); if (cb) cb.checked = true; });
+                        form.querySelectorAll('.bxgy-item').forEach((item) => {
+                            const group = item.getAttribute('data-target-group');
+                            const kind = item.querySelector('input[name$="[kind]"]')?.value;
+                            const targetId = Number(item.querySelector('input[name$="[id]"]')?.value || 0);
+                            const hiddenQty = item.querySelector('.bxgy-hidden-qty');
+                            const qtyInput = item.querySelector('.bxgy-qty');
+                            const targets = group === 'buy' ? buyTargets : getTargets;
+                            const match = targets.find((target) => target.kind === kind && Number(target.id) === targetId);
+                            const qty = Number(match?.qty || 0);
+                            if (hiddenQty) hiddenQty.value = String(qty);
+                            if (qtyInput) qtyInput.value = String(qty);
+                        });
                         window.updateScopeSelectionMeta?.();
+                        window.syncBxgySummary?.();
                         openDrawer();
                     });
                 });
@@ -598,43 +742,23 @@
                 }
             });
 
-            closeDrawer();
-            window.addEventListener('pageshow', closeDrawer);
-            bindActions(list);
-
             /* ===== LIVE SEARCH ===== */
             const searchInput = document.getElementById('promoSearchInput');
             if (searchInput && list) {
                 searchInput.addEventListener('input', (e) => {
                     const query = e.target.value.toLowerCase().trim();
                     const cards = list.querySelectorAll('.promo-card');
-                    let hasVisible = false;
-
+                    
                     cards.forEach(card => {
                         const name = card.querySelector('.promo-title, h3')?.textContent.toLowerCase() || '';
-                        
-                        if (name.includes(query)) {
-                            card.style.display = '';
-                            hasVisible = true;
-                        } else {
-                            card.style.display = 'none';
-                        }
+                        card.style.display = (query === '' || name.includes(query)) ? '' : 'none';
                     });
-
-                    let emptyMsg = document.getElementById('searchEmptyMsg');
-                    if (!hasVisible && query !== '') {
-                        if (!emptyMsg) {
-                            emptyMsg = document.createElement('div');
-                            emptyMsg.id = 'searchEmptyMsg';
-                            emptyMsg.className = 'empty-state';
-                            emptyMsg.innerHTML = `<em>Tidak ada promo ditemukan untuk "${escapeHtml(query)}"</em>`;
-                            list.appendChild(emptyMsg);
-                        }
-                    } else if (emptyMsg) {
-                        emptyMsg.remove();
-                    }
                 });
             }
+
+            closeDrawer();
+            window.addEventListener('pageshow', closeDrawer);
+            bindActions(list);
         })();
     </script>
 @endpush

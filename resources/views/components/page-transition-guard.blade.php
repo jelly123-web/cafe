@@ -4,15 +4,12 @@
   })();
 </script>
 <style>
-  html.app-js.app-hydrating body {
-    opacity: 0;
+  html,
+  body {
+    overflow-x: hidden;
   }
 
   html.app-js body {
-    transition: opacity 160ms ease, filter 160ms ease;
-  }
-
-  html.app-js:not(.app-hydrating) body {
     opacity: 1;
   }
 
@@ -20,26 +17,13 @@
     cursor: progress;
   }
 
-  html.app-navigating .main-content,
-  html.app-navigating .main-panel,
-  html.app-navigating .dashboard-shell,
-  html.app-navigating main.shell {
-    opacity: 0.62;
-    filter: saturate(0.96) blur(0.2px);
-    pointer-events: none;
-    transition: opacity 160ms ease, filter 160ms ease;
-  }
-
   html.app-js .main-content,
   html.app-js .main-panel,
   html.app-js .dashboard-shell,
   html.app-js main.shell {
-    animation: appPageIn 180ms ease both;
-  }
-
-  @keyframes appPageIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    opacity: 1;
+    filter: none;
+    transform: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

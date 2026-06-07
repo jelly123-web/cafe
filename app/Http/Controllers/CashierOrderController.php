@@ -73,9 +73,24 @@ class CashierOrderController extends Controller
 
         $orders = $this->baseOrdersQuery()->paginate(10);
         $latestOrder = $orders->first();
+        $summary = [
+            'total' => $orders->count(),
+            'processing' => $orders->where('status', SaleTransaction::STATUS_PROCESSING)->count(),
+            'ready' => $orders->where('status', SaleTransaction::STATUS_READY)->count(),
+            'cancelled' => $orders->where('status', SaleTransaction::STATUS_CANCELLED)->count(),
+        ];
+        $signature = sha1($orders->getCollection()->map(function (SaleTransaction $order) {
+            return implode(':', [
+                $order->id,
+                $order->status,
+                optional($order->updated_at)->timestamp ?? 0,
+            ]);
+        })->implode('|'));
 
         return response()->json([
             'ok' => true,
+            'signature' => $signature,
+            'summary' => $summary,
             'html' => view('cashier.orders._list', [
                 'orders' => $orders,
                 'canCancelOrders' => $this->canCancelOrders($user),

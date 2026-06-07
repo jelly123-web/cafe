@@ -1,113 +1,373 @@
 @extends('cashier.layout')
 
-@section('title', ($cafeBrand['name'] ?? config('app.name')) . ' - Meja Kasir')
+@section('title', 'Meja Cafe')
+@section('page_title', 'Meja Cafe')
+@section('page_icon', 'fas fa-chair')
+@section('page_description', 'Lihat, tambah, dan kelola meja yang dipakai pelanggan untuk scan QR.')
 
 @push('head')
     <style>
-        .main-panel { padding: 2rem 2.5rem; overflow-y: auto; }
-        .table-shell { max-width: 100%; }
-        .panel { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 20px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px var(--shadow); }
-        .page-title { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; margin: 0 0 0.5rem; }
-        .page-desc { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
-        .alert { padding: 0.85rem 1.25rem; border-radius: 14px; margin-bottom: 1.25rem; font-weight: 500; font-size: 0.95rem; border: 1px solid transparent; }
-        .ok { background: #E8F5E9; color: #558B2F; border-color: #C8E6C9; }
-        .table-wrap { overflow-x: auto; }
-        .status-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        .status-table th, .status-table td { padding: 0.95rem 0.75rem; border-bottom: 1px solid var(--accent); vertical-align: middle; text-align: left; font-size: 0.95rem; }
-        .status-table th { background: var(--bg-main); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--highlight); }
-        .status-table tbody tr:hover { background-color: #FFFAF5; }
-        .status-table th:nth-child(1), .status-table td:nth-child(1) { width: 14%; }
-        .status-table th:nth-child(2), .status-table td:nth-child(2) { width: 35%; }
-        .status-table th:nth-child(3), .status-table td:nth-child(3) { width: 16%; }
-        .status-table th:nth-child(4), .status-table td:nth-child(4) { width: 35%; }
-        .table-number { font-weight: 700; color: var(--primary); font-size: 1.05rem; display: inline-block; }
-        .table-name { color: var(--text-main); font-weight: 500; }
-        .tag { display: inline-flex; align-items: center; padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; }
-        .tag-empty { background: #E8F5E9; color: #558B2F; }
-        .tag-occupied { background: #FFF3E0; color: #E65100; }
-        .action-group { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-        .btn { border: 1px solid transparent; border-radius: 10px; padding: 0.5rem 0.95rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.84rem; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
-        .btn-primary { background: var(--highlight); color: #fff; border: none; box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); }
-        .btn-primary:hover { background: #c68b59; transform: translateY(-2px); }
-        .btn-secondary { background: transparent; color: var(--primary); border-color: var(--secondary); }
-        .btn-secondary:hover { border-color: var(--highlight); color: var(--highlight); background: #fffaf5; }
-        .btn-danger { background: transparent; color: var(--loss); border-color: #FFCDD2; }
-        .btn-danger:hover { background: #FFF0F0; border-color: var(--loss); }
-        .action-group form { display: inline-flex; }
-        .action-group .btn { min-width: 96px; }
-        @media (max-width: 768px) {
-            .main-panel { padding: 1.5rem 1rem; }
-            .page-title { font-size: 1.5rem; }
-            .panel { padding: 1.25rem; }
-            .status-table { table-layout: auto; }
-            .status-table th:nth-child(4), .status-table td:nth-child(4) { width: auto; }
-            .action-group { flex-direction: column; align-items: flex-start; }
-            .action-group .btn { min-width: 0; width: 100%; }
-        }
+    /* ===== TABLE TOOLBAR ===== */
+    .table-toolbar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+    /* ===== SEARCH BOX ===== */
+    .search-box { display: flex; gap: 6px; }
+    .search-box input {
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      min-width: 280px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--fg);
+      outline: none;
+      transition: all var(--transition);
+    }
+    .search-box input::placeholder { color: var(--muted); }
+    .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
+
+    /* ===== BUTTONS ===== */
+    .primary-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: white; text-decoration: none;
+      padding: 10px 20px; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 13px; border: none; cursor: pointer;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .primary-link:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(217,119,6,0.25); }
+
+    .secondary-link {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: transparent; color: var(--fg-secondary); text-decoration: none;
+      padding: 8px 14px; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 12px; border: 1.5px solid var(--border); cursor: pointer;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .secondary-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+    .danger-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; color: var(--red); border: 1.5px solid #FECACA;
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      transition: all var(--transition); font-family: var(--font);
+    }
+    .danger-link:hover { background: var(--red-light); border-color: var(--red); }
+
+    /* ===== TABLE GRID ===== */
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    /* ===== TABLE CARD ===== */
+    .table-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.25s ease;
+      animation: cardIn 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .table-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .table-card:hover {
+      border-color: transparent;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .table-card:hover::before {
+      opacity: 1;
+    }
+
+    /* ===== TABLE CARD HEAD ===== */
+    .table-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .table-card h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--fg);
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
+
+    /* ===== TABLE PILL ===== */
+    .table-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+    }
+
+    .table-pill.active {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .table-pill.inactive {
+      background: #F3F4F6;
+      color: var(--muted);
+    }
+
+    .table-pill .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .table-pill.active .pill-dot {
+      animation: dotPulse 2s infinite;
+    }
+
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ===== TABLE STATUS INFO ===== */
+    .table-status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .table-stat {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .table-stat i { font-size: 12px; }
+
+    /* ===== QR BOX ===== */
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .qr-preview-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .qr-preview {
+      width: 110px;
+      height: 110px;
+      padding: 6px;
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      display: block;
+      object-fit: contain;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+
+    .qr-preview:hover {
+      border-color: var(--accent);
+      transform: scale(1.03);
+    }
+
+    .qr-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .qr-info small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .qr-token-label {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+      color: var(--fg-secondary);
+      background: var(--bg);
+      padding: 4px 8px;
+      border-radius: 4px;
+      word-break: break-all;
+      border: 1px solid var(--border-light);
+    }
+
+    /* ===== TABLE ACTIONS ===== */
+    .table-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .table-actions form { margin: 0; display: inline-flex; }
+
+    /* ===== EMPTY STATE ===== */
+    .table-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+      font-size: 14px;
+      background: #fff;
+      border-radius: var(--radius-lg);
+    }
+
+    .table-empty::before {
+      content: '\f0fc';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      display: block;
+      font-size: 36px;
+      margin-bottom: 10px;
+      color: var(--border);
+    }
+
+    .table-empty em { font-style: normal; font-weight: 700; color: var(--fg-secondary); }
+
+    /* ===== PAGINATION ===== */
+    .pagination-area { margin-top: 20px; }
+    .pagination-wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .pagination-meta { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .pagination-links { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pagination-link, .pagination-dots {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 34px; height: 34px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 600; text-decoration: none;
+      border: 1px solid var(--border); color: var(--fg-secondary);
+      padding: 0 8px; background: var(--white); transition: all var(--transition);
+      font-family: var(--font); cursor: pointer;
+    }
+    .pagination-link:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .pagination-link.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .pagination-link.disabled { opacity: 0.35; pointer-events: none; }
     </style>
 @endpush
 
 @section('content')
-    <div class="table-shell">
-        <section class="panel">
-            <h1 class="page-title">Meja</h1>
-            <p class="page-desc">Melihat status meja (kosong/terisi), membuka meja baru, dan menutup meja setelah selesai.</p>
-        </section>
-
-        @if (session('success'))
-            <div class="alert ok">{{ session('success') }}</div>
-        @endif
-
-        <section class="panel">
-            <div class="table-wrap">
-                <table class="status-table">
-                    <thead>
-                        <tr>
-                            <th>Nomor Meja</th>
-                            <th>Nama Meja</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($tables as $table)
-                            <tr>
-                                <td><span class="table-number">{{ $table->number }}</span></td>
-                                <td><span class="table-name">{{ $table->name }}</span></td>
-                                <td>
-                                    <span class="tag {{ $table->service_status === \App\Models\DiningTable::STATUS_OCCUPIED ? 'tag-occupied' : 'tag-empty' }}">
-                                        {{ $table->service_status === \App\Models\DiningTable::STATUS_OCCUPIED ? 'Terisi' : 'Kosong' }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="action-group">
-                                        @if ($table->service_status === \App\Models\DiningTable::STATUS_EMPTY)
-                                            <form method="POST" action="{{ route('cashier.tables.open', $table) }}">
-                                                @csrf
-                                                <button class="btn btn-primary" type="submit">Buka Meja</button>
-                                            </form>
-                                        @else
-                                            <form method="POST" action="{{ route('cashier.tables.close', $table) }}">
-                                                @csrf
-                                                <button class="btn btn-secondary" type="submit">Tutup Meja</button>
-                                            </form>
-                                        @endif
-                                        <form method="POST" action="{{ route('cashier.tables.destroy', $table) }}" onsubmit="return confirm('Hapus meja {{ $table->number }}?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-danger" type="submit">Hapus</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" style="text-align:center;color:var(--text-muted);">Belum ada meja. Tambahkan meja dari superadmin atau modul meja Anda.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+    <!-- TOOLBAR -->
+    <div class="table-toolbar fade-in">
+        <div class="toolbar-actions">
+            <div class="search-box">
+                <input type="text" id="tableSearchInput" placeholder="Cari meja (cth: Meja 1)..." autocomplete="off">
             </div>
-        </section>
+        </div>
+        <div class="toolbar-actions">
+            <form method="POST" action="{{ route('cashier.tables.destroy', 0) }}" onsubmit="return confirm('Hapus semua meja? Aksi ini tidak bisa dibatalkan.')">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="danger-link"><i class="fas fa-trash-can"></i> Hapus Semua Meja</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TABLE GRID -->
+    <div class="table-grid fade-in">
+        @forelse ($tables as $table)
+            <article class="table-card" data-table-id="{{ $table->id }}">
+                <div class="table-card-head">
+                    <div>
+                        <span class="table-pill {{ $table->service_status === 'occupied' ? 'inactive' : 'active' }}">
+                            <span class="pill-dot"></span> Meja {{ $table->number }}
+                        </span>
+                        <h3>{{ $table->name }}</h3>
+                    </div>
+                </div>
+                <div class="table-status-row">
+                    <span class="table-stat">
+                        <i class="fas {{ $table->service_status === 'empty' ? 'fa-circle-check' : 'fa-circle-xmark' }}" style="color: {{ $table->service_status === 'empty' ? 'var(--green)' : 'var(--muted)' }};"></i> 
+                        {{ $table->service_status === 'empty' ? 'Kosong' : 'Terisi' }}
+                    </span>
+                </div>
+                
+                <div class="table-actions">
+                    @if ($table->service_status === 'empty')
+                        <form method="POST" action="{{ route('cashier.tables.open', $table) }}">
+                            @csrf
+                            <button class="primary-link" type="submit"><i class="fas fa-door-open"></i> Buka</button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('cashier.tables.close', $table) }}">
+                            @csrf
+                            <button class="secondary-link" type="submit"><i class="fas fa-door-closed"></i> Tutup</button>
+                        </form>
+                    @endif
+                    <form method="POST" action="{{ route('cashier.tables.destroy', $table) }}" onsubmit="return confirm('Hapus meja {{ $table->number }}?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="danger-link"><i class="fas fa-trash"></i> Hapus</button>
+                    </form>
+                </div>
+            </article>
+        @empty
+            <div class="table-empty" id="emptyState">
+                <em>Belum ada meja.</em>
+            </div>
+        @endforelse
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination-area fade-in">
+        {{ $tables->links('components.pagination') }}
     </div>
 @endsection

@@ -1,261 +1,184 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', ($cafeBrand['name'] ?? 'Cafe') . ' - Leader Kasir')</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>@yield('title', ($cafeBrand['name'] ?? 'Cafe') . ' - Leader Kasir')</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ asset('css/leader-cashier.css') }}">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css">
+  <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
 
-    @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @vite([
-            'resources/css/superadmin/dashboard.css',
-            'resources/css/superadmin/users.css',
-            'resources/css/superadmin/access.css',
-            'resources/css/superadmin/menus.css',
-            'resources/js/superadmin/dashboard.js',
-            'resources/js/superadmin/users.js',
-            'resources/js/superadmin/access.js',
-            'resources/js/superadmin/menus.js',
-        ])
-    @else
-        <link rel="stylesheet" href="{{ asset('css/superadmin/dashboard.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/superadmin/users.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/superadmin/access.css') }}">
-        <link rel="stylesheet" href="{{ asset('css/superadmin/menus.css') }}">
-        <script defer src="{{ asset('js/superadmin/dashboard.js') }}"></script>
-        <script defer src="{{ asset('js/superadmin/users.js') }}"></script>
-        <script defer src="{{ asset('js/superadmin/access.js') }}"></script>
-        <script defer src="{{ asset('js/superadmin/menus.js') }}"></script>
-    @endif
-
-    @stack('head')
-
-    <script src="https://cdn.jsdelivr.net/npm/@hotwired/turbo@7.3.0/dist/turbo.es2017-umd.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css">
-    <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
-    <style>
-        #nprogress .bar { background: #795548 !important; height: 3px !important; }
-        #nprogress .spinner-icon { border-top-color: #795548 !important; border-left-color: #795548 !important; }
-        .sidebar-toggle {
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: none;
-            background: #ffffff;
-            color: #795548;
-            font-size: 26px;
-            font-weight: 900;
-            cursor: pointer;
-            z-index: 2100;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-            transition: all .2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .sidebar-toggle:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1); }
-        body:not(.sidebar-collapsed) .sidebar-toggle { left: 306px; }
-        body.sidebar-collapsed .sidebar-toggle { left: 16px; }
-        .sidebar-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(62, 39, 35, 0.35);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .2s ease;
-            z-index: 1500;
-        }
-        body.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
-        .app-shell {
-            display: grid;
-            grid-template-columns: 290px minmax(0, 1fr);
-            min-height: 100vh;
-            transition: grid-template-columns .2s ease;
-        }
-        .sidebar {
-            transition: transform .2s ease, opacity .2s ease;
-            z-index: 1700;
-            background: rgba(255, 255, 255, 0.94);
-            position: sticky;
-            top: 0;
-            width: 290px;
-            grid-column: 1;
-            height: 100vh;
-            overflow-y: auto;
-            padding-top: 24px;
-        }
-        .main-panel {
-            grid-column: 2;
-            min-width: 0;
-            position: relative;
-            z-index: 1;
-            animation: fadeIn .25s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        body.sidebar-collapsed .app-shell { grid-template-columns: 0 minmax(0, 1fr) !important; }
-        body.sidebar-collapsed .sidebar {
-            transform: translateX(-100%);
-            opacity: 0;
-            pointer-events: none;
-        }
-        body.sidebar-collapsed .main-panel { grid-column: 2; }
-        @media (max-width: 1100px) {
-            body:not(.sidebar-collapsed) .sidebar-toggle { left: 16px; }
-            .app-shell {
-                display: block;
-                min-height: 100vh;
-            }
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 290px;
-                min-height: 100vh;
-                border-right: 1px solid rgba(121, 85, 72, 0.08);
-                border-bottom: 0 !important;
-                padding-top: 24px;
-            }
-            body.sidebar-collapsed .sidebar { transform: translateX(-110%); opacity: 1; pointer-events: none; }
-            body:not(.sidebar-collapsed) .sidebar { pointer-events: auto; }
-            .main-panel {
-                padding: 5.5rem 1rem 1.5rem;
-            }
-        }
-    </style>
-  @include('components.page-transition-guard')
+  @stack('head')
 </head>
-<body data-turbo-prefetch="true">
-    <script>
-        (function () {
-            try {
-                if (localStorage.getItem('leader_sidebar_collapsed') === '1') {
-                    document.body.classList.add('sidebar-collapsed');
-                }
-            } catch (e) {}
-        })();
-    </script>
-    <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-label="Toggle Sidebar">=</button>
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-    <div id="toastWrap" class="toast-wrap"></div>
-    <div class="app-shell">
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                @if (!empty($cafeBrand['logo_url']))
-                    <img src="{{ $cafeBrand['logo_url'] }}" alt="{{ $cafeBrand['name'] ?? 'Cafe' }}" style="width:64px;height:64px;object-fit:cover;border-radius:18px;box-shadow:0 4px 15px rgba(121, 85, 72, 0.12);margin-bottom:0.5rem;">
-                @else
-                    <span class="badge">{{ strtoupper(substr($cafeBrand['name'] ?? 'Cafe', 0, 4)) }}</span>
-                @endif
-                <h2>{{ $cafeBrand['name'] ?? 'Leader Kasir' }}</h2>
-                <p>Monitoring transaksi, kas masuk/keluar, dan laporan kasir.</p>
-            </div>
+<body data-turbo-prefetch="false">
 
-            <nav class="nav-menu">
-                <a class="nav-item {{ request()->routeIs('leader-cashier.index') ? 'active' : '' }}" href="{{ route('leader-cashier.index') }}">
-                    Monitoring Leader
-                </a>
-                <a class="nav-item {{ request()->routeIs('cashier.orders.*') ? 'active' : '' }}" href="{{ route('cashier.orders.index') }}">
-                    Pesanan
-                </a>
-                <a class="nav-item {{ request()->routeIs('leader-cashier.transactions.*') ? 'active' : '' }}" href="{{ route('leader-cashier.transactions.index') }}">
-                    Transaksi
-                </a>
-                <a class="nav-item {{ request()->routeIs('cashier.payments.*') ? 'active' : '' }}" href="{{ route('cashier.payments.index') }}">
-                    Pembayaran
-                </a>
-                <a class="nav-item {{ request()->routeIs('cashier.receipts.*') ? 'active' : '' }}" href="{{ route('cashier.receipts.index') }}">
-                    Struk
-                </a>
-                <a class="nav-item {{ request()->routeIs('cashier.tables.*') ? 'active' : '' }}" href="{{ route('cashier.tables.index') }}">
-                    Meja
-                </a>
-                <a class="nav-item {{ request()->routeIs('cashier.reports.*') ? 'active' : '' }}" href="{{ route('cashier.reports.index') }}">
-                    Laporan Kasir
-                </a>
-            </nav>
+<div class="dashboard-layout">
 
-            <div class="sidebar-footer">
-                <div class="user-card">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                        <img src="{{ auth()->user()->profile_photo_url }}" alt="{{ auth()->user()->name }}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent);">
-                        <div style="display: flex; flex-direction: column;">
-                            <span>Login sebagai</span>
-                            <strong>{{ auth()->user()->name ?? '-' }}</strong>
-                        </div>
-                    </div>
-                    <small style="display: block; margin-bottom: 0.5rem;">{{ auth()->user()->username ?? '-' }}</small>
-                    <a href="{{ route('profile.edit') }}" style="display: block; font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 600; margin-bottom: 1rem;">Edit Profil</a>
-                </div>
-
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button class="logout" type="submit">Logout</button>
-                </form>
-            </div>
-        </aside>
-
-        <main class="main-panel">
-            <header class="page-header">
-                <div>
-                    <span class="page-kicker">@yield('kicker', 'Cafe Control')</span>
-                    <h1>@yield('page_title', 'Leader Kasir')</h1>
-                    <p>@yield('page_description', 'Monitoring transaksi, kas masuk/keluar, dan laporan kasir.')</p>
-                </div>
-            </header>
-
-            @yield('content')
-        </main>
+  <!-- SIDEBAR (Matched to Superadmin) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">
+        @if(!empty($cafeBrand['logo_url']))
+            <img src="{{ $cafeBrand['logo_url'] }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+        @else
+            {{ strtoupper(substr($cafeBrand['name'] ?? 'M', 0, 1)) }}
+        @endif
+      </div>
+      <div class="sidebar-brand-text">
+        <span class="sidebar-brand-name">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
+        <span class="sidebar-brand-role">Leader Kasir Panel</span>
+      </div>
     </div>
 
-    <script>
-        (function () {
-            NProgress.configure({ showSpinner: false, minimum: 0.2 });
-            document.addEventListener('turbo:click', () => NProgress.start());
-            document.addEventListener('turbo:load', () => NProgress.done());
-            document.addEventListener('turbo:before-render', () => NProgress.done());
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Utama</div>
+      <a href="{{ route('leader-cashier.index') }}" class="nav-item {{ request()->routeIs('leader-cashier.index') ? 'active' : '' }}">
+        <i class="fas fa-chart-line"></i> Monitoring
+      </a>
+      <a href="{{ route('cashier.orders.index') }}" class="nav-item {{ request()->routeIs('cashier.orders.*') ? 'active' : '' }}">
+        <i class="fas fa-receipt"></i> Pesanan
+      </a>
+      <a href="{{ route('leader-cashier.transactions.index') }}" class="nav-item {{ request()->routeIs('leader-cashier.transactions.*') ? 'active' : '' }}">
+        <i class="fas fa-history"></i> Transaksi
+      </a>
+      <a href="{{ route('leader-cashier.payments.index') }}" class="nav-item {{ request()->routeIs('leader-cashier.payments.*') ? 'active' : '' }}">
+        <i class="fas fa-cash-register"></i> Pembayaran
+      </a>
+      <a href="{{ route('cashier.receipts.index') }}" class="nav-item {{ request()->routeIs('cashier.receipts.*') ? 'active' : '' }}">
+        <i class="fas fa-print"></i> Struk
+      </a>
+      <a href="{{ route('cashier.tables.index') }}" class="nav-item {{ request()->routeIs('cashier.tables.*') ? 'active' : '' }}">
+        <i class="fas fa-chair"></i> Meja
+      </a>
+      <a href="{{ route('cashier.reports.index') }}" class="nav-item {{ request()->routeIs('cashier.reports.*') ? 'active' : '' }}">
+        <i class="fas fa-file-invoice-dollar"></i> Laporan Kasir
+      </a>
+    </nav>
 
-            const toggle = document.getElementById('sidebarToggle');
-            const backdrop = document.getElementById('sidebarBackdrop');
-            const openSidebar = () => {
-                document.body.classList.remove('sidebar-collapsed');
-                document.body.classList.add('sidebar-open');
-                try { localStorage.setItem('leader_sidebar_collapsed', '0'); } catch (e) {}
-            };
-            const closeSidebar = () => {
-                document.body.classList.add('sidebar-collapsed');
-                document.body.classList.remove('sidebar-open');
-                try { localStorage.setItem('leader_sidebar_collapsed', '1'); } catch (e) {}
-            };
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="window.location.href='{{ route('profile.edit') }}'">
+        <div class="sidebar-avatar">
+          @if(auth()->user()->profile_photo_url)
+              <img src="{{ auth()->user()->profile_photo_url }}" alt="Avatar">
+          @else
+              {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+          @endif
+        </div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">{{ auth()->user()->name ?? 'User' }}</div>
+          <div class="sidebar-user-email">{{ auth()->user()->username ?? 'username' }}</div>
+        </div>
+      </div>
+      <form method="POST" action="{{ route('logout') }}" style="margin-top: 10px;">
+          @csrf
+          <button type="submit" style="width:100%; background:transparent; border:1.5px solid var(--red-light); color:var(--red); padding:8px; border-radius:var(--radius-sm); font-weight:700; cursor:pointer; font-family:var(--font); font-size:12px; transition:all var(--transition);">
+              <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+      </form>
+    </div>
+  </aside>
 
-            if (window.innerWidth <= 1100) {
-                closeSidebar();
-            } else {
-                document.body.classList.remove('sidebar-collapsed');
-                document.body.classList.remove('sidebar-open');
-                try { localStorage.setItem('leader_sidebar_collapsed', '0'); } catch (e) {}
-            }
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-            toggle?.addEventListener('click', function () {
-                if (document.body.classList.contains('sidebar-collapsed')) {
-                    openSidebar();
-                } else {
-                    closeSidebar();
-                }
-            });
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" title="Notifikasi"><i class="far fa-bell"></i><span class="notif-dot"></span></button>
+        <a href="{{ route('profile.edit') }}" class="topbar-btn" title="Pengaturan"><i class="fas fa-gear"></i></a>
+      </div>
+    </header>
 
-            backdrop?.addEventListener('click', closeSidebar);
-        })();
-    </script>
-    @include('components.live-sync')
-    @stack('scripts')
+    <div class="page-body">
+        @hasSection('page_title')
+          <div class="page-header fade-in">
+            <h1 class="page-header-title">
+                @hasSection('page_icon')
+                    <i class="@yield('page_icon')"></i>
+                @endif
+                @yield('page_title')
+            </h1>
+            @hasSection('page_description')
+              <p class="page-header-desc">@yield('page_description')</p>
+            @endif
+          </div>
+        @endif
+        @yield('content')
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="accessToast" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+  (() => {
+    // ===== TURBO CONFIG =====
+    NProgress.configure({ showSpinner: false, minimum: 0.2 });
+    document.addEventListener('turbo:click', () => NProgress.start());
+    document.addEventListener('turbo:load', () => NProgress.done());
+    document.addEventListener('turbo:before-render', () => NProgress.done());
+
+    // ===== SIDEBAR TOGGLE =====
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
+        });
+    }
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('show');
+        });
+    }
+
+    // ===== FADE IN =====
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05 });
+    
+    const initFadeIn = () => {
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    };
+    
+    document.addEventListener('turbo:load', initFadeIn);
+    initFadeIn();
+
+    // ===== TOAST GLOBAL =====
+    window.showToast = (message, type = 'success') => {
+      const toast = document.getElementById('accessToast');
+      if (!toast) return;
+      const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
+      toast.innerHTML = icon + ' ' + message;
+      toast.className = `toast ${type} show`;
+      window.clearTimeout(window.__leaderToast);
+      window.__leaderToast = window.setTimeout(() => toast.classList.remove('show'), 2800);
+    };
+  })();
+</script>
+
+@include('components.live-sync')
+@stack('scripts')
 </body>
 </html>

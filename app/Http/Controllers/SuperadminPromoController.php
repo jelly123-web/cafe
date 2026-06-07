@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class SuperadminPromoController extends Controller
@@ -51,13 +52,26 @@ class SuperadminPromoController extends Controller
 
         $promo = Promo::create($data);
 
-        if ($data['type'] !== 'buy_x_get_y') {
-            $promo->update(['buy_qty' => 0, 'get_qty' => 0]);
-        }
-
-        if ($data['applies_to'] === 'specific') {
+        if ($data['type'] === 'buy_x_get_y') {
+            $this->syncBuyXGetYTargets($promo, $data);
+        } elseif ($data['applies_to'] === 'specific') {
             $promo->menus()->sync($request->input('menu_ids', []));
             $promo->foodPackages()->sync($request->input('package_ids', []));
+            $promo->update([
+                'buy_qty' => 0,
+                'get_qty' => 0,
+                'buy_targets' => [],
+                'get_targets' => [],
+            ]);
+        } else {
+            $promo->menus()->detach();
+            $promo->foodPackages()->detach();
+            $promo->update([
+                'buy_qty' => 0,
+                'get_qty' => 0,
+                'buy_targets' => [],
+                'get_targets' => [],
+            ]);
         }
 
         if ($request->ajax()) {
@@ -90,16 +104,26 @@ class SuperadminPromoController extends Controller
 
         $promo->update($data);
 
-        if ($data['type'] !== 'buy_x_get_y') {
-            $promo->update(['buy_qty' => 0, 'get_qty' => 0]);
-        }
-
-        if ($data['applies_to'] === 'specific') {
+        if ($data['type'] === 'buy_x_get_y') {
+            $this->syncBuyXGetYTargets($promo, $data);
+        } elseif ($data['applies_to'] === 'specific') {
             $promo->menus()->sync($request->input('menu_ids', []));
             $promo->foodPackages()->sync($request->input('package_ids', []));
+            $promo->update([
+                'buy_qty' => 0,
+                'get_qty' => 0,
+                'buy_targets' => [],
+                'get_targets' => [],
+            ]);
         } else {
             $promo->menus()->detach();
             $promo->foodPackages()->detach();
+            $promo->update([
+                'buy_qty' => 0,
+                'get_qty' => 0,
+                'buy_targets' => [],
+                'get_targets' => [],
+            ]);
         }
 
         if ($request->ajax()) {
@@ -141,6 +165,9 @@ class SuperadminPromoController extends Controller
 
     private function promoPayload(Promo $promo): array
     {
+        $buyTargets = $this->hydratePromoTargets($promo->buy_targets ?? []);
+        $getTargets = $this->hydratePromoTargets($promo->get_targets ?? []);
+
         return [
             'id' => $promo->id,
             'name' => $promo->name,
@@ -151,6 +178,8 @@ class SuperadminPromoController extends Controller
             'min_spend' => (float) $promo->min_spend,
             'buy_qty' => (int) $promo->buy_qty,
             'get_qty' => (int) $promo->get_qty,
+            'buy_targets' => $buyTargets,
+            'get_targets' => $getTargets,
             'is_active' => $promo->is_active,
             'start_at' => $promo->start_at?->format('Y-m-d'),
             'end_at' => $promo->end_at?->format('Y-m-d'),
@@ -161,6 +190,7 @@ class SuperadminPromoController extends Controller
             'package_ids' => $promo->foodPackages->pluck('id')->all(),
             'menu_count' => $promo->menus->count(),
             'package_count' => $promo->foodPackages->count(),
+            'items' => array_values(array_merge($buyTargets, $getTargets)),
         ];
     }
 
@@ -169,7 +199,7 @@ class SuperadminPromoController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'type' => ['required', 'in:percentage,fixed_discount,buy_x_get_y,free_shipping'],
+            'type' => ['required', 'in:percentage,fixed_discount,buy_x_get_y'],
             'applies_to' => ['required', 'in:all,specific'],
             'value' => ['required_if:type,percentage,fixed_discount', 'nullable', 'numeric', 'min:0'],
             'min_spend' => ['nullable', 'numeric', 'min:0'],
@@ -183,6 +213,14 @@ class SuperadminPromoController extends Controller
             'menu_ids.*' => ['exists:menus,id'],
             'package_ids' => ['nullable', 'array'],
             'package_ids.*' => ['exists:food_packages,id'],
+            'buy_targets' => ['nullable', 'array'],
+            'buy_targets.*.kind' => ['nullable', 'in:menu,package'],
+            'buy_targets.*.id' => ['nullable', 'integer'],
+            'buy_targets.*.qty' => ['nullable', 'integer', 'min:0'],
+            'get_targets' => ['nullable', 'array'],
+            'get_targets.*.kind' => ['nullable', 'in:menu,package'],
+            'get_targets.*.id' => ['nullable', 'integer'],
+            'get_targets.*.qty' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $selectedMenus = collect($request->input('menu_ids', []))
@@ -193,18 +231,125 @@ class SuperadminPromoController extends Controller
             ->filter(fn ($value) => $value !== null && $value !== '')
             ->values();
 
-        if (($data['applies_to'] ?? null) === 'specific' && $selectedMenus->isEmpty() && $selectedPackages->isEmpty()) {
+        if (
+            ($data['type'] ?? null) !== 'buy_x_get_y'
+            && ($data['applies_to'] ?? null) === 'specific'
+            && $selectedMenus->isEmpty()
+            && $selectedPackages->isEmpty()
+        ) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'menu_ids' => 'Pilih minimal 1 menu atau paket untuk promo produk tertentu.',
             ]);
         }
 
+        $buyTargets = $this->normalizeTargets($request->input('buy_targets', []));
+        $getTargets = $this->normalizeTargets($request->input('get_targets', []));
+
+        if (($data['type'] ?? null) === 'buy_x_get_y') {
+            if (empty($buyTargets) || empty($getTargets)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'buy_targets' => 'Untuk promo beli x gratis y, isi minimal 1 item beli dan 1 item gratis.',
+                ]);
+            }
+
+            $data['applies_to'] = 'specific';
+            $data['value'] = 0;
+            $data['min_spend'] = 0;
+        }
+
+        if (($data['type'] ?? null) === 'fixed_discount') {
+            $data['min_spend'] = 0;
+        }
+
         $data['value'] = isset($data['value']) && $data['value'] !== null ? (float) $data['value'] : 0;
         $data['min_spend'] = isset($data['min_spend']) && $data['min_spend'] !== null ? (float) $data['min_spend'] : 0;
-        $data['buy_qty'] = isset($data['buy_qty']) && $data['buy_qty'] !== null ? (int) $data['buy_qty'] : 0;
-        $data['get_qty'] = isset($data['get_qty']) && $data['get_qty'] !== null ? (int) $data['get_qty'] : 0;
+        $data['buy_qty'] = ($data['type'] ?? null) === 'buy_x_get_y'
+            ? collect($buyTargets)->sum('qty')
+            : (isset($data['buy_qty']) && $data['buy_qty'] !== null ? (int) $data['buy_qty'] : 0);
+        $data['get_qty'] = ($data['type'] ?? null) === 'buy_x_get_y'
+            ? collect($getTargets)->sum('qty')
+            : (isset($data['get_qty']) && $data['get_qty'] !== null ? (int) $data['get_qty'] : 0);
+        $data['buy_targets'] = $buyTargets;
+        $data['get_targets'] = $getTargets;
         $data['is_active'] = isset($data['is_active']) ? (bool) $data['is_active'] : false;
 
         return $data;
+    }
+
+    private function normalizeTargets(array $targets): array
+    {
+        return collect($targets)
+            ->map(function ($target) {
+                $kind = $target['kind'] ?? null;
+                $id = isset($target['id']) ? (int) $target['id'] : 0;
+                $qty = isset($target['qty']) ? (int) $target['qty'] : 0;
+
+                if (!in_array($kind, ['menu', 'package'], true) || $id <= 0 || $qty <= 0) {
+                    return null;
+                }
+
+                return [
+                    'kind' => $kind,
+                    'id' => $id,
+                    'qty' => $qty,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function syncBuyXGetYTargets(Promo $promo, array $data): void
+    {
+        $buyTargets = collect($data['buy_targets'] ?? []);
+
+        $promo->menus()->sync(
+            $buyTargets->where('kind', 'menu')->pluck('id')->values()->all()
+        );
+
+        $promo->foodPackages()->sync(
+            $buyTargets->where('kind', 'package')->pluck('id')->values()->all()
+        );
+
+        $promo->update([
+            'buy_qty' => (int) collect($data['buy_targets'] ?? [])->sum('qty'),
+            'get_qty' => (int) collect($data['get_targets'] ?? [])->sum('qty'),
+            'buy_targets' => $data['buy_targets'] ?? [],
+            'get_targets' => $data['get_targets'] ?? [],
+        ]);
+    }
+
+    private function hydratePromoTargets(array $targets): array
+    {
+        $targetCollection = collect($targets)->filter(fn ($target) => is_array($target));
+        if ($targetCollection->isEmpty()) {
+            return [];
+        }
+
+        $menuMap = Menu::query()
+            ->whereIn('id', $targetCollection->where('kind', 'menu')->pluck('id')->all())
+            ->get(['id', 'name'])
+            ->keyBy('id');
+
+        $packageMap = FoodPackage::query()
+            ->whereIn('id', $targetCollection->where('kind', 'package')->pluck('id')->all())
+            ->get(['id', 'name'])
+            ->keyBy('id');
+
+        return $targetCollection
+            ->map(function ($target) use ($menuMap, $packageMap) {
+                $id = (int) ($target['id'] ?? 0);
+                $kind = $target['kind'] ?? 'menu';
+                $source = $kind === 'package' ? $packageMap->get($id) : $menuMap->get($id);
+
+                return [
+                    'kind' => $kind,
+                    'id' => $id,
+                    'qty' => (int) ($target['qty'] ?? 0),
+                    'name' => $source?->name ?? 'Item dihapus',
+                ];
+            })
+            ->values()
+            ->all();
     }
 }

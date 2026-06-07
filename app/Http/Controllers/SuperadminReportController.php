@@ -31,42 +31,29 @@ class SuperadminReportController extends Controller
         $report = $this->buildReport($request);
 
         // Ensure pagination links point to the index page, not the live endpoint
-        $report['paginator']->setPath(route('superadmin.reports.index'));
+        $report['rows']->setPath(route('superadmin.reports.index'));
 
-        $rows = $report['transactions']->map(function (array $row): array {
+        $rows = $report['rows']->getCollection()->map(function ($row): array {
             return [
-                'id' => $row['id'],
-                'code' => $row['code'],
-                'branch_name' => $row['branch_name'],
-                'sold_at' => $row['sold_at']?->format('d M Y H:i') ?? '-',
-                'total_amount' => 'Rp ' . number_format((float) $row['total_amount'], 0, ',', '.'),
-                'total_cost' => 'Rp ' . number_format((float) $row['total_cost'], 0, ',', '.'),
-                'profit_loss' => 'Rp ' . number_format(abs((float) $row['profit_loss']), 0, ',', '.'),
-                'profit_class' => ((float) $row['profit_loss']) >= 0 ? 'profit' : 'loss',
-                'status' => $row['status'],
-                'status_label' => match ($row['status']) {
-                    SaleTransaction::STATUS_PAID => 'Lunas',
-                    SaleTransaction::STATUS_CANCELLED => 'Batal',
-                    default => 'Pending',
-                },
+                'id' => $row->id,
+                'code' => $row->code,
+                'order_source' => $row->table?->name ? ('Meja ' . $row->table->name) : 'Pesanan Langsung',
+                'sold_at' => $row->sold_at_label,
+                'total_amount' => $row->total_amount_label,
+                'total_cost' => $row->total_cost_label,
+                'profit_loss' => $row->profit_loss,
+                'profit_class' => $row->profit_class,
+                'status' => $row->status,
+                'status_label' => $row->status_label,
             ];
         })->values();
 
         return response()->json([
-            'summary' => [
-                'period_label' => $report['period_label'],
-                'period_range' => $report['date_from']->format('d M Y') . ' - ' . $report['date_to']->format('d M Y'),
-                'transaction_count' => number_format((int) $report['transaction_count'], 0, ',', '.'),
-                'total_sales' => 'Rp ' . number_format((float) $report['total_sales'], 0, ',', '.'),
-                'total_cost' => 'Rp ' . number_format((float) $report['total_cost'], 0, ',', '.'),
-                'total_payroll' => 'Rp ' . number_format((float) $report['total_payroll'], 0, ',', '.'),
-                'total_cash_in' => 'Rp ' . number_format((float) $report['total_cash_in'], 0, ',', '.'),
-                'total_cash_out' => 'Rp ' . number_format((float) $report['total_cash_out'], 0, ',', '.'),
-                'profit_loss' => 'Rp ' . number_format(abs((float) $report['profit_loss']), 0, ',', '.'),
-                'profit_class' => ((float) $report['profit_loss']) >= 0 ? 'profit' : 'loss',
-            ],
+            'summary' => $report['summary'],
             'rows' => $rows,
-            'pagination' => $report['paginator']->links('components.pagination')->render(),
+            'pagination' => $report['rows']->links('components.pagination')->render(),
+            'chart_data' => $report['chart_data'],
+            'pie_data' => $report['pie_data'],
         ]);
     }
 
@@ -116,7 +103,7 @@ class SuperadminReportController extends Controller
     private function buildReport(Request $request): array
     {
         $validated = $request->validate([
-            'period' => ['nullable', 'in:daily,weekly,monthly,yearly,custom'],
+            'period' => ['nullable', 'in:today,yesterday,this_week,this_month,last_month,this_year,daily,weekly,monthly,yearly,custom'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
@@ -125,17 +112,27 @@ class SuperadminReportController extends Controller
         $now = now();
 
         [$dateFrom, $dateTo, $periodLabel] = match ($period) {
-            'weekly' => [
+            'yesterday' => [
+                $now->copy()->subDay()->startOfDay(),
+                $now->copy()->subDay()->endOfDay(),
+                'Laporan Kemarin',
+            ],
+            'this_week', 'weekly' => [
                 $now->copy()->startOfWeek(Carbon::MONDAY)->startOfDay(),
                 $now->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay(),
                 'Laporan Mingguan',
             ],
-            'monthly' => [
+            'this_month', 'monthly' => [
                 $now->copy()->startOfMonth()->startOfDay(),
                 $now->copy()->endOfMonth()->endOfDay(),
                 'Laporan Bulanan',
             ],
-            'yearly' => [
+            'last_month' => [
+                $now->copy()->subMonthNoOverflow()->startOfMonth()->startOfDay(),
+                $now->copy()->subMonthNoOverflow()->endOfMonth()->endOfDay(),
+                'Laporan Bulan Lalu',
+            ],
+            'this_year', 'yearly' => [
                 $now->copy()->startOfYear()->startOfDay(),
                 $now->copy()->endOfYear()->endOfDay(),
                 'Laporan Tahunan',
@@ -153,16 +150,16 @@ class SuperadminReportController extends Controller
         };
 
         $transactionsQuery = SaleTransaction::query()
-            ->with(['branch'])
+            ->with(['branch', 'table'])
             ->whereBetween('sold_at', [$dateFrom, $dateTo])
             ->orderBy('sold_at');
 
         $allTransactionsForStats = (clone $transactionsQuery)->get();
-         $paginatedTransactions = $transactionsQuery->paginate(5)->withQueryString();
+        $paginatedTransactions = $transactionsQuery->paginate(15)->withQueryString();
 
         // Chart Data Logic
         $chartData = ['labels' => [], 'values' => []];
-        if ($period === 'yearly') {
+        if (in_array($period, ['this_year', 'yearly'], true)) {
             // Group by month
             for ($i = 1; $i <= 12; $i++) {
                 $monthName = Carbon::create(null, $i, 1)->translatedFormat('M');
@@ -170,15 +167,15 @@ class SuperadminReportController extends Controller
                 $chartData['labels'][] = $monthName;
                 $chartData['values'][] = (float) $monthlyTotal;
             }
-        } elseif ($period === 'monthly') {
+        } elseif (in_array($period, ['this_month', 'monthly', 'last_month'], true)) {
             // Group by day of month
-            $daysInMonth = $now->daysInMonth;
+            $daysInMonth = $dateFrom->daysInMonth;
             for ($i = 1; $i <= $daysInMonth; $i++) {
                 $dailyTotal = $allTransactionsForStats->filter(fn($t) => $t->sold_at->day === $i && $t->status === SaleTransaction::STATUS_PAID)->sum('total_amount');
                 $chartData['labels'][] = $i;
                 $chartData['values'][] = (float) $dailyTotal;
             }
-        } elseif ($period === 'weekly') {
+        } elseif (in_array($period, ['this_week', 'weekly'], true)) {
             // Group by day of week
             for ($i = 0; $i < 7; $i++) {
                 $day = $dateFrom->copy()->addDays($i);
@@ -186,26 +183,33 @@ class SuperadminReportController extends Controller
                 $chartData['labels'][] = $day->translatedFormat('D');
                 $chartData['values'][] = (float) $weeklyTotal;
             }
+        } else {
+            // Daily: group by hours
+            for ($i = 0; $i < 24; $i++) {
+                $hourlyTotal = $allTransactionsForStats->filter(fn($t) => $t->sold_at->hour === $i && $t->status === SaleTransaction::STATUS_PAID)->sum('total_amount');
+                $chartData['labels'][] = str_pad($i, 2, '0', STR_PAD_LEFT) . ':00';
+                $chartData['values'][] = (float) $hourlyTotal;
+            }
         }
 
-        $mappedTransactions = $paginatedTransactions->getCollection()->map(function (SaleTransaction $transaction): array {
+        $paginatedTransactions->getCollection()->transform(function (SaleTransaction $transaction) {
             $profitLoss = (float) $transaction->total_amount - (float) $transaction->total_cost;
-
-            return [
-                'id' => $transaction->id,
-                'code' => $transaction->code,
-                'branch_name' => $transaction->branch?->name ?? '-',
-                'sold_at' => $transaction->sold_at,
-                'total_amount' => (float) $transaction->total_amount,
-                'total_cost' => (float) $transaction->total_cost,
-                'profit_loss' => $profitLoss,
-                'status' => $transaction->status,
-            ];
+            $transaction->profit_loss = 'Rp ' . number_format(abs($profitLoss), 0, ',', '.');
+            $transaction->profit_class = $profitLoss >= 0 ? 'profit' : 'loss';
+            $transaction->total_amount_label = 'Rp ' . number_format((float) $transaction->total_amount, 0, ',', '.');
+            $transaction->total_cost_label = 'Rp ' . number_format((float) $transaction->total_cost, 0, ',', '.');
+            $transaction->sold_at_label = $transaction->sold_at?->format('d M Y, H:i') ?? '-';
+            $transaction->status_label = match ($transaction->status) {
+                SaleTransaction::STATUS_PAID => 'Lunas',
+                SaleTransaction::STATUS_CANCELLED => 'Batal',
+                default => 'Pending',
+            };
+            return $transaction;
         });
 
         $paidTransactions = $allTransactionsForStats->where('status', SaleTransaction::STATUS_PAID);
-        $totalSales = $paidTransactions->sum('total_amount');
-        $totalCost = $paidTransactions->sum('total_cost');
+        $totalSales = (float) $paidTransactions->sum('total_amount');
+        $totalCost = (float) $paidTransactions->sum('total_cost');
         $grossProfit = $totalSales - $totalCost;
 
         $totalPayroll = (float) Payroll::query()
@@ -223,28 +227,43 @@ class SuperadminReportController extends Controller
 
         $profitLoss = $grossProfit - $totalPayroll + $cashIn - $cashOut;
 
+        $summary = [
+            'period_label' => $periodLabel,
+            'period_range' => $dateFrom->format('d M Y') . ' - ' . $dateTo->format('d M Y'),
+            'transaction_count' => number_format($allTransactionsForStats->count(), 0, ',', '.'),
+            'total_sales' => 'Rp ' . number_format($totalSales, 0, ',', '.'),
+            'total_cost' => 'Rp ' . number_format($totalCost, 0, ',', '.'),
+            'total_payroll' => 'Rp ' . number_format($totalPayroll, 0, ',', '.'),
+            'total_cash_in' => 'Rp ' . number_format($cashIn, 0, ',', '.'),
+            'total_cash_out' => 'Rp ' . number_format($cashOut, 0, ',', '.'),
+            'profit_loss' => 'Rp ' . number_format(abs($profitLoss), 0, ',', '.'),
+            'profit_class' => $profitLoss >= 0 ? 'profit' : 'loss',
+        ];
+
+        $pieData = [
+            'labels' => ['Penjualan', 'Modal', 'Gaji', 'Laba Bersih'],
+            'values' => [
+                max($totalSales, 0),
+                max($totalCost, 0),
+                max($totalPayroll, 0),
+                max($profitLoss, 0),
+            ],
+        ];
+
         return [
             'period' => $period,
-            'period_label' => $periodLabel,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-            'transactions' => $mappedTransactions,
-            'paginator' => $paginatedTransactions,
-            'transaction_count' => $allTransactionsForStats->count(),
-            'total_sales' => $totalSales,
-            'total_cost' => $totalCost,
-            'total_payroll' => $totalPayroll,
-            'gross_profit' => $grossProfit,
-            'profit_loss' => $profitLoss,
-            'total_cash_in' => $cashIn,
-            'total_cash_out' => $cashOut,
+            'summary' => $summary,
+            'rows' => $paginatedTransactions,
             'chart_data' => $chartData,
+            'pie_data' => $pieData,
             'filename_base' => sprintf(
                 'laporan-%s-%s-sampai-%s',
                 $period,
                 $dateFrom->format('Ymd'),
                 $dateTo->format('Ymd')
             ),
+            'date_from' => $dateFrom->format('Y-m-d'),
+            'date_to' => $dateTo->format('Y-m-d'),
         ];
     }
 }

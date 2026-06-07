@@ -1,122 +1,261 @@
 @extends('cashier.layout')
 
-@section('title', ($cafeBrand['name'] ?? config('app.name')) . ' - Struk Kasir')
+@section('title', 'Struk Kasir')
+@section('page_title', 'Struk Kasir')
+@section('page_icon', 'fas fa-receipt')
+@section('page_description', 'Cetak struk dan kirim struk digital via WhatsApp.')
 
 @push('head')
-    <style>
-        .main-panel { padding: 2rem 2.5rem; overflow-y: auto; }
-        .receipt-shell { max-width: 100%; }
-        .panel { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 20px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px var(--shadow); }
-        .page-title { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; margin: 0 0 0.5rem; }
-        .page-desc { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
-        .alert { padding: 0.85rem 1.25rem; border-radius: 14px; margin-bottom: 1.25rem; font-weight: 500; font-size: 0.95rem; border: 1px solid transparent; }
-        .ok { background: #E8F5E9; color: #558B2F; border-color: #C8E6C9; }
-        .table-wrap { overflow-x: auto; margin: 0; }
-        .receipt-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        .receipt-table th, .receipt-table td { padding: 0.85rem 0.75rem; border-bottom: 1px solid var(--accent); vertical-align: top; text-align: left; font-size: 0.95rem; }
-        .receipt-table th { background: var(--bg-main); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--highlight); }
-        .receipt-table tbody tr:hover { background-color: #FFFAF5; }
-        .receipt-table th:nth-child(1), .receipt-table td:nth-child(1) { width: 16%; }
-        .receipt-table th:nth-child(2), .receipt-table td:nth-child(2) { width: 9%; }
-        .receipt-table th:nth-child(3), .receipt-table td:nth-child(3) { width: 15%; }
-        .receipt-table th:nth-child(4), .receipt-table td:nth-child(4) { width: 11%; }
-        .receipt-table th:nth-child(5), .receipt-table td:nth-child(5) { width: 49%; }
-        .order-code { font-weight: 700; color: var(--primary); word-break: break-word; display: inline-block; }
-        .order-total { font-weight: 600; white-space: nowrap; }
-        .tag { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; }
-        .tag-paid { background: #E8F5E9; color: #558B2F; }
-        .tag-unpaid { background: #FFF3E0; color: #E65100; }
-        .tag-cancelled { background: #FFEBEE; color: #C62828; }
-        .action-group { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
-        .btn { border: 1px solid transparent; border-radius: 12px; padding: 0.65rem 1.2rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.9rem; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-sm { padding: 0.45rem 0.85rem; font-size: 0.85rem; border-radius: 8px; }
-        .btn-secondary { background: transparent; color: var(--primary); border-color: var(--accent); }
-        .btn-secondary:hover { border-color: var(--highlight); color: var(--highlight); background: #fffaf5; }
-        .btn-primary { background: var(--highlight); color: #fff; border: none; box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); }
-        .btn-primary:hover { background: #c68b59; transform: translateY(-2px); }
-        .btn-danger { background: transparent; color: #C62828; border-color: #FFCDD2; }
-        .btn-danger:hover { background: #FFEBEE; }
-        .action-group form { display: inline-flex; align-items: center; }
-        .inline-form { display: flex; gap: 0.45rem; align-items: center; flex-wrap: nowrap; }
-        .input-field { border: 1px solid var(--accent); border-radius: 8px; padding: 0.45rem 0.75rem; background-color: var(--bg-card); color: var(--text-main); font-family: inherit; font-size: 0.85rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; width: 128px; }
-        .input-field:focus { border-color: var(--highlight); box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.15); }
-        .pagination-wrap { margin-top: 1.5rem; }
-        .pagination-meta { color: var(--text-muted); font-size: .9rem; margin-bottom: .75rem; text-align: center; }
-        .pagination-links { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; }
-        .pagination-link, .pagination-dots { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; border-radius: 10px; font-size: .9rem; font-weight: 600; text-decoration: none; border: 1px solid var(--accent); color: var(--primary); padding: 0 .65rem; }
-        .pagination-link:hover { background: var(--highlight); color: #fff; border-color: var(--highlight); }
-        .pagination-link.active { background: var(--highlight); color: #fff; border-color: var(--highlight); box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); }
-        .pagination-link.disabled { color: var(--secondary); pointer-events: none; }
-        @media (max-width: 768px) {
-            .main-panel { padding: 1.5rem 1rem; }
-            .page-title { font-size: 1.5rem; }
-            .panel { padding: 1.25rem; }
-            .receipt-table { table-layout: auto; }
-            .receipt-table th:nth-child(5), .receipt-table td:nth-child(5) { width: auto; }
-            .action-group { display: flex; flex-direction: column; align-items: flex-start; }
-            .inline-form { width: 100%; flex-wrap: wrap; }
-            .input-field { flex: 1; width: auto; min-width: 0; }
-        }
-    </style>
+<style>
+    /* ===== STATS STRIP ===== */
+    .stats-strip {
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        gap: 12px; margin-bottom: 24px;
+    }
+    .strip-card {
+        background: var(--white); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 14px 18px;
+        display: flex; align-items: center; gap: 14px;
+        transition: all 0.25s ease; position: relative; overflow: hidden;
+    }
+    .strip-card .strip-icon {
+        width: 40px; height: 40px; border-radius: var(--radius-sm);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; flex-shrink: 0;
+    }
+    .strip-info strong {
+        font-size: 18px; font-weight: 900; color: var(--fg);
+        letter-spacing: -0.3px; line-height: 1.1; display: block;
+    }
+    .strip-info span {
+        font-size: 11px; color: var(--muted); font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.4px;
+    }
+
+    .receipt-table .action-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .receipt-table .inline-form {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .receipt-table .btn-sm {
+        min-height: 40px;
+        padding: 0 18px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .receipt-table .btn-print {
+        background: var(--white);
+        color: var(--accent-dark) !important;
+        border: 1.5px solid var(--border);
+        box-shadow: var(--shadow-xs);
+    }
+
+    .receipt-table .btn-print:hover {
+        border-color: var(--accent);
+        color: var(--accent) !important;
+        background: var(--accent-light);
+    }
+
+    .receipt-table .btn-send {
+        background: #2563EB;
+        color: #fff !important;
+        border: 1.5px solid #2563EB;
+    }
+
+    .receipt-table .btn-send:hover {
+        background: #1D4ED8;
+        border-color: #1D4ED8;
+    }
+
+    .receipt-table .btn-danger {
+        background: transparent;
+        color: var(--red) !important;
+        border: 1.5px solid var(--red-light);
+    }
+
+    .receipt-table .btn-danger:hover {
+        background: var(--red-light);
+        border-color: #FCA5A5;
+    }
+
+    .receipt-table .input-field {
+        min-width: 150px;
+        height: 40px;
+        padding: 0 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--white);
+        color: var(--fg);
+        font: inherit;
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="receipt-shell">
-        <section class="panel">
-            <h1 class="page-title">Struk</h1>
-            <p class="page-desc">Cetak struk dan kirim struk digital.</p>
-        </section>
-
-        @if (session('success'))
-            <div class="alert ok">{{ session('success') }}</div>
-        @endif
-
-        <section class="panel">
-            <div class="table-wrap">
-                <table class="receipt-table">
-                    <thead>
-                        <tr>
-                            <th>Kode</th>
-                            <th>Meja</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($orders as $order)
-                            <tr>
-                                <td><span class="order-code">{{ $order->code }}</span></td>
-                                <td>{{ $order->table?->number ?? '-' }}</td>
-                                <td><span class="order-total">Rp {{ number_format((float) $order->total_amount, 0, ',', '.') }}</span></td>
-                                <td>
-                                    @php
-                                        $statusClass = $order->status === \App\Models\SaleTransaction::STATUS_PAID ? 'tag-paid' : ($order->status === \App\Models\SaleTransaction::STATUS_CANCELLED ? 'tag-cancelled' : 'tag-unpaid');
-                                    @endphp
-                                    <span class="tag {{ $statusClass }}">{{ $order->statusLabel() }}</span>
-                                </td>
-                                <td>
-                                    <div class="action-group">
-                                        <a class="btn btn-sm btn-secondary" href="{{ route('cashier.receipts.print', $order) }}" target="_blank">Cetak</a>
-                                        <form method="POST" action="{{ route('cashier.receipts.send', $order) }}" class="inline-form">
-                                            @csrf
-                                            <input type="text" name="destination" placeholder="No WA" required class="input-field" maxlength="12">
-                                            <button class="btn btn-sm btn-primary" type="submit">Kirim</button>
-                                        </form>
-                                        <form method="POST" action="{{ route('cashier.receipts.destroy', $order) }}" onsubmit="return confirm('Hapus data struk {{ $order->code }}?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger" type="submit">Hapus Data</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{ $orders->links('components.pagination') }}
-        </section>
+  <!-- STATS STRIP -->
+  <section class="stats-strip fade-in">
+    <div class="strip-card" style="--card-accent: var(--green);">
+      <div class="strip-icon" style="background:var(--green-light);color:var(--green);"><i class="fas fa-check-circle"></i></div>
+      <div class="strip-info">
+        <strong>{{ $orders->where('status', 'paid')->count() }}</strong>
+        <span>Lunas</span>
+      </div>
     </div>
+    <div class="strip-card" style="--card-accent: var(--accent);">
+      <div class="strip-icon" style="background:var(--accent-light);color:var(--accent);"><i class="fas fa-hourglass-half"></i></div>
+      <div class="strip-info">
+        <strong>{{ $orders->where('status', 'unpaid')->count() }}</strong>
+        <span>Belum Bayar</span>
+      </div>
+    </div>
+    <div class="strip-card" style="--card-accent: var(--blue);">
+      <div class="strip-icon" style="background:var(--blue-light);color:var(--blue);"><i class="fas fa-paper-plane"></i></div>
+      <div class="strip-info">
+        <strong>{{ $orders->where('status', 'sent')->count() }}</strong>
+        <span>Struk Terkirim</span>
+      </div>
+    </div>
+    <div class="strip-card" style="--card-accent: var(--red);">
+      <div class="strip-icon" style="background:var(--red-light);color:var(--red);"><i class="fas fa-ban"></i></div>
+      <div class="strip-info">
+        <strong>{{ $orders->where('status', 'cancelled')->count() }}</strong>
+        <span>Dibatalkan</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN PANEL -->
+  <section class="panel fade-in">
+    <div class="panel-head">
+      <div>
+        <h2><i class="fas fa-table-list"></i> Daftar Struk</h2>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="search-mini">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Cari kode struk..." id="searchInput">
+      </div>
+      <button class="filter-tab active" data-filter="all">Semua <span class="tab-count">{{ $orders->count() }}</span></button>
+      <button class="filter-tab" data-filter="paid">Lunas <span class="tab-count">{{ $orders->where('status', 'paid')->count() }}</span></button>
+      <button class="filter-tab" data-filter="unpaid">Belum Bayar <span class="tab-count">{{ $orders->where('status', 'unpaid')->count() }}</span></button>
+      <button class="filter-tab" data-filter="cancelled">Batal <span class="tab-count">{{ $orders->where('status', 'cancelled')->count() }}</span></button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table class="report-table receipt-table">
+        <thead>
+          <tr>
+            <th>Kode TRX</th>
+            <th>Meja</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="receiptBody">
+          @foreach($orders as $order)
+          <tr data-status="{{ $order->status }}">
+            <td><span class="trx-code">{{ $order->code }}</span></td>
+            <td>
+              <div class="branch-cell">
+                <div class="branch-dot" style="background:linear-gradient(135deg, var(--accent), #F59E0B);"><i class="fas fa-chair"></i></div>
+                <span style="font-weight:600;font-size:13px;">{{ $order->table ? 'Meja ' . $order->table->number : 'Bungkus' }}</span>
+              </div>
+            </td>
+            <td class="amount-cell">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
+            <td>
+                @php
+                    $statusClass = $order->status === 'paid' ? 'status-paid' : ($order->status === 'cancelled' ? 'status-cancelled' : 'status-unpaid');
+                    $statusLabel = $order->status === 'paid' ? 'Lunas' : ($order->status === 'cancelled' ? 'Batal' : 'Belum Bayar');
+                @endphp
+                <span class="status-pill {{ $statusClass }}"><span class="status-dot"></span> {{ $statusLabel }}</span>
+            </td>
+            <td>
+              <div class="action-group">
+                <a class="btn btn-print btn-sm" href="{{ route('cashier.receipts.print', $order) }}" target="_blank" title="Cetak Struk">
+                  <i class="fas fa-print"></i> Cetak
+                </a>
+
+                <form class="inline-form" action="{{ route('cashier.receipts.send', $order) }}" method="POST" data-send-form>
+                  @csrf
+                  <input type="text" name="destination" placeholder="No WA" class="input-field" maxlength="15" required>
+                  <button class="btn btn-send btn-sm" type="submit">
+                    <i class="fab fa-whatsapp"></i> Kirim
+                  </button>
+                </form>
+
+                @if($order->status !== 'paid')
+                <form action="{{ route('cashier.receipts.destroy', $order) }}" method="POST" onsubmit="return confirm('Hapus data struk ini?')" data-delete-form>
+                    @csrf @method('DELETE')
+                    <button class="btn btn-danger btn-sm" type="submit">
+                      <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </form>
+                @endif
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINATION -->
+    <div class="pagination-area">
+      {{ $orders->links() }}
+    </div>
+  </section>
 @endsection
+
+@push('scripts')
+<script>
+  (() => {
+    // ===== FILTER TABS =====
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const rows = document.querySelectorAll('#receiptBody tr[data-status]');
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        filterTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const filter = tab.dataset.filter;
+        rows.forEach(row => {
+          row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
+        });
+      });
+    });
+
+    // ===== SEARCH =====
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const q = searchInput.value.toLowerCase().trim();
+        rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(q) ? '' : 'none';
+        });
+      });
+    }
+  })();
+</script>
+@endpush

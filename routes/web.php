@@ -63,16 +63,28 @@ Route::get('/meja/{table:qr_token}/orders/live', [PublicTableMenuController::cla
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/live-sync/orders', [LiveSyncController::class, 'orders'])->name('live-sync.orders');
-    Route::get('/csrf-token', function (\Illuminate\Http\Request $request) {
-        $request->session()->regenerateToken();
-
-        return response()->json([
-            'token' => csrf_token(),
-        ]);
-    })->name('csrf.token');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
+
+Route::get('/csrf-token', function (\Illuminate\Http\Request $request) {
+    $request->session()->regenerateToken();
+
+    return response()->json([
+        'token' => csrf_token(),
+    ]);
+})->name('csrf.token');
+
+Route::get('/scanner-hp/kasir/{token}', [CashierPaymentController::class, 'mobileScannerPage'])
+    ->middleware('signed')
+    ->name('cashier.scanner.mobile');
+Route::post('/scanner-hp/kasir/{token}/cart', [BarcodeScannerController::class, 'addMenuToTargetCart'])
+    ->name('cashier.scanner.mobile.cart');
+Route::get('/scanner-hp/superadmin/{token}', [CashierPaymentController::class, 'mobileScannerPage'])
+    ->middleware('signed')
+    ->name('superadmin.scanner.mobile');
+Route::post('/scanner-hp/superadmin/{token}/cart', [BarcodeScannerController::class, 'addMenuToTargetCart'])
+    ->name('superadmin.scanner.mobile.cart');
 
 Route::prefix('dapur')
     ->name('kitchen.')
@@ -93,7 +105,7 @@ Route::prefix('dapur')
 
 Route::prefix('kasir')
     ->name('cashier.')
-    ->middleware(['auth', 'role:kasir,staff,admin,superadmin,leader_cashier,kitchen,inventory'])
+    ->middleware(['auth', 'role:kasir,staff,admin,superadmin,kitchen,inventory,leader_cashier'])
     ->group(function () {
         Route::get('/scanner', function () {
             return redirect()->route('cashier.payments.index');
@@ -112,6 +124,7 @@ Route::prefix('kasir')
         Route::post('/transaksi/checkout', [CashierTransactionController::class, 'checkout'])->name('transactions.checkout');
         Route::get('/pembayaran', [CashierPaymentController::class, 'index'])->name('payments.index');
         Route::get('/pembayaran/live', [CashierPaymentController::class, 'live'])->name('payments.live');
+        Route::get('/pembayaran/cart/live', [CashierPaymentController::class, 'cartLive'])->name('payments.cart.live');
         Route::post('/pembayaran/checkout', [CashierPaymentController::class, 'checkoutFromCart'])->name('payments.checkout');
         Route::delete('/pembayaran/cart/{menu}', [CashierPaymentController::class, 'removeCartItem'])->name('payments.cart.destroy');
         Route::post('/pembayaran/{order}', [CashierPaymentController::class, 'pay'])->name('payments.pay');
@@ -139,7 +152,10 @@ Route::prefix('gudang')
         Route::get('/barang-keluar', [InventoryController::class, 'stockOutPage'])->name('out.page');
         Route::post('/categories', [InventoryController::class, 'storeCategory'])->name('categories.store');
         Route::post('/items', [InventoryController::class, 'storeItem'])->name('items.store');
+        Route::delete('/items/type/{type}', [InventoryController::class, 'destroyItemsByType'])->name('items.destroy-by-type');
         Route::delete('/items/{item}', [InventoryController::class, 'destroyItem'])->name('items.destroy');
+        Route::delete('/movements', [InventoryController::class, 'destroyAllMovements'])->name('movements.destroy-all');
+        Route::delete('/movements/{movement}', [InventoryController::class, 'destroyMovement'])->name('movements.destroy');
         Route::post('/stock-in', [InventoryController::class, 'stockIn'])->name('stock.in');
         Route::post('/stock-out', [InventoryController::class, 'stockOut'])->name('stock.out');
         Route::post('/stock-opname', [InventoryController::class, 'stockOpname'])->name('stock.opname');
@@ -154,6 +170,16 @@ Route::prefix('leader-kasir')
         Route::get('/live', [LeaderCashierController::class, 'live'])->name('live');
         Route::post('/cash-flow', [LeaderCashierController::class, 'storeCashFlow'])->name('cash-flow.store');
         Route::delete('/cash-flow/{entry}', [LeaderCashierController::class, 'destroyCashFlow'])->name('cash-flow.destroy');
+
+        // Added specialized payment routes for Leader Cashier
+        Route::get('/pembayaran', [CashierPaymentController::class, 'superadminIndex'])->name('payments.index');
+        Route::get('/pembayaran/live', [CashierPaymentController::class, 'superadminLive'])->name('payments.live');
+        Route::post('/pembayaran/checkout', [CashierPaymentController::class, 'checkoutFromCart'])->name('payments.checkout');
+        Route::delete('/pembayaran/cart/{menu}', [CashierPaymentController::class, 'removeCartItem'])->name('payments.cart.destroy');
+        Route::post('/pembayaran/{order}', [CashierPaymentController::class, 'pay'])->name('payments.pay');
+        Route::delete('/pembayaran', [CashierPaymentController::class, 'destroyAll'])->name('payments.destroy-all');
+        Route::post('/scanner/cart', [BarcodeScannerController::class, 'addMenuToCart'])->name('scanner.cart');
+        Route::post('/scanner/save', [BarcodeScannerController::class, 'store'])->name('scanner.save');
     });
 
 Route::prefix('superadmin')
@@ -201,6 +227,7 @@ Route::prefix('superadmin')
         Route::get('/reports/excel', [SuperadminReportController::class, 'exportExcel'])->name('reports.excel');
         Route::get('/pembayaran-kasir', [CashierPaymentController::class, 'superadminIndex'])->name('payments.index');
         Route::get('/pembayaran-kasir/live', [CashierPaymentController::class, 'superadminLive'])->name('payments.live');
+        Route::get('/pembayaran-kasir/cart/live', [CashierPaymentController::class, 'cartLive'])->name('payments.cart.live');
         Route::post('/pembayaran-kasir/checkout', [CashierPaymentController::class, 'checkoutFromCart'])->name('payments.checkout');
         Route::delete('/pembayaran-kasir/cart/{menu}', [CashierPaymentController::class, 'removeCartItem'])->name('payments.cart.destroy');
         Route::post('/pembayaran-kasir/{order}', [CashierPaymentController::class, 'pay'])->name('payments.pay');

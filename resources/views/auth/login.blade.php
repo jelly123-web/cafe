@@ -16,7 +16,7 @@
         button:disabled::after { content: ""; position: absolute; width: 16px; height: 16px; top: 50%; right: 15px; margin-top: -8px; border: 2px solid #fff; border-radius: 50%; border-right-color: transparent; animation: rotate .6s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
-    <script defer src="{{ asset('js/auth/login.js') }}"></script>
+    <script defer src="{{ asset('js/auth/login.js') }}?v={{ @filemtime(public_path('js/auth/login.js')) }}"></script>
   @include('components.page-transition-guard')
 </head>
 <body>

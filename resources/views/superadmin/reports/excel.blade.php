@@ -21,7 +21,7 @@
     </tr>
     <tr>
         <th>Kode</th>
-        <th>Cabang</th>
+        <th>Meja / Pesanan</th>
         <th>Tanggal</th>
         <th>Total Penjualan</th>
         <th>Total Modal</th>
@@ -30,7 +30,7 @@
     @forelse ($transactions as $row)
         <tr>
             <td>{{ $row['code'] }}</td>
-            <td>{{ $row['branch_name'] }}</td>
+            <td>{{ $row['order_source'] }}</td>
             <td>{{ $row['sold_at']->format('d M Y H:i') }}</td>
             <td>{{ $row['total_amount'] }}</td>
             <td>{{ $row['total_cost'] }}</td>

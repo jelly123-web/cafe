@@ -1,5 +1,6 @@
 @php
-    $isEdit = isset($mode) && $mode === 'edit';
+    $isEdit = isset($menuCategory);
+    $category = $menuCategory ?? new \App\Models\MenuCategory();
 @endphp
 
 @push('head')

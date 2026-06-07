@@ -19,19 +19,21 @@ class CashierPaymentController extends Controller
         return view('cashier.payments.index', $this->paymentData());
     }
 
-    public function superadminIndex(): View
-    {
-        return view('superadmin.payments.index', $this->paymentData());
-    }
-
     public function live(): View
     {
         return view('cashier.payments.live', $this->paymentData());
     }
 
+    public function superadminIndex(): View
+    {
+        $prefix = request()->routeIs('superadmin.*') ? 'superadmin' : 'leader_cashier';
+        return view($prefix . '.payments.index', $this->paymentData());
+    }
+
     public function superadminLive(): View
     {
-        return view('superadmin.payments.live', $this->paymentData());
+        $prefix = request()->routeIs('superadmin.*') ? 'superadmin' : 'leader_cashier';
+        return view($prefix . '.payments.live', $this->paymentData());
     }
 
     private function paymentData(): array

@@ -47,7 +47,7 @@ class SuperadminTableController extends Controller
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() || $request->ajax()) {
             $table->loadCount('sales');
 
             return response()->json([
@@ -78,7 +78,7 @@ class SuperadminTableController extends Controller
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-        if ($request->expectsJson()) {
+        if ($request->expectsJson() || $request->ajax()) {
             $table->loadCount('sales');
 
             return response()->json([
@@ -157,6 +157,19 @@ class SuperadminTableController extends Controller
             'show_url' => route('tables.show', $table),
             'delete_url' => route('superadmin.tables.destroy', $table),
             'qr_url' => route('superadmin.tables.qr', $table),
+            'qr_svg' => $this->tableQrDataUri($table),
         ];
     }
+
+    private function tableQrDataUri(DiningTable $table): string
+    {
+        $svg = app('qrcode')
+            ->format('svg')
+            ->size(360)
+            ->margin(1)
+            ->generate(route('tables.show', $table));
+
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }
 }
+

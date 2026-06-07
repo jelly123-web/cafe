@@ -166,6 +166,20 @@
 
     .category-filter-bar::-webkit-scrollbar { display: none; }
 
+    .category-filter-bar.is-loading {
+      pointer-events: none;
+    }
+
+    .category-filter-bar.is-loading .filter-pill:not(.active) {
+      opacity: 0.65;
+    }
+
+    .content-toolbar.fade-in,
+    #menuContentRegion .fade-in {
+      opacity: 1;
+      transform: none;
+    }
+
     .filter-pill {
       display: inline-flex;
       align-items: center;
@@ -213,12 +227,8 @@
 
     .filter-pill.active span {
       opacity: 0.9;
+      font-weight: 600;
     }
-      opacity: 0.7;
-      font-weight: 500;
-    }
-
-    .filter-pill.active span { opacity: 0.9; }
 
     /* ===== PANEL ===== */
     .panel {
@@ -381,11 +391,13 @@
       gap: 4px;
     }
 
-    .btn-open-edit {
+    .btn-open-edit,
+    .package-manage-link {
       color: var(--accent);
     }
 
-    .btn-open-edit:hover {
+    .btn-open-edit:hover,
+    .package-manage-link:hover {
       background: var(--accent-light);
       color: var(--accent-dark);
     }
@@ -877,76 +889,8 @@
         </div>
     </div>
 
-    <!-- CATEGORY FILTER -->
-    <div class="category-filter-bar fade-in">
-        <a href="{{ route('superadmin.menus.index', ['search' => request('search')]) }}" 
-           class="filter-pill {{ !request('category_id') ? 'active' : '' }}" 
-           data-category-id="all">
-           <i class="fas fa-th-large"></i> Semua <span>({{ $total_menus }})</span>
-        </a>
-        @foreach ($categories as $category)
-            @php
-                $icon = 'fa-utensils';
-                $cname = strtolower($category->name);
-                if (str_contains($cname, 'makanan')) $icon = 'fa-bowl-rice';
-                elseif (str_contains($cname, 'minuman')) $icon = 'fa-wheat-awn';
-                elseif (str_contains($cname, 'paket')) $icon = 'fa-shopping-bag';
-            @endphp
-            <a href="{{ route('superadmin.menus.index', ['category_id' => $category->id, 'search' => request('search')]) }}" 
-               class="filter-pill {{ request('category_id') == $category->id ? 'active' : '' }}" 
-               data-category-id="{{ $category->id }}">
-               <i class="fas {{ $icon }}"></i> {{ strtolower($category->name) }} <span>({{ $category->display_count ?? $category->menus_count }})</span>
-            </a>
-        @endforeach
-    </div>
-
-    <!-- MENU PANEL -->
-    <div class="panel fade-in">
-        <div class="panel-head">
-            <h2><i class="fas fa-list"></i> Daftar Menu</h2>
-            <span id="menuCount">{{ $menus->total() }} menu</span>
-        </div>
-
-        <div class="menu-card-list" id="menusList">
-            @forelse ($menus as $menu)
-                @php
-                    $menuImage = $menu->image_path
-                        ? (Storage::disk('public')->exists($menu->image_path) ? Storage::disk('public')->url($menu->image_path) : asset('images/menu-placeholder.svg'))
-                        : asset('images/menu-placeholder.svg');
-                @endphp
-                <div class="menu-card" data-menu-id="{{ $menu->id }}" data-category-id-val="{{ $menu->menu_category_id ?? 'none' }}">
-                    <img class="menu-thumb" src="{{ $menuImage }}" alt="{{ $menu->name }}">
-                    <div class="menu-meta">
-                        <h3>{{ $menu->name }}</h3>
-                        <p>{{ $menu->code }}</p>
-                        <div class="menu-pricing">
-                            <span class="tag tag-category">{{ $menu->category?->name ?? 'Tanpa kategori' }}</span>
-                            <span class="tag tag-success">Rp {{ number_format((float) $menu->selling_price, 0, ',', '.') }}</span>
-                            <span class="tag tag-muted">Modal Rp {{ number_format((float) $menu->cost_price, 0, ',', '.') }}</span>
-                        </div>
-                    </div>
-                    <div class="actions">
-                        <button type="button" class="btn-open-edit" 
-                            data-id="{{ $menu->id }}"
-                            data-code="{{ $menu->code }}"
-                            data-name="{{ $menu->name }}"
-                            data-category-id="{{ $menu->menu_category_id }}"
-                            data-selling-price="{{ (float) $menu->selling_price }}"
-                            data-cost-price="{{ (float) $menu->cost_price }}"
-                            data-image-url="{{ $menuImage }}"
-                        ><i class="fas fa-pen"></i> Edit</button>
-                        <button type="button" class="btn-delete-menu" data-id="{{ $menu->id }}"><i class="fas fa-trash"></i> Hapus</button>
-                    </div>
-                </div>
-            @empty
-                <div class="alert" id="emptyState"><em>Belum ada menu.</em></div>
-            @endforelse
-        </div>
-
-        <!-- Pagination -->
-        <div class="menu-pagination">
-            {{ $menus->links('components.pagination') }}
-        </div>
+    <div id="menuContentRegion">
+        @include('superadmin.menus._content')
     </div>
 
     <!-- SIDE MODAL (DRAWER) -->
@@ -1040,13 +984,30 @@
             const drawerTitle = document.getElementById('drawerTitle');
             const drawerMethod = document.getElementById('drawerMethod');
             const btnSubmit = document.getElementById('btnSubmitDrawer');
-            const list = document.getElementById('menusList');
-            const countEl = document.getElementById('menuCount');
-            
             const getCsrfToken = () => document.querySelector('input[name="_token"]')?.value || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const defaultImage = @json(asset('images/menu-placeholder.svg'));
             const menuBaseUrl = @json(url('superadmin/menus'));
             const storeUrl = @json(route('superadmin.menus.store'));
+            const getList = () => document.getElementById('menusList');
+            const getCountEl = () => document.getElementById('menuCount');
+            const getContentRegion = () => document.getElementById('menuContentRegion');
+            const getCategoryBar = () => document.getElementById('menuCategoryFilterBar');
+            const resolveCategoryFromUrl = (url) => {
+                const params = new URL(url || window.location.href, window.location.origin).searchParams;
+                return params.get('category_id') || 'all';
+            };
+            const getCurrentCategoryId = () => getCategoryBar()?.dataset.currentCategoryId || resolveCategoryFromUrl(window.location.href);
+            let currentSearchQuery = '';
+            let currentCategorySlug = 'all';
+            const syncActiveCategoryPill = (categoryId = 'all') => {
+                const categoryBar = getCategoryBar();
+                if (!categoryBar) return;
+                categoryBar.dataset.currentCategoryId = String(categoryId || 'all');
+                categoryBar.querySelectorAll('.filter-pill').forEach((pill) => {
+                    const pillCategoryId = pill.getAttribute('data-category-id') || 'all';
+                    pill.classList.toggle('active', String(pillCategoryId) === String(categoryId));
+                });
+            };
 
             const openDrawer = () => { drawer.classList.add('open'); backdrop.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); };
             const closeDrawer = () => { drawer.classList.remove('open'); backdrop.classList.remove('open'); drawer.setAttribute('aria-hidden', 'true'); };
@@ -1083,6 +1044,85 @@
             const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
             const formatMoney = (v) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(v || 0));
 
+            const revealMenuContent = (root = document) => {
+                root.querySelectorAll('.content-toolbar.fade-in, #menuContentRegion .fade-in').forEach((el) => {
+                    el.classList.add('visible');
+                    el.style.opacity = '1';
+                    el.style.transform = 'none';
+                });
+            };
+
+            const updateVisibleCount = (count) => {
+                const countEl = getCountEl();
+                if (!countEl) return;
+                if (currentCategorySlug === 'paket') {
+                    countEl.textContent = `${count} paket`;
+                    return;
+                }
+                countEl.textContent = currentCategorySlug === 'all' ? `${count} item` : `${count} menu`;
+            };
+
+            const updateListHeading = () => {
+                const titleEl = document.getElementById('menuListTitle');
+                const iconEl = document.getElementById('menuListIcon');
+                if (!titleEl || !iconEl) return;
+                if (currentCategorySlug === 'paket') {
+                    titleEl.textContent = 'Daftar Paket';
+                    iconEl.className = 'fas fa-box-open';
+                } else {
+                    titleEl.textContent = 'Daftar Menu';
+                    iconEl.className = 'fas fa-list';
+                }
+            };
+
+            const applyCombinedFilters = () => {
+                const list = getList();
+                if (!list) return;
+
+                const cards = [...list.querySelectorAll('.menu-card')];
+                let visibleCount = 0;
+
+                cards.forEach((card) => {
+                    const categorySlug = (card.getAttribute('data-category-slug') || '').toLowerCase();
+                    const itemType = card.getAttribute('data-item-type') || 'menu';
+                    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                    const code = card.querySelector('p')?.textContent.toLowerCase() || '';
+                    const matchesSearch = !currentSearchQuery || name.includes(currentSearchQuery) || code.includes(currentSearchQuery);
+                    const matchesCategory = currentCategorySlug === 'all'
+                        ? true
+                        : (currentCategorySlug === 'paket'
+                            ? itemType === 'package'
+                            : categorySlug === currentCategorySlug);
+
+                    const shouldShow = matchesSearch && matchesCategory;
+                    card.style.display = shouldShow ? '' : 'none';
+                    if (shouldShow) visibleCount += 1;
+                });
+
+                let emptyState = document.getElementById('emptyState');
+                if (visibleCount === 0) {
+                    if (!emptyState) {
+                        emptyState = document.createElement('div');
+                        emptyState.className = 'alert';
+                        emptyState.id = 'emptyState';
+                        list.appendChild(emptyState);
+                    }
+                    const suffix = currentSearchQuery ? ` untuk "${currentSearchQuery}"` : '';
+                    if (currentCategorySlug === 'paket') {
+                        emptyState.innerHTML = `<em>Belum ada paket${suffix}.</em>`;
+                    } else if (currentCategorySlug === 'all') {
+                        emptyState.innerHTML = `<em>Belum ada menu atau paket${suffix}.</em>`;
+                    } else {
+                        emptyState.innerHTML = `<em>Belum ada menu kategori ${currentCategorySlug}${suffix}.</em>`;
+                    }
+                } else if (emptyState) {
+                    emptyState.remove();
+                }
+
+                updateListHeading();
+                updateVisibleCount(visibleCount);
+            };
+
             const updatePillCount = (catId, delta) => {
                 const id = catId == null || catId === 'none' ? '' : String(catId);
                 const pill = document.querySelector(`.filter-pill[data-category-id="${id}"]`) || document.querySelector(`.filter-pill[data-category-id="all"]`);
@@ -1096,7 +1136,25 @@
                 if (catId !== 'all') updatePillCount('all', delta);
             };
 
+            const bindCategoryFilters = () => {
+                const categoryBar = getCategoryBar();
+                if (!categoryBar || categoryBar.dataset.bound === '1') return;
+                categoryBar.dataset.bound = '1';
+                categoryBar.addEventListener('click', (event) => {
+                    const link = event.target.closest('.filter-pill[href]');
+                    if (!link) return;
+                    event.preventDefault();
+
+                    const categoryId = link.getAttribute('data-category-id') || 'all';
+                    currentCategorySlug = (link.getAttribute('data-category-slug') || 'all').toLowerCase();
+                    syncActiveCategoryPill(categoryId);
+                    applyCombinedFilters();
+                    window.history.replaceState({ path: link.href }, '', link.href);
+                });
+            };
+
             const bindActions = (root) => {
+                if (!root) return;
                 root.querySelectorAll('.btn-open-edit').forEach(btn => {
                     btn.addEventListener('click', () => {
                         resetForm();
@@ -1133,6 +1191,8 @@
                         if (!confirm('Hapus menu ini?')) return;
 
                         try {
+                            const list = getList();
+                            const countEl = getCountEl();
                             const payload = new FormData();
                             payload.append('_method', 'DELETE');
                             payload.append('_token', getCsrfToken());
@@ -1158,7 +1218,7 @@
                             updatePillCount(catId, -1);
                             card.remove();
                             if (!list.querySelector('.menu-card')) list.innerHTML = '<div class="alert" id="emptyState"><em>Belum ada menu.</em></div>';
-                            countEl.textContent = list.querySelectorAll('.menu-card').length + ' menu';
+                            applyCombinedFilters();
                             window.showToast?.(data.message || 'Menu berhasil dihapus', 'success');
                         } catch (err) {
                             window.showToast?.(err.message || 'Gagal menghapus menu.', 'error');
@@ -1173,6 +1233,8 @@
                 btnSubmit.textContent = 'Menyimpan...';
                 
                 try {
+                    const list = getList();
+                    const countEl = getCountEl();
                     const res = await fetch(form.action, {
                         method: 'POST',
                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
@@ -1215,6 +1277,8 @@
                         card = document.createElement('div');
                         card.className = 'menu-card';
                         card.setAttribute('data-menu-id', menu.id);
+                        card.setAttribute('data-item-type', 'menu');
+                        card.setAttribute('data-category-slug', String(menu.category_name || '').toLowerCase());
                         list.prepend(card);
                         updatePillCount(menu.menu_category_id, 1);
                     } else if (oldCatId !== (menu.menu_category_id ? String(menu.menu_category_id) : 'none')) {
@@ -1223,10 +1287,11 @@
                     }
 
                     card.setAttribute('data-category-id-val', menu.menu_category_id || 'none');
+                    card.setAttribute('data-item-type', 'menu');
+                    card.setAttribute('data-category-slug', String(menu.category_name || '').toLowerCase());
                     card.innerHTML = html;
                     bindActions(card);
-                    
-                    countEl.textContent = list.querySelectorAll('.menu-card').length + ' menu';
+                    applyCombinedFilters();
                     window.showToast?.(data.message, 'success');
                     closeDrawer();
                 } catch (err) {
@@ -1241,40 +1306,25 @@
 
             closeDrawer();
             window.addEventListener('pageshow', closeDrawer);
-            bindActions(list);
+            revealMenuContent();
+            bindCategoryFilters();
+            bindActions(getList());
+            syncActiveCategoryPill(getCurrentCategoryId());
+            currentCategorySlug = (document.querySelector('.filter-pill.active')?.getAttribute('data-category-slug') || 'all').toLowerCase();
+            applyCombinedFilters();
+            window.addEventListener('pageshow', () => {
+                syncActiveCategoryPill(getCurrentCategoryId());
+                currentCategorySlug = (document.querySelector('.filter-pill.active')?.getAttribute('data-category-slug') || 'all').toLowerCase();
+                applyCombinedFilters();
+            });
+            window.hydrateManagedImages?.(document);
 
             /* ===== LIVE SEARCH ===== */
             const searchInput = document.getElementById('menuSearchInput');
-            if (searchInput && list) {
+            if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
-                    const query = e.target.value.toLowerCase().trim();
-                    const cards = list.querySelectorAll('.menu-card');
-                    let hasVisible = false;
-
-                    cards.forEach(card => {
-                        const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-                        const code = card.querySelector('p')?.textContent.toLowerCase() || '';
-                        
-                        if (name.includes(query) || code.includes(query)) {
-                            card.style.display = '';
-                            hasVisible = true;
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-
-                    let emptyMsg = document.getElementById('searchEmptyMsg');
-                    if (!hasVisible && query !== '') {
-                        if (!emptyMsg) {
-                            emptyMsg = document.createElement('div');
-                            emptyMsg.id = 'searchEmptyMsg';
-                            emptyMsg.className = 'alert';
-                            emptyMsg.innerHTML = `<em>Tidak ada menu ditemukan untuk "${escapeHtml(query)}"</em>`;
-                            list.appendChild(emptyMsg);
-                        }
-                    } else if (emptyMsg) {
-                        emptyMsg.remove();
-                    }
+                    currentSearchQuery = e.target.value.toLowerCase().trim();
+                    applyCombinedFilters();
                 });
             }
         })();

@@ -50,9 +50,21 @@
       </div>
       <div class="section-card-actions">
         <div class="filter-pills" id="dashboardPeriodPills">
-          <button class="filter-pill {{ ($currentPeriod ?? 'today') === 'today' ? 'active' : '' }}" data-period="today" type="button">Hari Ini</button>
-          <button class="filter-pill {{ ($currentPeriod ?? 'today') === 'week' ? 'active' : '' }}" data-period="week" type="button">Minggu</button>
-          <button class="filter-pill {{ ($currentPeriod ?? 'today') === 'month' ? 'active' : '' }}" data-period="month" type="button">Bulan</button>
+          <a
+            href="{{ route('superadmin.dashboard', array_merge(request()->except('page'), ['period' => 'today'])) }}"
+            class="filter-pill {{ ($currentPeriod ?? 'today') === 'today' ? 'active' : '' }}"
+            data-period="today"
+          >Hari Ini</a>
+          <a
+            href="{{ route('superadmin.dashboard', array_merge(request()->except('page'), ['period' => 'week'])) }}"
+            class="filter-pill {{ ($currentPeriod ?? 'today') === 'week' ? 'active' : '' }}"
+            data-period="week"
+          >Minggu</a>
+          <a
+            href="{{ route('superadmin.dashboard', array_merge(request()->except('page'), ['period' => 'month'])) }}"
+            class="filter-pill {{ ($currentPeriod ?? 'today') === 'month' ? 'active' : '' }}"
+            data-period="month"
+          >Bulan</a>
         </div>
       </div>
     </div>

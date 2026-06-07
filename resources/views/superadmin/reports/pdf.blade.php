@@ -105,7 +105,7 @@
         <thead>
             <tr>
                 <th>Kode TRX</th>
-                <th>Cabang</th>
+                <th>Meja / Pesanan</th>
                 <th>Waktu Transaksi</th>
                 <th>Penjualan</th>
                 <th>Modal</th>
@@ -117,7 +117,7 @@
             @forelse ($transactions as $row)
                 <tr>
                     <td style="font-family: monospace; font-weight: bold;">{{ $row['code'] }}</td>
-                    <td>{{ $row['branch_name'] }}</td>
+                    <td>{{ $row['order_source'] }}</td>
                     <td>{{ $row['sold_at']?->format('d M Y H:i') }}</td>
                     <td class="amount">Rp {{ number_format($row['total_amount'], 0, ',', '.') }}</td>
                     <td class="amount">Rp {{ number_format($row['total_cost'], 0, ',', '.') }}</td>

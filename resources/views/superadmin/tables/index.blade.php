@@ -3,46 +3,13 @@
 @section('title', 'Meja Cafe — MakanYuk')
 @section('page_title', 'Meja Cafe')
 @section('page_description', 'Lihat, tambah, dan kelola meja yang dipakai pelanggan untuk scan QR.')
+@section('page_icon')
+    <i class="fas fa-chair"></i>
+@endsection
+@section('kicker', 'Utama')
 
 @push('head')
     <style>
-    /* ===== VARIABEL DESAIN ===== */
-    :root {
-      --bg: #F4F5F7;
-      --bg-card: #FFFFFF;
-      --white: #FFFFFF;
-      --border: #E8EAED;
-      --border-light: #F0F1F3;
-      --fg: #1A1D23;
-      --fg-secondary: #5F6577;
-      --muted: #9CA3B4;
-      --accent: #D97706;
-      --accent-light: #FEF3C7;
-      --accent-dark: #B45309;
-      --green: #059669;
-      --green-light: #D1FAE5;
-      --red: #DC2626;
-      --red-light: #FEE2E2;
-      --blue: #2563EB;
-      --blue-light: #DBEAFE;
-      --purple: #7C3AED;
-      --purple-light: #EDE9FE;
-      --teal: #0D9488;
-      --teal-light: #CCFBF1;
-      --shadow-xs: 0 1px 2px rgba(0,0,0,0.03);
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
-      --shadow-lg: 0 8px 30px rgba(0,0,0,0.07);
-      --shadow-xl: 0 20px 60px rgba(0,0,0,0.1);
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
-      --radius-full: 999px;
-      --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
-      --transition: 0.2s ease;
-    }
-
     /* ===== TABLE TOOLBAR ===== */
     .table-toolbar {
       background: var(--white);
@@ -57,33 +24,10 @@
       margin-bottom: 20px;
     }
 
-    .table-toolbar h2 {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--fg);
-      margin: 0 0 2px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: -0.2px;
-    }
-
-    .table-toolbar h2 i { color: var(--accent); font-size: 16px; }
-
-    .table-toolbar p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
     .toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
     /* ===== SEARCH BOX ===== */
-    .search-box {
-      display: flex;
-      gap: 6px;
-    }
-
+    .search-box { display: flex; gap: 6px; }
     .search-box input {
       border: 1.5px solid var(--border);
       background: var(--white);
@@ -97,13 +41,8 @@
       outline: none;
       transition: all var(--transition);
     }
-
     .search-box input::placeholder { color: var(--muted); }
-
-    .search-box input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
-    }
+    .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1); }
 
     /* ===== BUTTONS ===== */
     .primary-link {
@@ -406,14 +345,14 @@
 
     /* ===== DRAWER BODY ===== */
     .drawer-body {
-      padding: 28px 24px; overflow-y: auto; flex: 1; min-height: 0;
+      padding: 28px 24px; overflow-y: auto; flex: 1;
       scrollbar-width: thin; scrollbar-color: var(--border) transparent;
       display: flex; flex-direction: column; gap: 18px;
     }
     .drawer-body::-webkit-scrollbar { width: 5px; }
     .drawer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
-    .drawer-form { display: flex; flex-direction: column; gap: 0; min-height: 100%; height: 100%; }
+    .drawer-form { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; }
 
     .drawer-field { display: flex; flex-direction: column; gap: 10px; }
 
@@ -488,8 +427,11 @@
 
     .form-error {
       font-size: 12px; color: var(--red); min-height: 1rem;
-      font-weight: 600;
+      font-weight: 600; padding: 10px 14px; background: var(--red-light);
+      border-radius: var(--radius-sm); border: 1px solid #FECACA;
+      display: none;
     }
+    .form-error:not(:empty) { display: block; }
 
     /* ===== QR MODAL ===== */
     .qr-modal-backdrop {
@@ -537,23 +479,6 @@
       font-family: 'SF Mono', 'Fira Code', monospace;
       background: var(--bg); padding: 8px 12px; border-radius: var(--radius-sm);
       border: 1px solid var(--border-light);
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
-      .table-toolbar { flex-direction: column; align-items: stretch; padding: 16px; gap: 12px; }
-      .toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; }
-      .table-grid { grid-template-columns: 1fr; }
-      .table-card { padding: 16px; }
-      .qr-preview-wrap { flex-direction: column; align-items: center; }
-      .qr-info { align-items: center; text-align: center; }
-    }
-
-    @media (max-width: 480px) {
-      .toolbar-actions { grid-template-columns: 1fr; }
-      .table-actions { flex-direction: column; }
-      .table-actions .secondary-link,
-      .table-actions .danger-link { width: 100%; justify-content: center; }
     }
     </style>
 @endpush
@@ -675,11 +600,11 @@
                         <span class="switch-text">Aktif</span>
                     </label>
                 </div>
-                <small class="form-error" id="drawerError"></small>
+                <div class="form-error" id="drawerError"></div>
             </div>
             <div class="drawer-foot">
                 <button type="button" class="btn-drawer-cancel" id="cancelDrawerBtn">Batal</button>
-                <button type="submit" class="primary-link" id="submitDrawerBtn"><i class="fas fa-check"></i> Buat Meja</button>
+                <button type="submit" class="primary-link" id="submitDrawerBtn"><i class="fas fa-check"></i> Simpan Meja</button>
             </div>
         </form>
     </aside>
@@ -754,9 +679,11 @@
                 title.innerHTML = '<i class="fas fa-plus-circle"></i> Tambah Meja';
                 form.action = "{{ route('superadmin.tables.store') }}";
                 methodSpoof.value = '';
+                form.dataset.editId = '';
                 form.reset();
                 document.getElementById('drawer_is_active').checked = true;
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> Buat Meja';
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Simpan Meja';
+                submitBtn.disabled = false;
                 errorEl.textContent = '';
             };
 
@@ -765,10 +692,12 @@
                 title.innerHTML = '<i class="fas fa-pen-to-square"></i> Edit Meja';
                 form.action = "{{ url('superadmin/tables') }}/" + id;
                 methodSpoof.value = 'PUT';
+                form.dataset.editId = id || '';
                 document.getElementById('drawer_number').value = btn.getAttribute('data-number') || '';
                 document.getElementById('drawer_name').value = btn.getAttribute('data-name') || '';
                 document.getElementById('drawer_is_active').checked = btn.getAttribute('data-active') === '1';
                 submitBtn.innerHTML = '<i class="fas fa-check"></i> Simpan Perubahan';
+                submitBtn.disabled = false;
                 errorEl.textContent = '';
             };
 
@@ -796,26 +725,24 @@
 
             [closeBtn, cancelBtn, backdrop].forEach((el) => el?.addEventListener('click', closeDrawer));
             [closeQrBtn, qrBackdrop].forEach((el) => el?.addEventListener('click', closeQrModal));
-            window.addEventListener('superadmin:sidebar-toggle', () => {
-                closeDrawer();
-                closeQrModal();
-            });
-            closeDrawer();
-            window.addEventListener('pageshow', closeDrawer);
+            
             bindActionButtons();
 
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 errorEl.textContent = '';
+
+                if (!form.reportValidity()) {
+                    return;
+                }
+
                 submitBtn.disabled = true;
                 const originalText = submitBtn.innerHTML;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
 
                 const formData = new FormData(form);
-                if (methodSpoof.value === 'PUT') {
-                    formData.set('_method', 'PUT');
-                }
-
+                const isEdit = methodSpoof.value === 'PUT';
+                
                 try {
                     const res = await fetch(form.action, {
                         method: 'POST',
@@ -828,8 +755,7 @@
                     });
 
                     if (res.status === 419) {
-                        errorEl.textContent = 'Sesi telah berakhir. Refresh halaman lalu coba lagi.';
-                        return;
+                        throw new Error('Sesi telah berakhir. Refresh halaman lalu coba lagi.');
                     }
 
                     const payload = await res.json();
@@ -838,33 +764,7 @@
                         throw new Error(msg);
                     }
 
-                    const table = payload.table;
-                    const existing = grid.querySelector('[data-table-id="' + table.id + '"]');
-                    const emptyState = document.getElementById('emptyState');
-                    const html = [
-                        '<article class="table-card" data-table-id="' + table.id + '">',
-                        '  <div class="table-card-head"><div><span class="table-pill ' + (table.is_active ? 'active' : 'inactive') + '"><span class="pill-dot"></span> Meja ' + table.number + '</span><h3>' + table.name + '</h3></div></div>',
-                        '  <div class="table-status-row">',
-                        '    <span class="table-stat"><i class="fas ' + (table.is_active ? 'fa-circle-check' : 'fa-circle-xmark') + '" style="color: ' + (table.is_active ? 'var(--green)' : 'var(--muted)') + ';"></i> ' + (table.is_active ? 'Aktif' : 'Nonaktif') + '</span>',
-                        '    <span class="table-stat"><i class="fas fa-receipt"></i> ' + table.sales_count + ' transaksi</span>',
-                        '  </div>',
-                        '  <div class="qr-box"><div class="qr-preview-wrap"><img class="qr-preview" src="' + table.qr_url + '" alt="QR Meja ' + table.number + '" loading="lazy" style="' + (table.is_active ? '' : 'opacity:0.5;') + '"><div class="qr-info"><small>Scan QR untuk membuka halaman pelanggan meja ini.</small><div class="qr-token-label">Token: ' + table.qr_token + '</div></div></div></div>',
-                        '  <div class="table-actions">',
-                        '    <a class="secondary-link" href="' + table.show_url + '" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Buka Halaman</a>',
-                        '    <button type="button" class="secondary-link btn-show-qr" data-show-url="' + table.show_url + '" data-qr-url="' + table.qr_url + '"><i class="fas fa-qrcode"></i> Lihat QR</button>',
-                        '    <button type="button" class="secondary-link btn-open-edit" data-id="' + table.id + '" data-number="' + table.number + '" data-name="' + table.name + '" data-active="' + (table.is_active ? '1' : '0') + '"><i class="fas fa-pen"></i> Edit</button>',
-                        '    <form method="POST" action="' + table.delete_url + '" onsubmit="return confirm('Hapus meja ini?')"><input type="hidden" name="_token" value="' + getCsrfToken() + '"><input type="hidden" name="_method" value="DELETE"><button type="submit" class="danger-link"><i class="fas fa-trash"></i> Hapus</button></form>',
-                        '  </div>',
-                        '</article>'
-                    ].join('');
-                    if (existing) {
-                        existing.outerHTML = html;
-                    } else {
-                        if (emptyState) emptyState.remove();
-                        grid.insertAdjacentHTML('afterbegin', html);
-                    }
-                    bindActionButtons(grid);
-                    closeDrawer();
+                    window.location.reload();
                 } catch (err) {
                     errorEl.textContent = err.message || 'Terjadi kesalahan.';
                     submitBtn.disabled = false;
@@ -893,21 +793,6 @@
                             card.style.display = 'none';
                         }
                     });
-
-                    let emptyMsg = document.getElementById('searchEmptyMsg');
-                    if (!hasVisible && query !== '') {
-                        if (!emptyMsg) {
-                            emptyMsg = document.createElement('div');
-                            emptyMsg.id = 'searchEmptyMsg';
-                            emptyMsg.className = 'table-empty';
-                            emptyMsg.style.background = '#fff';
-                            emptyMsg.style.borderRadius = 'var(--radius-lg)';
-                            emptyMsg.innerHTML = `<em>Tidak ada meja ditemukan untuk "${query}"</em>`;
-                            tableGrid.appendChild(emptyMsg);
-                        }
-                    } else if (emptyMsg) {
-                        emptyMsg.remove();
-                    }
                 });
             }
         })();

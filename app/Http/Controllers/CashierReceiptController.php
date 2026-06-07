@@ -16,7 +16,11 @@ class CashierReceiptController extends Controller
             ->orderByDesc('sold_at')
             ->paginate(5);
 
-        return view('cashier.receipts.index', ['orders' => $orders]);
+        $view = auth()->user()?->role === 'leader_cashier'
+            ? 'leader_cashier.receipts.index'
+            : 'cashier.receipts.index';
+
+        return view($view, ['orders' => $orders]);
     }
 
     public function print(SaleTransaction $order): View

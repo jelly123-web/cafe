@@ -19,4 +19,9 @@ class MenuCategory extends Model
     {
         return $this->hasMany(Menu::class, 'menu_category_id');
     }
+
+    public function packages(): HasMany
+    {
+        return $this->hasMany(FoodPackage::class, 'menu_category_id');
+    }
 }

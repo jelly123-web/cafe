@@ -25,9 +25,9 @@ class SuperadminPayrollController extends Controller
         $data = $request->validate([
             'employee_id' => ['required', 'exists:employees,id'],
             'period_month' => ['required', 'date'],
-            'base_salary' => ['required', 'numeric', 'min:0'],
-            'allowances' => ['nullable', 'numeric', 'min:0'],
-            'deductions' => ['nullable', 'numeric', 'min:0'],
+            'base_salary' => ['required', 'numeric', 'min:0', 'max:999999999999999'],
+            'allowances' => ['nullable', 'numeric', 'min:0', 'max:999999999999999'],
+            'deductions' => ['nullable', 'numeric', 'min:0', 'max:999999999999999'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 

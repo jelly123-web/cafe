@@ -14,7 +14,7 @@ class CashierTableController extends Controller
     {
         $tables = DiningTable::query()
             ->orderByRaw('CAST(number AS UNSIGNED) ASC')
-            ->get();
+            ->paginate(10);
 
         return view('cashier.tables.index', ['tables' => $tables]);
     }

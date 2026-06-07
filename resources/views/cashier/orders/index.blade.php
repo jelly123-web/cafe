@@ -1,203 +1,280 @@
 @extends('cashier.layout')
 
 @section('title', ($cafeBrand['name'] ?? config('app.name')) . ' - Pesanan Kasir')
+@section('page_title', 'Pesanan Kasir')
+@section('page_description', 'Melihat pesanan masuk pelanggan, status pesanan, dan membatalkan pesanan jika diizinkan.')
 
 @push('head')
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/leader-cashier.css') }}">
     <style>
-        body { line-height: 1.6; background-image: radial-gradient(var(--accent) 1px, transparent 1px); background-size: 24px 24px; }
-        .shell { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
-        .panel { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 20px; padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px var(--shadow); }
-        .title { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; margin: 0 0 0.5rem; }
-        .muted { color: var(--text-muted); font-size: 0.95rem; }
-        .alert { padding: 0.85rem 1.25rem; border-radius: 14px; margin-bottom: 1rem; font-weight: 500; font-size: 0.95rem; border: 1px solid transparent; }
-        .ok { background: #E8F5E9; color: #558B2F; border-color: #C8E6C9; }
-        .err { background: #FFEBEE; color: #C62828; border-color: #FFCDD2; }
-        .order { border: 1px solid var(--accent); border-radius: 16px; padding: 1.25rem; margin-bottom: 1.25rem; background: #FFFAF5; transition: all 0.2s ease; box-shadow: 0 2px 8px var(--shadow); }
-        .order:hover { border-color: rgba(212, 163, 115, 0.4); transform: translateY(-2px); box-shadow: 0 6px 15px var(--shadow); }
-        .row { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-        .pill { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 999px; background: var(--highlight); color: #fff; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-        .order strong { display: block; margin-top: 8px; color: var(--primary); font-size: 1.1rem; font-family: 'Playfair Display', Georgia, serif; }
-        .order .muted div { font-size: 0.9rem; }
-        .order .muted strong { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.9rem; color: var(--text-main); }
-        .items { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--accent); }
-        .item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px dashed var(--accent); font-size: 0.95rem; }
-        .item:last-child { border-bottom: none; }
-        .item span:last-child { font-weight: 600; color: var(--primary); }
-        .order-card { background: #FFFAF5; box-shadow: 0 2px 8px var(--shadow); }
-        .order-head { align-items: flex-start; }
-        .order-title { margin-top: 0.45rem; }
-        .order-meta { display: grid; gap: 0.2rem; color: var(--text-muted); font-size: 0.9rem; margin-top: 0.2rem; }
-        .order-items { margin-top: 1rem; padding-top: 0.85rem; border-top: 1px dashed var(--accent); display: grid; gap: 0.5rem; }
-        .order-item { font-size: 0.95rem; }
-        .order-footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--accent); flex-wrap: wrap; }
-        .order-code { margin-bottom: 0.25rem; }
-        .status-pill { display: inline-flex; align-items: center; padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
-        .status-pending { background: #FFF3E0; color: #E65100; }
-        .status-processing { background: #E3F2FD; color: #1565C0; }
-        .status-ready { background: #E8F5E9; color: #2E7D32; }
-        .status-completed { background: #E8F5E9; color: #2E7D32; }
-        .status-cancelled { background: #FFEBEE; color: #C62828; }
-        .empty-orders { text-align: center; padding: 2rem 0; }
-        .btn { border: 1px solid transparent; border-radius: 12px; padding: 0.5rem 1.2rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.9rem; transition: all 0.2s ease; }
-        .btn-cancel { background: transparent; color: #E57373; border-color: #F8D7DA; margin-top: 1rem; }
-        .btn-cancel:hover { background: #FFF0F0; border-color: #E57373; }
-        .pagination-area { margin-top: 1.5rem; }
-        .order.flash-new { animation: flashNew 0.9s ease; }
-        @keyframes flashNew {
-            0% { box-shadow: 0 0 0 0 rgba(129, 199, 132, 0.6); border-color: #81C784; }
-            100% { box-shadow: 0 2px 8px var(--shadow); border-color: var(--accent); }
+        :root {
+            --bg: #F4F5F7;
+            --bg-card: #FFFFFF;
+            --white: #FFFFFF;
+            --border: #E8EAED;
+            --border-light: #F0F1F3;
+            --fg: #1A1D23;
+            --fg-secondary: #5F6577;
+            --muted: #9CA3B4;
+            --accent: #D97706;
+            --accent-light: #FEF3C7;
+            --accent-dark: #B45309;
+            --green: #059669;
+            --green-light: #D1FAE5;
+            --red: #DC2626;
+            --red-light: #FEE2E2;
+            --blue: #2563EB;
+            --blue-light: #DBEAFE;
+            --radius-sm: 8px;
+            --radius-md: 12px;
         }
-        @media (max-width: 768px) { .shell { padding: 1rem; } .title { font-size: 1.5rem; } .panel { padding: 1.25rem; } .row { flex-direction: column; gap: 0.5rem; } }
+
+        /* ===== STATS STRIP ===== */
+        .stats-strip {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 12px; margin-bottom: 24px;
+        }
+        .strip-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 14px 18px;
+            display: flex; align-items: center; gap: 14px;
+            transition: all 0.25s ease; position: relative; overflow: hidden;
+        }
+        .strip-card .strip-icon {
+            width: 40px; height: 40px; border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+        /* Warna Stat Card */
+        .strip-card:nth-child(1) .strip-icon { background: var(--accent-light); color: var(--accent); }
+        .strip-card:nth-child(2) .strip-icon { background: var(--blue-light); color: var(--blue); }
+        .strip-card:nth-child(3) .strip-icon { background: var(--green-light); color: var(--green); }
+        .strip-card:nth-child(4) .strip-icon { background: var(--red-light); color: var(--red); }
+        
+        .strip-info strong {
+            font-size: 18px; font-weight: 900; color: var(--fg);
+            letter-spacing: -0.3px; line-height: 1.1; display: block;
+        }
+        .strip-info span {
+            font-size: 11px; color: var(--muted); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.4px;
+        }
+
+        /* ===== ORDER LIST ===== */
+        .order-list { display: grid; gap: 12px; }
+
+        /* ===== ORDER CARD ===== */
+        .order {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0;
+            transition: all 0.25s ease;
+            overflow: hidden;
+            position: relative;
+        }
+        .order-head {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 12px; padding: 18px 20px 0; flex-wrap: wrap;
+        }
+        .order-head-left { display: flex; align-items: flex-start; gap: 14px; min-width: 0; }
+        .order-icon {
+            width: 44px; height: 44px; border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+            background: var(--accent-light); color: var(--accent);
+        }
+        .order-head-info { min-width: 0; }
+        .order-code {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 4px;
+            background: var(--accent-light); color: var(--accent-dark);
+            font-size: 12px; font-weight: 800; font-family: monospace;
+        }
+        .order-title { font-size: 14px; font-weight: 800; color: var(--fg); margin-top: 4px; }
+        .order-meta { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; font-weight: 500; margin-top: 3px; }
+        
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 5px 12px; border-radius: 999px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+        }
+        .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+        .status-pending { background: var(--accent-light); color: var(--accent-dark); }
+        .status-processing { background: var(--blue-light); color: var(--blue); }
+        .status-ready { background: var(--green-light); color: var(--green); }
+        .status-cancelled { background: var(--red-light); color: var(--red); }
+
+        .order-items { padding: 14px 20px; display: grid; gap: 6px; }
+        .order-item {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border-light);
+        }
+        .item-left { display: flex; align-items: center; gap: 8px; }
+        .item-qty {
+            width: 24px; height: 24px; border-radius: 5px;
+            background: var(--bg); border: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800; color: var(--fg-secondary);
+        }
+        .item-name { font-weight: 600; color: var(--fg); }
+        .item-price { font-weight: 700; color: var(--fg); }
+
+        .order-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; padding: 14px 20px; border-top: 1px solid var(--border-light);
+            background: var(--bg);
+        }
+        .order-total { font-size: 16px; font-weight: 900; color: var(--fg); }
+        .order-total small { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; display: block; }
+        .btn-cancel {
+            background: transparent; color: var(--red); border: 1.5px solid #FECACA;
+            border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+        }
+        .btn-cancel:hover { background: var(--red-light); border-color: var(--red); }
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 14px; }
     </style>
 @endpush
 
 @section('content')
-    <main class="shell">
-        <section class="panel">
-            <span style="display: block; color: var(--highlight); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.25rem;">Halo, {{ auth()->user()->name ?? 'User' }} 👋</span>
-            <h1 class="title">Pesanan Kasir</h1>
-            <p class="muted">Melihat pesanan masuk pelanggan, status pesanan, dan membatalkan pesanan jika diizinkan.</p>
-        </section>
+    @if (session('success'))
+        <div class="alert alert-ok fade-in">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-err fade-in">{{ session('error') }}</div>
+    @endif
 
-        @if (session('success'))
-            <div class="alert ok">{{ session('success') }}</div>
-        @endif
-        @if (session('error'))
-            <div class="alert err">{{ session('error') }}</div>
-        @endif
-
-        <section class="panel">
-            <div id="cashierOrdersList">
-                @include('cashier.orders._list', ['orders' => $orders, 'canCancelOrders' => $canCancelOrders])
+    <section class="stats-strip fade-in">
+        <div class="strip-card">
+            <div class="strip-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="strip-info">
+                <strong id="cashierOrdersTotal">{{ $orders->count() }}</strong>
+                <span>Total Pesanan</span>
             </div>
-        </section>
-    </main>
+        </div>
+        <div class="strip-card">
+            <div class="strip-icon"><i class="fas fa-spinner"></i></div>
+            <div class="strip-info">
+                <strong id="cashierOrdersProcessing">{{ $orders->where('status','processing')->count() }}</strong>
+                <span>Diproses</span>
+            </div>
+        </div>
+        <div class="strip-card">
+            <div class="strip-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="strip-info">
+                <strong id="cashierOrdersReady">{{ $orders->where('status','ready')->count() }}</strong>
+                <span>Siap Saji</span>
+            </div>
+        </div>
+        <div class="strip-card">
+            <div class="strip-icon"><i class="fas fa-ban"></i></div>
+            <div class="strip-info">
+                <strong id="cashierOrdersCancelled">{{ $orders->where('status','cancelled')->count() }}</strong>
+                <span>Dibatalkan</span>
+            </div>
+        </div>
+    </section>
+
+    <div id="cashierOrdersList" class="order-list">
+        @include('cashier.orders._list', ['orders' => $orders, 'canCancelOrders' => $canCancelOrders])
+    </div>
 @endsection
 
 @push('scripts')
 <script>
-    (function () {
-        const listEl = document.getElementById('cashierOrdersList');
-        if (!listEl) return;
+    (() => {
+        const wrap = document.getElementById('cashierOrdersList');
+        if (!wrap) return;
 
-        let lastTopOrderId = Number(listEl.querySelector('.order[data-order-id]')?.dataset.orderId || 0);
-        let isLoading = false;
+        const totalEl = document.getElementById('cashierOrdersTotal');
+        const processingEl = document.getElementById('cashierOrdersProcessing');
+        const readyEl = document.getElementById('cashierOrdersReady');
+        const cancelledEl = document.getElementById('cashierOrdersCancelled');
+        const storageKey = 'cafe_live_sync_last_order_id';
+        const channel = window.BroadcastChannel ? new BroadcastChannel('cafe-order-sync') : null;
+        let currentSignature = @json(sha1($orders->getCollection()->map(function ($order) {
+            return implode(':', [
+                $order->id,
+                $order->status,
+                optional($order->updated_at)->timestamp ?? 0,
+            ]);
+        })->implode('|')));
+        let busy = false;
 
-        const showNotif = (message, type = 'success') => {
-            if (typeof window.showToast === 'function') {
-                window.showToast(message, type);
-                return;
-            }
-            console.log(type.toUpperCase() + ': ' + message);
+        const hydrateFadeIn = () => {
+            wrap.querySelectorAll('.fade-in').forEach((el) => el.classList.add('visible'));
         };
 
-        const bindCancelForms = () => {
-            listEl.querySelectorAll('.cancel-order-form').forEach((form) => {
-                if (form.dataset.bound === '1') return;
-                form.dataset.bound = '1';
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    if (!confirm('Batalkan pesanan ini?')) return;
-
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    if (submitBtn) submitBtn.disabled = true;
-                    try {
-                        const response = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: new FormData(form),
-                            credentials: 'same-origin',
-                        });
-                        const data = await response.json();
-                        if (!response.ok || !data.ok) {
-                            throw new Error(data.message || 'Gagal membatalkan pesanan.');
-                        }
-                        showNotif(data.message || 'Pesanan dibatalkan.');
-                        await reloadOrders(false);
-                    } catch (err) {
-                        showNotif(err.message || 'Terjadi kesalahan.', 'error');
-                    } finally {
-                        if (submitBtn) submitBtn.disabled = false;
-                    }
-                });
-            });
-        };
-
-        const reloadOrders = async (notifyNew = true) => {
-            if (isLoading) return;
-            isLoading = true;
+        const refreshOrders = async () => {
+            if (busy || document.visibilityState !== 'visible') return;
+            busy = true;
             try {
-                const url = new URL(@json(route('cashier.orders.live')), window.location.origin);
-                const currentParams = new URLSearchParams(window.location.search);
-                if (currentParams.has('page')) {
-                    url.searchParams.set('page', currentParams.get('page'));
-                }
-
-                const response = await fetch(url, {
+                const res = await fetch("{{ route('cashier.orders.live') }}", {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json',
                     },
                     credentials: 'same-origin',
                 });
-                if (!response.ok) throw new Error('Gagal memuat pesanan terbaru.');
-                const data = await response.json();
-                const prevTopOrderId = lastTopOrderId;
-
-                listEl.innerHTML = data.html || '';
-                bindCancelForms();
-
-                const topOrderEl = listEl.querySelector('.order[data-order-id]');
-                const topId = Number(topOrderEl?.dataset.orderId || 0);
-                lastTopOrderId = topId;
-
-                if (notifyNew && data.latest && Number(data.latest.id) > Number(prevTopOrderId)) {
-                    topOrderEl?.classList.add('flash-new');
-                    showNotif('Pesanan baru masuk: ' + data.latest.code, 'success');
+                if (!res.ok) return;
+                const payload = await res.json();
+                if ((payload.signature || '') !== currentSignature) {
+                    wrap.innerHTML = payload.html || '';
+                    currentSignature = payload.signature || '';
+                    hydrateFadeIn();
                 }
-            } catch (err) {
-                console.error(err);
+                if (payload.summary) {
+                    if (totalEl) totalEl.textContent = payload.summary.total ?? '0';
+                    if (processingEl) processingEl.textContent = payload.summary.processing ?? '0';
+                    if (readyEl) readyEl.textContent = payload.summary.ready ?? '0';
+                    if (cancelledEl) cancelledEl.textContent = payload.summary.cancelled ?? '0';
+                }
+            } catch (e) {
             } finally {
-                isLoading = false;
+                busy = false;
             }
         };
 
-        const startPolling = () => {
-            const listEl = document.getElementById('cashierOrdersList');
-            if (!listEl) return;
+        wrap.addEventListener('submit', async (event) => {
+            const form = event.target.closest('.cancel-order-form');
+            if (!(form instanceof HTMLFormElement)) return;
+            event.preventDefault();
 
-            // Handle pagination clicks via AJAX
-            listEl.addEventListener('click', (e) => {
-                const link = e.target.closest('.pagination-link');
-                if (link && link.href) {
-                    e.preventDefault();
-                    const url = new URL(link.href);
-                    const newPage = url.searchParams.get('page');
-                    if (newPage) {
-                        // Update URL without reloading or scrolling
-                        const newUrl = window.location.pathname + '?page=' + newPage;
-                        window.history.pushState({ path: newUrl }, '', newUrl);
-                        reloadOrders(false);
-                    }
-                }
-            });
+            const formData = new FormData(form);
+            currentSignature = '';
 
-            setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    reloadOrders(true);
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                    credentials: 'same-origin',
+                });
+                const payload = await res.json();
+                if (!res.ok || payload.ok === false) {
+                    throw new Error(payload.message || 'Gagal membatalkan pesanan.');
                 }
-            }, 3000);
+                if (window.showToast) window.showToast(payload.message || 'Pesanan dibatalkan.', 'success');
+                refreshOrders();
+            } catch (error) {
+                if (window.showToast) window.showToast(error.message || 'Gagal membatalkan pesanan.', 'error');
+            }
+        });
+
+        const requestRefresh = () => {
+            if (document.visibilityState === 'visible') refreshOrders();
         };
 
-        bindCancelForms();
-        window.addEventListener('cafe:order-sync', () => reloadOrders(true));
-        startPolling();
+        hydrateFadeIn();
+        setInterval(requestRefresh, 4000);
+        window.addEventListener('cafe:order-sync', requestRefresh);
+        window.addEventListener('storage', (event) => {
+            if (event.key === storageKey) requestRefresh();
+        });
+        channel?.addEventListener('message', requestRefresh);
     })();
 </script>
 @endpush

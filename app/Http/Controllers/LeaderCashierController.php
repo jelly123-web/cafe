@@ -22,7 +22,7 @@ class LeaderCashierController extends Controller
     {
         $user = $request->user();
         $role = strtolower(trim((string) $user?->role));
-        abort_unless($user && in_array($role, ['leader_cashier', 'superadmin'], true), 403);
+        abort_unless($user && in_array($role, ['leader_cashier', 'kasir', 'superadmin'], true), 403);
 
         $catalog = Cache::remember('leader.cashier.transaction.catalog', now()->addMinutes(1), function () {
             return [
@@ -35,11 +35,19 @@ class LeaderCashierController extends Controller
             ];
         });
 
+        $orders = SaleTransaction::query()
+            ->with(['table', 'items.menu'])
+            ->whereDate('sold_at', Carbon::today())
+            ->orderByDesc('sold_at')
+            ->get();
+
         return view('leader_cashier.transactions.index', [
             'menus' => $catalog['menus'],
             'addonMenus' => $catalog['addonMenus'],
             'tables' => $catalog['tables'],
             'cart' => $this->cartRows((int) $user->id),
+            'orders' => $orders,
+            'canCancelOrders' => true,
         ]);
     }
 

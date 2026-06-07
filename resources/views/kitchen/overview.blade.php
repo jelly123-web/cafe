@@ -1,92 +1,262 @@
 @extends('kitchen.layout')
 
-@section('title', ($cafeBrand['name'] ?? config('app.name')) . ' - Dashboard Dapur')
+@section('title', 'Dashboard Dapur')
 
 @push('head')
     <style>
-        .kitchen-shell { max-width: 100%; }
-        .panel { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 20px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px var(--shadow); }
-        .page-title { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.6rem; margin: 0 0 0.5rem; }
-        .page-desc { color: var(--text-muted); font-size: 0.95rem; margin: 0; }
-        .alert-warn { background: #FFF8E1; color: #8D6E63; border: 1px solid #FFE0B2; border-left: 5px solid var(--highlight); padding: 0.85rem 1.25rem; border-radius: 14px; margin-top: 1rem; font-size: 0.9rem; }
-        .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
-        .summary-card { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 16px; padding: 1.25rem; box-shadow: 0 4px 15px var(--shadow); position: relative; overflow: hidden; }
-        .summary-card::after { content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--accent), var(--highlight)); }
-        .summary-card span { display: block; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; margin-bottom: 0.6rem; }
-        .summary-card strong { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; }
-        @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @media (max-width: 768px) { .page-title { font-size: 1.35rem; } .panel { padding: 1.25rem; } .summary-grid { grid-template-columns: 1fr; } }
+        .page-body { padding: 0; }
+        .page-shell {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 28px 32px;
+        }
+
+        .dashboard-topbar {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px 28px;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .dashboard-topbar h1 {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--fg);
+            margin: 0 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.3px;
+        }
+
+        .dashboard-topbar h1 i { color: var(--accent); }
+
+        .dashboard-topbar p {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .dashboard-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dashboard-hello-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 40px;
+            padding: 0 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            background: var(--bg);
+            color: var(--fg-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            background: var(--green-light);
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: dotPulse 2s infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px 26px;
+            box-shadow: var(--shadow-xs);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-3px);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.amber { background: #FEF3C7; color: #D97706; }
+        .stat-icon.orange { background: #FFF3E0; color: #E65100; }
+        .stat-icon.blue { background: #DBEAFE; color: #2563EB; }
+        .stat-icon.green { background: #D1FAE5; color: #059669; }
+
+        .stat-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .stat-trend.urgent { background: var(--red-light); color: var(--red); }
+        .stat-trend.progress { background: var(--blue-light); color: var(--blue); }
+        .stat-trend.success { background: var(--green-light); color: var(--green); }
+        .stat-trend.neutral { background: #F3F4F6; color: var(--muted); }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1.1;
+            color: var(--fg);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 1280px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 768px) {
+            .page-shell { padding: 16px; }
+            .dashboard-topbar { flex-direction: column; align-items: flex-start; padding: 20px; }
+            .dashboard-hello-pill { display: none; }
+            .stats-grid { grid-template-columns: 1fr; gap: 16px; }
+            .stat-card { padding: 20px; }
+            .stat-value { font-size: 26px; }
+        }
     </style>
 @endpush
 
 @section('content')
-    <div class="kitchen-shell">
-        <section class="panel">
-            <h1 class="page-title">Dashboard Dapur</h1>
-            <p class="page-desc">Ringkasan operasional dapur hari ini.</p>
-            @if (! $hasStatus)
-                <div class="alert-warn">Kolom status belum tersedia di database, jadi ringkasan status masih 0. Jalankan migrasi untuk data status lengkap.</div>
-            @endif
-        </section>
+    <div class="page-shell">
+        <div class="dashboard-topbar">
+            <div>
+                <h1><i class="fas fa-fire-burner"></i> Dashboard Dapur</h1>
+                <p>Ringkasan operasional dapur hari ini.</p>
+            </div>
+            <div class="dashboard-topbar-right">
+                <div class="dashboard-hello-pill">
+                    <span>Halo, {{ auth()->user()->name ?? 'Koki' }}</span>
+                </div>
+                <div class="live-indicator">
+                    <span class="live-dot"></span> Live
+                </div>
+            </div>
+        </div>
 
-        <section class="summary-grid">
-            <article class="summary-card">
-                <span>Total pesanan hari ini</span>
-                <strong id="kpiTotal">{{ $totalToday }}</strong>
-            </article>
-            <article class="summary-card">
-                <span>Pesanan menunggu</span>
-                <strong id="kpiPending">{{ $pendingCount }}</strong>
-            </article>
-            <article class="summary-card">
-                <span>Pesanan sedang dibuat</span>
-                <strong id="kpiProcessing">{{ $processingCount }}</strong>
-            </article>
-            <article class="summary-card">
-                <span>Pesanan selesai</span>
-                <strong id="kpiCompleted">{{ $completedCount }}</strong>
-            </article>
-        </section>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon amber">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <span class="stat-trend neutral">
+                        <i class="fas fa-calendar-day"></i> Hari ini
+                    </span>
+                </div>
+                <div class="stat-value">{{ $pendingCount + $processingCount + $completedCount }}</div>
+                <div class="stat-label">Total Pesanan</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon orange">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <span class="stat-trend {{ $pendingCount > 0 ? 'urgent' : 'neutral' }}">
+                        <i class="fas {{ $pendingCount > 0 ? 'fa-exclamation-circle' : 'fa-minus-circle' }}"></i>
+                        {{ $pendingCount > 0 ? 'Butuh Aksi' : 'Aman' }}
+                    </span>
+                </div>
+                <div class="stat-value">{{ $pendingCount }}</div>
+                <div class="stat-label">Pesanan Menunggu</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon blue">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <span class="stat-trend {{ $processingCount > 0 ? 'progress' : 'neutral' }}">
+                        <i class="fas {{ $processingCount > 0 ? 'fa-spinner' : 'fa-minus-circle' }}"></i>
+                        {{ $processingCount > 0 ? 'Proses' : 'Kosong' }}
+                    </span>
+                </div>
+                <div class="stat-value">{{ $processingCount }}</div>
+                <div class="stat-label">Sedang Dibuat</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <span class="stat-trend success">
+                        <i class="fas fa-arrow-up"></i> Lancar
+                    </span>
+                </div>
+                <div class="stat-value">{{ $completedCount }}</div>
+                <div class="stat-label">Pesanan Selesai</div>
+            </div>
+        </div>
     </div>
-    <script>
-        (function () {
-            const totalEl = document.getElementById('kpiTotal');
-            const pendingEl = document.getElementById('kpiPending');
-            const processingEl = document.getElementById('kpiProcessing');
-            const completedEl = document.getElementById('kpiCompleted');
-            if (!totalEl || !pendingEl || !processingEl || !completedEl) return;
-
-            let syncing = false;
-            const sync = async () => {
-                if (syncing) return;
-                syncing = true;
-                try {
-                    const res = await fetch("{{ route('kitchen.dashboard.live') }}", {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        credentials: 'same-origin',
-                    });
-                    if (!res.ok) return;
-                    const payload = await res.json();
-                    totalEl.textContent = payload.totalToday ?? 0;
-                    pendingEl.textContent = payload.pendingCount ?? 0;
-                    processingEl.textContent = payload.processingCount ?? 0;
-                    completedEl.textContent = payload.completedCount ?? 0;
-                } catch (e) {
-                } finally {
-                    syncing = false;
-                }
-            };
-
-            sync();
-            setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    sync();
-                }
-            }, 4000);
-            window.addEventListener('focus', sync);
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') sync();
-            });
-        })();
-    </script>
 @endsection

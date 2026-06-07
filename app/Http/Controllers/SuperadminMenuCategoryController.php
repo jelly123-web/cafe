@@ -9,81 +9,80 @@ use Illuminate\View\View;
 
 class SuperadminMenuCategoryController extends Controller
 {
-    private const FIXED_CATEGORIES = [
-        'makanan',
-        'minuman',
-        'paket',
-    ];
-
     public function index(): View
     {
-        $this->ensureFixedCategories();
-
         $categories = MenuCategory::query()
-            ->withCount('menus')
-            ->whereIn('name', self::FIXED_CATEGORIES)
+            ->withCount([
+                'menus' => function ($query) {
+                    $query->where('code', '!=', 'A01');
+                },
+                'packages',
+            ])
             ->get()
-            ->sortBy(fn (MenuCategory $category) => array_search($category->name, self::FIXED_CATEGORIES, true))
-            ->values();
+            ->map(function (MenuCategory $category) {
+                $category->display_count = $category->name === 'paket'
+                    ? $category->packages_count
+                    : $category->menus_count;
+
+                $category->display_label = $category->name === 'paket' ? 'paket' : 'menu';
+
+                return $category;
+            });
 
         return view('superadmin.menu-categories.index', [
             'categories' => $categories,
-            'fixedCategories' => self::FIXED_CATEGORIES,
         ]);
     }
 
-    public function create(): JsonResponse
+    public function create(): View
     {
-        return $this->readOnlyResponse();
+        return view('superadmin.menu-categories.create');
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        return $this->readOnlyResponse();
+        $data = $request->validate([
+            'name' => 'required|string|max:100|unique:menu_categories,name',
+            'description' => 'nullable|string|max:255',
+        ]);
+        
+        $data['slug'] = \Illuminate\Support\Str::slug($data['name']);
+
+        MenuCategory::create($data);
+
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Kategori berhasil ditambahkan.');
     }
 
-    public function edit(MenuCategory $menuCategory): JsonResponse
+    public function edit(MenuCategory $menuCategory): View
     {
-        return $this->readOnlyResponse();
+        return view('superadmin.menu-categories.edit', ['menuCategory' => $menuCategory]);
     }
 
-    public function update(Request $request, MenuCategory $menuCategory): JsonResponse
+    public function update(Request $request, MenuCategory $menuCategory): \Illuminate\Http\RedirectResponse
     {
-        return $this->readOnlyResponse();
+        $data = $request->validate([
+            'name' => 'required|string|max:100|unique:menu_categories,name,' . $menuCategory->id,
+            'description' => 'nullable|string|max:255',
+        ]);
+        
+        $data['slug'] = \Illuminate\Support\Str::slug($data['name']);
+
+        $menuCategory->update($data);
+
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Kategori berhasil diperbarui.');
     }
 
-    public function destroy(Request $request, MenuCategory $menuCategory): JsonResponse
+    public function destroy(Request $request, MenuCategory $menuCategory): \Illuminate\Http\RedirectResponse
     {
-        return $this->readOnlyResponse();
+        $menuCategory->delete();
+
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Kategori berhasil dihapus.');
     }
 
-    public function destroyAll(Request $request): JsonResponse
+    public function destroyAll(Request $request): \Illuminate\Http\RedirectResponse
     {
-        return $this->readOnlyResponse();
-    }
+        MenuCategory::query()->delete();
 
-    private function ensureFixedCategories(): void
-    {
-        foreach (self::FIXED_CATEGORIES as $name) {
-            MenuCategory::firstOrCreate(
-                ['name' => $name],
-                ['slug' => $name]
-            );
-        }
-
-        MenuCategory::query()
-            ->whereNotIn('name', self::FIXED_CATEGORIES)
-            ->delete();
-    }
-
-    private function readOnlyResponse(): JsonResponse
-    {
-        if (! request()->expectsJson()) {
-            abort(403, 'Kategori menu dikunci. Hanya tiga kategori tetap yang boleh dipakai.');
-        }
-
-        return response()->json([
-            'message' => 'Kategori menu dikunci. Hanya tiga kategori tetap yang boleh dipakai.',
-        ], 403);
+        return redirect()->route('superadmin.menu-categories.index')->with('status', 'Semua kategori berhasil dihapus.');
     }
 }

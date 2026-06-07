@@ -1,201 +1,159 @@
 @extends('superadmin.layout')
 
+@section('title', 'Hak Akses')
+@section('page_title', 'Hak Akses')
+@section('page_description', 'Checklist hak akses tiap role dalam satu tabel. Semua perubahan disimpan ke database permission.')
+
 @push('head')
     <style>
+        /* CSS provided by user - embedded here */
         .summary-top {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            margin-bottom: 1.2rem;
-            gap: 1rem;
-            flex-wrap: wrap;
+            display: flex; justify-content: flex-end; align-items: center;
+            margin-bottom: 20px; gap: 10px; flex-wrap: wrap;
         }
         .active-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.45rem;
-            border: 1px solid #ffe0b2;
-            background: #fff8ef;
-            color: #c67f2f;
-            border-radius: 999px;
-            padding: 0.45rem 0.85rem;
-            font-weight: 700;
-            font-size: 0.85rem;
+            display: inline-flex; align-items: center; gap: 6px;
+            border: 1.5px solid var(--accent-light); background: var(--accent-light);
+            color: var(--accent-dark); border-radius: var(--radius-full);
+            padding: 6px 14px; font-weight: 700; font-size: 12px; letter-spacing: 0.3px;
         }
+        .active-badge .badge-dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+            animation: dotPulse 2s infinite;
+        }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Stats Grid */
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.2rem;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 14px; margin-bottom: 24px;
         }
         .stat-card {
-            background: #fff;
-            border: 1px solid var(--accent);
-            border-radius: 16px;
-            padding: 1rem;
-            box-shadow: 0 4px 15px var(--shadow);
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--radius-md); padding: 18px 20px;
+            display: flex; flex-direction: column; gap: 8px;
+            transition: all 0.25s ease; position: relative; overflow: hidden;
+        }
+        .stat-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+            height: 3px; background: var(--card-accent, var(--accent));
+            opacity: 0; transition: opacity var(--transition);
+        }
+        .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .stat-card:hover::after { opacity: 1; }
+        .stat-card .card-icon {
+            width: 38px; height: 38px; border-radius: var(--radius-sm);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; margin-bottom: 2px;
         }
         .stat-card strong {
-            display: block;
-            font-family: 'Playfair Display', Georgia, serif;
-            color: var(--primary);
-            font-size: 2rem;
-            line-height: 1;
-            margin-bottom: 0.25rem;
+            font-size: 26px; font-weight: 900; color: var(--fg);
+            letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums;
         }
-        .stat-card span { color: var(--text-muted); font-size: 0.9rem; }
-        .access-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 1rem;
-            align-items: start;
+        .stat-card span {
+            font-size: 12px; color: var(--muted); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
+
+        /* Panel & Table Styles */
+        .access-layout { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
         .panel-clean {
-            background: #fff;
-            border: 1px solid var(--accent);
-            border-radius: 18px;
-            box-shadow: 0 4px 15px var(--shadow);
-            overflow: hidden;
+            background: var(--white); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); overflow: hidden;
         }
         .panel-clean .head {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.9rem;
-            align-items: center;
-            border-bottom: 1px solid var(--accent);
-            padding: 1rem 1.15rem;
+            display: flex; justify-content: space-between; gap: 12px;
+            align-items: center; border-bottom: 1px solid var(--border-light);
+            padding: 18px 24px; flex-wrap: wrap;
         }
         .panel-clean h2 {
-            margin: 0;
-            color: var(--primary);
-            font-family: 'Playfair Display', Georgia, serif;
-            font-size: 2rem;
+            margin: 0; font-size: 15px; font-weight: 800; color: var(--fg);
+            letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px;
         }
-        .muted-note { color: var(--text-muted); font-size: 0.93rem; margin-top: 0.2rem; }
+        .panel-clean h2 i { color: var(--accent); font-size: 16px; }
+        .muted-note { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+        /* Filter Toolbar */
+        .filter-toolbar {
+            display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
+            padding: 16px 24px; border-bottom: 1px solid var(--border-light);
+        }
+        .filter-field { display: flex; flex-direction: column; gap: 5px; }
+        .filter-field label {
+            font-size: 11px; font-weight: 700; color: var(--muted);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .filter-field input, .filter-field select {
+            padding: 8px 12px; border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); background: var(--white);
+            font-size: 13px; font-weight: 500; color: var(--fg);
+            outline: none; transition: all var(--transition);
+        }
+        
+        /* Buttons */
         .sync-btn {
-            border: 1px solid #ffd8a8;
-            background: #fff8ef;
-            color: #c67f2f;
-            border-radius: 12px;
-            padding: 0.58rem 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
+            border: 1.5px solid var(--border); background: var(--white);
+            color: var(--fg-secondary); border-radius: var(--radius-sm);
+            padding: 9px 18px; font-weight: 700; font-size: 13px;
+            cursor: pointer; transition: all var(--transition);
+            display: inline-flex; align-items: center; gap: 6px;
         }
-        .sync-btn.primary {
-            background: var(--highlight);
-            border-color: var(--highlight);
-            color: #fff;
-        }
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            padding: 0.9rem;
-            border-top: 1px solid var(--accent);
-            background: #fff;
-            position: sticky;
-            bottom: 0;
-            z-index: 2;
-        }
-        .table-wrap { overflow: auto; padding: 0.9rem; }
-        .perm-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 100%;
-            table-layout: fixed;
-        }
-        .perm-table th,
-        .perm-table td {
-            border-bottom: 1px solid var(--accent);
-            padding: 0.8rem 0.55rem;
-            text-align: center;
-            vertical-align: middle;
+        .sync-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+        .sync-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+        .sync-btn.primary:hover { background: var(--accent-dark); }
+        .sync-btn.sm { padding: 6px 12px; font-size: 12px; }
+
+        /* Permission Table */
+        .table-wrap { overflow: auto; padding: 0; max-height: 65vh; }
+        .perm-table { width: 100%; border-collapse: collapse; min-width: 100%; table-layout: fixed; }
+        .perm-table th, .perm-table td {
+            border-bottom: 1px solid var(--border-light); padding: 12px 16px;
+            text-align: center; vertical-align: middle; font-size: 13px;
         }
         .perm-table th {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            background: #faf6f1;
-            font-weight: 700;
-            letter-spacing: 0.4px;
+            font-size: 11px; text-transform: uppercase; color: var(--muted);
+            background: var(--bg); font-weight: 700; letter-spacing: 0.7px;
+            position: sticky; top: 0; z-index: 5;
         }
-        .perm-table th:first-child,
-        .perm-table td:first-child {
-            width: 290px;
-            min-width: 290px;
+        .perm-table td:first-child, .perm-table th:first-child {
+            width: 280px; min-width: 280px; text-align: left;
+            position: sticky; left: 0; z-index: 3; background: var(--white);
         }
-        .perm-table th:not(:first-child),
-        .perm-table td:not(:first-child) {
-            width: 120px;
+        .perm-table th:first-child { z-index: 6; background: var(--bg); }
+        .perm-table th:not(:first-child), .perm-table td:not(:first-child) { width: 110px; }
+        
+        .perm-label { font-weight: 700; color: var(--fg); font-size: 13px; display: block; }
+        .perm-key {
+            color: var(--muted); font-size: 11px; display: block; margin-top: 2px;
+            font-family: monospace;
         }
-        .perm-table td:first-child,
-        .perm-table th:first-child {
-            text-align: left;
-            position: sticky;
-            left: 0;
-            background: #fff;
-            z-index: 3;
-            box-shadow: 8px 0 0 #fff;
-        }
-        .perm-key { color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 0.15rem; }
-        .role-head { display: grid; gap: 0.12rem; justify-items: center; line-height: 1.15; }
-        .role-head strong { color: var(--primary); font-size: 0.84rem; white-space: normal; word-break: break-word; }
-        .role-head small { color: var(--text-muted); font-size: 0.68rem; white-space: normal; word-break: break-word; }
+        .role-head { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+        .role-dot { width: 8px; height: 8px; border-radius: 50%; margin-bottom: 2px; }
+
+        /* Custom Checkbox */
         .tick {
-            width: 22px;
-            height: 22px;
-            accent-color: #f08d23;
-            cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            width: 22px; height: 22px; border: 2px solid var(--border);
+            border-radius: 5px; cursor: pointer; position: relative;
         }
-        .toast {
-            position: fixed;
-            right: 1rem;
-            top: 1rem;
-            z-index: 9999;
-            background: #1f2937;
-            color: #fff;
-            border-radius: 14px;
-            padding: 0.85rem 1rem;
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.2);
-            transform: translateY(-12px);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.22s ease;
-            max-width: min(92vw, 420px);
-            font-size: 0.92rem;
+        .tick:checked { background: var(--accent); border-color: var(--accent); }
+        .tick:checked::after {
+            content: ''; position: absolute; left: 6px; top: 2px;
+            width: 6px; height: 11px; border: solid white;
+            border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
         }
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .toast.success { background: #2e7d32; }
-        .toast.error { background: #c62828; }
-        .panel-side { padding: 1rem 1.15rem; }
-        .side-box {
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 0.85rem;
-            margin-bottom: 0.75rem;
-            background: #fff;
-            display: flex;
-            justify-content: space-between;
-            gap: 0.6rem;
-            align-items: center;
-        }
-        .side-box strong { color: var(--primary); display: block; }
-        .side-box p { margin: 0; color: var(--text-muted); font-size: 0.86rem; }
-        .side-box .num { font-size: 2rem; color: #f08d23; font-weight: 800; line-height: 1; }
-        @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: 1fr; }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 16px 24px; border-top: 1px solid var(--border-light);
+            background: #FAFBFC; position: sticky; bottom: 0; z-index: 4;
         }
     </style>
 @endpush
-
-@section('title', 'Hak Akses')
-@section('page_title', 'Table Access')
-@section('page_description', 'Checklist hak akses tiap role dalam satu tabel. Semua perubahan disimpan ke database permission.')
 
 @section('content')
     @php
@@ -206,43 +164,50 @@
         $totalUsers = $users->count();
         $assignedCount = 0;
         foreach ($roleMeta as $role) {
-            if ($role->role === 'superadmin') {
-                $assignedCount += $permissionsCount;
-            } else {
-                foreach (array_keys($permissionDefinitions) as $key) {
-                    if (data_get($role->permissions, $key, false)) {
-                        $assignedCount++;
-                    }
+            foreach (array_keys($permissionDefinitions) as $key) {
+                if (data_get($role->permissions, $key, false)) {
+                    $assignedCount++;
                 }
             }
         }
-        $adminLike = $roleMeta->filter(function ($role) {
-            return in_array((string) $role->role, ['superadmin', 'admin', 'leader_cashier'], true)
-                || data_get($role->permissions, 'superadmin_users')
-                || data_get($role->permissions, 'superadmin_menus')
-                || data_get($role->permissions, 'superadmin_reports');
-        })->count();
     @endphp
 
-    <div class="summary-top">
-        <span class="active-badge">{{ $rolesCount }} role aktif</span>
+    <div class="summary-top fade-in">
+        <span class="active-badge"><span class="badge-dot"></span> {{ $rolesCount }} role aktif</span>
     </div>
 
     <section class="stats-grid">
-        <article class="stat-card"><strong>{{ $rolesCount }}</strong><span>Total Role</span></article>
-        <article class="stat-card"><strong>{{ $permissionsCount }}</strong><span>Permission Tersedia</span></article>
-        <article class="stat-card"><strong>{{ $totalUsers }}</strong><span>User Dalam Semua Role</span></article>
-        <article class="stat-card"><strong>{{ $assignedCount }}</strong><span>Permission Terpasang</span></article>
+        <article class="stat-card fade-in" style="--card-accent: var(--purple);">
+            <div class="card-icon" style="background:var(--purple-light);color:var(--purple);"><i class="fas fa-user-shield"></i></div>
+            <strong>{{ $rolesCount }}</strong>
+            <span>Total Role</span>
+        </article>
+        <article class="stat-card fade-in" style="--card-accent: var(--blue);">
+            <div class="card-icon" style="background:var(--blue-light);color:var(--blue);"><i class="fas fa-key"></i></div>
+            <strong id="valPermCount">{{ $permissionsCount }}</strong>
+            <span>Permission Tersedia</span>
+        </article>
+        <article class="stat-card fade-in" style="--card-accent: var(--teal);">
+            <div class="card-icon" style="background:var(--teal-light);color:var(--teal);"><i class="fas fa-users"></i></div>
+            <strong>{{ $totalUsers }}</strong>
+            <span>User</span>
+        </article>
+        <article class="stat-card fade-in" style="--card-accent: var(--green);">
+            <div class="card-icon" style="background:var(--green-light);color:var(--green);"><i class="fas fa-check-double"></i></div>
+            <strong class="value-green" id="valAssigned">{{ $assignedCount }}</strong>
+            <span>Permission Terpasang</span>
+        </article>
     </section>
 
     <section class="access-layout">
-        <article class="panel-clean">
+        <article class="panel-clean fade-in">
             <div class="head">
                 <div>
-                    <h2>Checklist Akses</h2>
+                    <h2><i class="fas fa-table-list"></i> Checklist Akses</h2>
                     <div class="muted-note">Centang permission yang boleh dilakukan role terkait.</div>
                 </div>
             </div>
+
             <form id="matrixForm" method="POST" action="{{ route('superadmin.access.matrix.update') }}" data-matrix-form>
                 @csrf
                 <div class="table-wrap">
@@ -253,26 +218,18 @@
                                 @foreach ($roleMeta as $role)
                                     <th>
                                         <div class="role-head">
+                                            <span class="role-dot" style="background:var(--accent);"></span>
                                             <strong>{{ strtoupper($role->label) }}</strong>
-                                            <small>
-                                                {{ strtoupper(match ($role->role) {
-                                                    'staff' => 'kasir',
-                                                    'leader_cashier' => 'leader kasir',
-                                                    'inventory' => 'gudang',
-                                                    'kitchen' => 'dapur',
-                                                    default => str_replace('_', ' ', $role->role),
-                                                }) }}
-                                            </small>
                                         </div>
                                     </th>
                                 @endforeach
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="permBody">
                             @foreach ($permissionDefinitions as $key => $label)
                                 <tr>
                                     <td>
-                                        <strong>{{ $label }}</strong>
+                                        <span class="perm-label">{{ $label }}</span>
                                         <span class="perm-key">{{ $key }}</span>
                                     </td>
                                     @foreach ($roleMeta as $role)
@@ -290,84 +247,48 @@
                     </table>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="sync-btn primary">Save Perubahan</button>
+                    <button type="submit" class="sync-btn primary"><i class="fas fa-save"></i> Simpan Perubahan</button>
                 </div>
             </form>
         </article>
-
     </section>
-    <div class="toast" id="accessToast" aria-live="polite" aria-atomic="true"></div>
 
     <script>
         (() => {
             const form = document.querySelector('[data-matrix-form]');
-            const toast = document.getElementById('accessToast');
-            const stats = {
-                roles: document.querySelector('.stats-grid .stat-card:nth-child(1) strong'),
-                permissions: document.querySelector('.stats-grid .stat-card:nth-child(2) strong'),
-                users: document.querySelector('.stats-grid .stat-card:nth-child(3) strong'),
-                assigned: document.querySelector('.stats-grid .stat-card:nth-child(4) strong'),
-            };
-            const roleHeaders = Array.from(document.querySelectorAll('.perm-table thead th')).slice(1);
-            const permissionRows = Array.from(document.querySelectorAll('.perm-table tbody tr'));
-
-            const showToast = (message, type = 'success') => {
-                if (!toast) return;
-                toast.textContent = message;
-                toast.className = `toast ${type} show`;
-                window.clearTimeout(window.__accessToastTimer);
-                window.__accessToastTimer = window.setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 2400);
-            };
-
-            const recalcAssigned = () => {
+            const valAssigned = document.getElementById('valAssigned');
+            
+            const recalcStats = () => {
                 let assigned = 0;
-                permissionRows.forEach((row) => {
-                    const checks = row.querySelectorAll('input[type="checkbox"]');
-                    checks.forEach((input) => {
-                        if (input.disabled) {
-                            assigned += 1;
-                            return;
-                        }
-                        if (input.checked) assigned += 1;
-                    });
+                document.querySelectorAll('.perm-table input[type="checkbox"]').forEach(input => {
+                    if (input.disabled || input.checked) assigned += 1;
                 });
-                if (stats.assigned) stats.assigned.textContent = String(assigned);
-            };
-
-            const recalcRoles = () => {
-                if (stats.roles) stats.roles.textContent = String(roleHeaders.length);
+                if (valAssigned) valAssigned.textContent = String(assigned);
             };
 
             if (form) {
-                form.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-                    const payload = new FormData(form);
-                    try {
-                        const response = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json',
-                            },
-                            body: payload,
-                        });
-                        const data = await response.json().catch(() => ({}));
-                        if (!response.ok) {
-                            throw new Error(data.message || 'Gagal menyimpan hak akses.');
-                        }
-                        showToast(data.message || 'Hak akses berhasil disimpan.', 'success');
-                        recalcAssigned();
-                        recalcRoles();
-                    } catch (err) {
-                        showToast(err.message || 'Gagal menyimpan hak akses.', 'error');
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = form.querySelector('.sync-btn.primary');
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+                    
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    
+                    btn.innerHTML = '<i class="fas fa-save"></i> Simpan Perubahan';
+                    if (response.ok) {
+                        window.showToast('Hak akses berhasil disimpan.');
+                        recalcStats();
+                    } else {
+                        window.showToast('Gagal menyimpan.', 'error');
                     }
                 });
             }
 
-            recalcAssigned();
-            recalcRoles();
+            document.querySelectorAll('.tick').forEach(cb => cb.addEventListener('change', recalcStats));
         })();
     </script>
 @endsection

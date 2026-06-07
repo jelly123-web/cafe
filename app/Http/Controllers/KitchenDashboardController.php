@@ -59,6 +59,13 @@ class KitchenDashboardController extends Controller
         $hasCustomerName = Schema::hasColumn('sale_transactions', 'customer_name');
         $hasStatus = Schema::hasColumn('sale_transactions', 'status');
 
+        $today = now()->toDateString();
+        $todayQuery = SaleTransaction::query()->whereDate('sold_at', $today);
+
+        $pendingCount = $hasStatus ? (clone $todayQuery)->where('status', SaleTransaction::STATUS_PENDING)->count() : 0;
+        $processingCount = $hasStatus ? (clone $todayQuery)->where('status', SaleTransaction::STATUS_PROCESSING)->count() : 0;
+        $completedCount = $hasStatus ? (clone $todayQuery)->where('status', SaleTransaction::STATUS_COMPLETED)->count() : 0;
+
         $orders = SaleTransaction::query()
             ->with(['table', 'items.menu', 'items.foodPackage'])
             ->withCount('items')
@@ -78,6 +85,9 @@ class KitchenDashboardController extends Controller
             'hasCustomerName' => $hasCustomerName,
             'hasStatus' => $hasStatus,
             'kitchenStatuses' => SaleTransaction::kitchenStatuses(),
+            'pendingCount' => $pendingCount,
+            'processingCount' => $processingCount,
+            'completedCount' => $completedCount,
         ]);
     }
 
@@ -101,10 +111,18 @@ class KitchenDashboardController extends Controller
             ->get();
 
         $latestOrderTs = optional($orders->first()?->sold_at)?->timestamp ?? 0;
+        $signature = sha1($orders->map(function (SaleTransaction $order) {
+            return implode(':', [
+                $order->id,
+                $order->status,
+                optional($order->updated_at)->timestamp ?? 0,
+            ]);
+        })->implode('|'));
 
         return response()->json([
             'count' => $orders->count(),
             'latest_ts' => $latestOrderTs,
+            'signature' => $signature,
             'html' => view('kitchen.partials.orders', [
                 'orders' => $orders,
                 'hasCustomerName' => $hasCustomerName,

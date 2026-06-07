@@ -22,15 +22,25 @@ class SuperadminMenuController extends Controller
         'paket',
     ];
 
-    public function index(): View|JsonResponse
+    public function index()
     {
         $this->ensureFixedCategories();
 
         $search = request()->string('search')->toString();
         $categoryId = request()->get('category_id');
         $allowedCategoryIds = $this->fixedCategoryIds();
+        $categoriesById = MenuCategory::query()
+            ->whereIn('id', $allowedCategoryIds)
+            ->get()
+            ->keyBy('id');
 
-        $query = Menu::query()
+        $currentFilter = 'all';
+        if ($categoryId !== null && $categoryId !== '' && $categoryId !== 'all') {
+            $resolvedCategory = $categoriesById->get((int) $categoryId);
+            $currentFilter = $resolvedCategory?->name ?? 'all';
+        }
+
+        $menus = Menu::query()
             ->with('category')
             ->where('code', '!=', 'A01')
             ->when($search, function ($query, string $search) {
@@ -39,15 +49,13 @@ class SuperadminMenuController extends Controller
                         ->orWhere('name', 'like', "%{$search}%");
                 });
             })
-            ->when($categoryId, function ($query, $categoryId) {
-                if ($categoryId !== 'all' && $categoryId !== '') {
-                    $query->where('menu_category_id', $categoryId);
-                }
+            ->whereHas('category', function ($query) {
+                $query->where('name', '!=', 'paket');
             })
-            ->latest();
+            ->latest()
+            ->get();
 
         if (request()->ajax()) {
-            $menus = $query->get();
             return response()->json([
                 'menus' => $menus->map(fn($m) => [
                     'id' => $m->id,
@@ -65,11 +73,23 @@ class SuperadminMenuController extends Controller
             ]);
         }
 
-        $menus = $query->paginate(12)->withQueryString();
+        $packages = FoodPackage::query()
+            ->with(['menus', 'category'])
+            ->when($search, function ($query, string $search) {
+                $query->where(function ($subQuery) use ($search) {
+                    $subQuery->where('code', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->get();
 
         $categories = MenuCategory::query()
             ->whereIn('id', $allowedCategoryIds)
-            ->withCount('menus')
+            ->withCount(['menus' => function ($query) {
+                $query->where('code', '!=', 'A01');
+            }])
             ->orderBy('name')
             ->get()
             ->map(function (MenuCategory $category) {
@@ -80,11 +100,25 @@ class SuperadminMenuController extends Controller
                 return $category;
             });
 
-        return view('superadmin.menus.index', [
+        $resolvedCategoryId = $currentFilter === 'all'
+            ? 'all'
+            : (string) optional($categoriesById->firstWhere('name', $currentFilter))->id;
+
+        $viewData = [
             'menus' => $menus,
+            'packages' => $packages,
+            'showPackages' => $currentFilter === 'paket',
             'categories' => $categories,
-            'total_menus' => Menu::where('code', '!=', 'A01')->count(),
-        ]);
+            'total_menus' => $categories->sum(fn (MenuCategory $category) => (int) ($category->display_count ?? 0)),
+            'current_category_id' => $resolvedCategoryId ?: 'all',
+            'current_filter' => $currentFilter,
+        ];
+
+        if (request()->header('X-Menu-Fragment') === '1') {
+            return response()->view('superadmin.menus._content', $viewData);
+        }
+
+        return view('superadmin.menus.index', $viewData);
     }
 
     public function create(): View

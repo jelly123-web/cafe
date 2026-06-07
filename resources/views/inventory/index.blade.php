@@ -3,174 +3,800 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Inventory & Perlengkapan - Pastel Cafe Theme</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    <title>Inventory & Perlengkapan - {{ $cafeBrand['name'] ?? 'MakanYuk Cafe' }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
         :root {
-            --bg-main: #F9F5F0;
-            --bg-card: #FFFFFF;
-            --primary: #795548;
-            --secondary: #BCAAA4;
-            --accent: #D7CCC8;
-            --highlight: #D4A373;
-            --text-main: #6D4C41;
-            --text-muted: #A1887F;
-            --profit: #81C784;
-            --loss: #E57373;
-            --shadow: rgba(121, 85, 72, 0.08);
+            --white: #ffffff;
+            --border: #E5E7EB;
+            --border-light: #F3F4F6;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 8px;
+            --radius-full: 9999px;
+            --accent: #D97706;
+            --accent-dark: #B45309;
+            --accent-light: #FFFBEB;
+            --fg: #111827;
+            --fg-secondary: #374151;
+            --muted: #6B7280;
+            --green: #059669;
+            --green-light: #D1FAE5;
+            --red: #DC2626;
+            --red-light: #FEE2E2;
+            --blue: #2563EB;
+            --blue-light: #DBEAFE;
+            --orange: #E65100;
+            --orange-light: #FFF3E0;
+            --bg: #F9FAFB;
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            --transition: 0.2s ease;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--fg);
             line-height: 1.6;
-            background-image: radial-gradient(var(--accent) 1px, transparent 1px);
-            background-size: 24px 24px;
-            padding-bottom: 24px;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .app-shell {
-            display: grid;
-            grid-template-columns: 290px minmax(0, 1fr);
+        .dashboard-layout {
+            display: flex;
             min-height: 100vh;
-            transition: grid-template-columns .2s ease;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        .sidebar-toggle { position: fixed; top: 16px; left: 16px; width: 44px; height: 44px; border: 1px solid var(--accent); border-radius: 12px; background: #fff; color: var(--primary); font-size: 24px; font-weight: 700; line-height: 1; cursor: pointer; z-index: 2100; box-shadow: 0 8px 20px rgba(121,85,72,.15); transition: left .2s ease, transform .2s ease; }
-        body:not(.sidebar-collapsed) .sidebar-toggle { left: 306px; }
-        .sidebar-toggle:hover { transform: translateY(-1px); }
-        .sidebar-backdrop { position: fixed; inset: 0; background: rgba(62,39,35,.35); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 1500; }
-        body.sidebar-open .sidebar-backdrop { opacity: 1; pointer-events: auto; }
-        .sidebar { padding: 1.75rem 1.4rem; border-right: 1px solid rgba(121, 85, 72, 0.08); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 1.25rem; transition: transform .2s ease, opacity .2s ease; z-index: 1700; }
-        .sidebar-brand { display: flex; flex-direction: column; }
-        .sidebar-logo { width: 64px; height: 64px; object-fit: cover; border-radius: 18px; box-shadow: 0 4px 15px rgba(121, 85, 72, 0.12); margin-bottom: 0.5rem; }
-        .sidebar-brand h2 { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; margin: 0.5rem 0 0.25rem; }
-        .sidebar-brand p { color: var(--text-muted); font-size: 0.95rem; }
-        .nav-menu { display: grid; gap: 0.75rem; }
-        .nav-item { text-decoration: none; color: var(--text-main); background: var(--bg-card); border-radius: 16px; padding: 0.9rem 1rem; box-shadow: 0 4px 15px var(--shadow); border: 1px solid transparent; transition: all 0.2s ease; font-weight: 500; font-size: 0.95rem; }
-        .nav-item.active, .nav-item:hover { border-color: rgba(212, 163, 115, 0.35); background: #fffaf5; }
-        .sidebar-footer { margin-top: auto; display: grid; gap: 0.85rem; }
-        .user-card { background: var(--bg-card); border-radius: 18px; padding: 1rem; box-shadow: 0 4px 15px var(--shadow); }
-        .user-info-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
-        .profile-photo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
-        .user-info-text { display: flex; flex-direction: column; }
-        .user-info-text span { color: var(--text-muted); font-size: 0.8rem; }
-        .user-info-text strong { color: var(--primary); font-size: 0.95rem; }
-        .logout-btn { background-color: #e2b68c; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); width: 100%; font-size: 0.95rem; }
-        .logout-btn:hover { background-color: #d4a373; transform: translateY(-2px); }
+        .sidebar {
+            background: var(--white);
+            border-right: 1px solid var(--border);
+            width: 260px;
+            padding: 20px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1000;
+        }
 
-        .main-panel { padding: 2rem 2.5rem; overflow-y: auto; }
-        .page-header { margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; }
-        .page-kicker { display: inline-flex; align-items: center; background-color: var(--highlight); color: #fff; font-size: 0.75rem; padding: 0.35rem 0.75rem; border-radius: 50px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .page-header h1 { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.8rem; margin: 0.5rem 0 0.25rem; }
-        .page-header p { color: var(--text-muted); font-size: 0.95rem; }
+        .sidebar-brand {
+            padding: 0 6px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-        .panel { background: var(--bg-card); border: 1px solid var(--accent); border-radius: 20px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px var(--shadow); }
-        
-        .btn { border: 1px solid transparent; border-radius: 12px; padding: 0.65rem 1.2rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 0.9rem; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-primary { background: #e2b68c; color: #fff; border: none; box-shadow: 0 2px 8px rgba(212, 163, 115, 0.3); }
-        .btn-primary:hover { background: #d4a373; transform: translateY(-2px); }
+        .sidebar-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
 
-        .table-wrap { overflow-x: auto; margin: 0; }
-        .inventory-table { width: 100%; border-collapse: collapse; }
-        .inventory-table th, .inventory-table td { padding: 1rem 0.75rem; border-bottom: 1px dashed var(--accent); vertical-align: middle; text-align: left; font-size: 0.95rem; }
-        .inventory-table th { background: var(--bg-main); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--highlight); }
-        .inventory-table tbody tr:hover { background-color: #FFFAF5; }
-        .inventory-table tbody tr:last-child td { border-bottom: none; }
-        .item-name { font-weight: 600; color: var(--primary); }
-        .amount { font-variant-numeric: tabular-nums; }
-        .tag { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; }
-        .tag-danger { background: #FFEBEE; color: #C62828; }
-        .tag-success { background: #E8F5E9; color: #558B2F; }
-        .tag-in { background: #E8F5E9; color: #558B2F; }
-        .tag-out { background: #FFF3E0; color: #E65100; }
-        .section-title { font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.2rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--accent); }
-        .empty-state { color: var(--text-muted); font-style: italic; text-align: center; padding: 2.5rem 1rem; }
-        
-        .btn-delete { color: var(--loss); background: transparent; border: none; font-weight: 700; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px; }
-        .btn-delete:hover { background: #FFEBEE; }
+        .sidebar-brand h2 {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--fg);
+            letter-spacing: -0.3px;
+            margin: 0;
+        }
 
-        /* Drawer Styles */
-        .drawer-backdrop { position:fixed; inset:0; background:rgba(56, 37, 30, 0.32); backdrop-filter:blur(2px); z-index:1200; opacity:0; visibility:hidden; transition:0.2s ease; }
-        .drawer-backdrop.open { opacity:1; visibility:visible; }
+        .sidebar-brand p {
+            font-size: 11px;
+            color: var(--muted);
+            margin: 0;
+        }
+
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 12px 6px;
+        }
+
+        .nav-item {
+            text-decoration: none;
+            color: var(--fg-secondary);
+            background: transparent;
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all var(--transition);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .nav-item.active {
+            background: var(--accent-light);
+            color: var(--accent-dark);
+        }
+
+        .nav-item.active i {
+            color: var(--accent);
+        }
+
+        .nav-item:hover {
+            background: var(--border-light);
+            color: var(--fg);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+        }
+
+        .user-card {
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-info-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            transition: background var(--transition);
+        }
+
+        .user-info-row:hover { background: var(--bg); }
+
+        .profile-photo {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-info-text span {
+            display: block;
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .user-info-text strong {
+            display: block;
+            font-size: 14px;
+            color: var(--fg);
+            font-weight: 800;
+        }
+
+        .logout-btn {
+            background: transparent;
+            color: var(--red);
+            border: 1.5px solid #FECACA;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            cursor: pointer;
+            width: 100%;
+            font-size: 13px;
+            transition: all var(--transition);
+            font-family: var(--font);
+        }
+
+        .logout-btn:hover {
+            background: var(--red-light);
+            border-color: var(--red);
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-brand-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--fg);
+            letter-spacing: -0.6px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .topbar-btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--fg-secondary);
+            font-size: 15px;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .topbar-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .page-body {
+            flex: 1;
+            padding: 28px;
+            overflow-y: auto;
+        }
+
+        .dashboard-topbar {
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .dashboard-topbar h1 {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--fg);
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        .dashboard-topbar h1 i { color: var(--accent); }
+
+        .dashboard-topbar p {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .page-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-light);
+            color: var(--accent-dark);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .section-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-xs);
+            margin-bottom: 24px;
+        }
+
+        .section-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 24px 28px 16px;
+            border-bottom: 1px solid var(--border-light);
+            flex-wrap: wrap;
+        }
+
+        .section-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--fg);
+        }
+
+        .section-card-title i {
+            color: var(--accent);
+            font-size: 16px;
+        }
+
+        .section-card-body {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead th {
+            padding: 14px 24px;
+            background: #FBFBFC;
+            border-bottom: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .data-table tbody td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+            font-size: 14px;
+            color: var(--fg-secondary);
+            font-weight: 500;
+        }
+
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr:hover { background: var(--bg); }
+
+        .cell-item {
+            font-weight: 800;
+            color: var(--fg);
+        }
+
+        .amount {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+
+        .text-danger {
+            color: var(--red);
+            font-weight: 800;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .badge-in { background: var(--green-light); color: var(--green); }
+        .badge-out { background: var(--orange-light); color: var(--orange); }
+        .badge-opname { background: var(--blue-light); color: var(--blue); }
+        .badge-low { background: var(--red-light); color: var(--red); }
+        .badge-low .status-dot { animation: dotPulse 1.5s infinite; }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: var(--font);
+            border: 1.5px solid transparent;
+            text-decoration: none;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+        }
+
+        .btn-delete {
+            background: transparent;
+            color: var(--red);
+            border: 1px solid #FECACA;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: var(--radius-sm);
+        }
+
+        .btn-delete:hover {
+            background: var(--red-light);
+            border-color: var(--red);
+        }
+
+        .drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .drawer-backdrop.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
         .inventory-drawer {
             position: fixed;
             top: 0;
             right: 0;
             width: min(520px, 95vw);
             height: 100vh;
-            background: #fff;
+            background: var(--white);
             z-index: 1201;
             transform: translateX(102%);
-            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: -10px 0 34px rgba(79, 53, 43, 0.12);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-lg);
             display: flex;
             flex-direction: column;
         }
+
         .inventory-drawer.open { transform: translateX(0); }
-        .drawer-head { padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--accent); display: flex; justify-content: space-between; align-items: center; background: #fff; flex-shrink: 0; }
-        .drawer-head h3 { margin: 0; font-family: 'Playfair Display', Georgia, serif; color: var(--primary); font-size: 1.6rem; }
-        .drawer-close { border: 1.5px solid var(--accent); background: #fff; color: var(--primary); border-radius: 12px; padding: 0.5rem 1rem; cursor: pointer; font-weight: 700; font-size: 0.9rem; transition: all 0.2s; }
-        .drawer-close:hover { background: var(--bg-main); border-color: var(--highlight); }
-        .drawer-body { padding: 1.75rem; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--accent) transparent; }
-        .drawer-body::-webkit-scrollbar { width: 6px; }
-        .drawer-body::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
-        .drawer-foot { padding: 1.25rem 1.75rem; border-top: 1px solid var(--accent); display: flex; gap: 1rem; justify-content: flex-end; background: #fdfaf8; flex-shrink: 0; }
-        .btn-drawer-cancel { border: 1.5px solid var(--accent); background: #fff; color: var(--primary); border-radius: 12px; padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 700; transition: all 0.2s; }
-        .btn-drawer-cancel:hover { border-color: var(--loss); color: var(--loss); }
-        .drawer-field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
-        .drawer-field label { font-size: 0.9rem; font-weight: 700; color: var(--text-main); }
-        .drawer-field input, .drawer-field select, .drawer-field textarea { width: 100%; padding: 0.75rem 1.15rem; border-radius: 14px; border: 1.5px solid var(--accent); background: #fff; color: var(--text-main); font-size: 1rem; transition: all 0.2s; outline: none; }
-        .drawer-field input:focus, .drawer-field select:focus, .drawer-field textarea:focus { border-color: var(--highlight); box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.12); }
-        .drawer-error { background: #fff5f5; color: var(--loss); padding: 0.85rem 1.15rem; border-radius: 12px; border-left: 4px solid var(--loss); font-weight: 600; margin-top: 0.5rem; display: none; }
 
-        /* Toast system */
-        .toast-wrap { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: min(340px, 90vw); pointer-events: none; }
-        .toast-item { background: #38251e; color: #fff; padding: 12px 20px; border-radius: 14px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); font-size: 0.9rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 12px; pointer-events: auto; animation: toast-in 0.3s ease forwards; transition: opacity 0.2s, transform 0.2s; }
-        .toast-item.success { border-left: 4px solid var(--profit); }
-        .toast-item.error { border-left: 4px solid var(--loss); }
-        .toast-item button { background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 1.1rem; padding: 0 4px; }
-        @keyframes toast-in { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-
-        body.sidebar-collapsed .app-shell { grid-template-columns: 0 minmax(0, 1fr) !important; }
-        body.sidebar-collapsed .sidebar { transform: translateX(-100%); opacity: 0; pointer-events: none; }
-        @media (max-width: 1100px) {
-            body:not(.sidebar-collapsed) .sidebar-toggle { left: 16px; }
-            .app-shell { grid-template-columns: 1fr; }
-            .sidebar { position: fixed; top: 0; left: 0; width: 290px; min-height: 100vh; border-right: 1px solid rgba(121, 85, 72, 0.08); border-bottom: 0; }
-            body.sidebar-collapsed .sidebar { transform: translateX(-110%); opacity: 1; pointer-events: none; }
+        .drawer-head {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
         }
+
+        .drawer-head h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--fg);
+        }
+
+        .drawer-close {
+            border: 1px solid var(--border);
+            background: var(--white);
+            color: var(--fg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            font-family: var(--font);
+            transition: all var(--transition);
+        }
+
+        .drawer-close:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: var(--red-light);
+        }
+
+        .drawer-body {
+            padding: 28px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .drawer-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .drawer-field label {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--fg-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .drawer-field input,
+        .drawer-field select,
+        .drawer-field textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            color: var(--fg);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            transition: all var(--transition);
+            font-family: var(--font);
+        }
+
+        .drawer-field input:focus,
+        .drawer-field select:focus,
+        .drawer-field textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+        }
+
+        .drawer-foot {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+
+        .btn-drawer-cancel {
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            color: var(--fg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 11px 22px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+            font-family: var(--font);
+            transition: all var(--transition);
+        }
+
+        .btn-drawer-cancel:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: var(--red-light);
+        }
+
+        .drawer-error {
+            background: var(--red-light);
+            color: var(--red);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid #FECACA;
+            font-weight: 700;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .toast-wrap {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: min(360px, 90vw);
+        }
+
+        .toast-item {
+            background: var(--fg);
+            color: white;
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            animation: toast-in 0.3s ease;
+        }
+
+        .toast-item.success { border-left: 5px solid var(--green); }
+        .toast-item.error { border-left: 5px solid var(--red); }
+        .toast-item button {
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .pagination-area {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .pagination-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pagination-meta {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .pagination-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-link,
+        .pagination-dots {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            color: var(--fg-secondary);
+            padding: 0 10px;
+            background: var(--white);
+            transition: all var(--transition);
+        }
+
+        .pagination-link:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .pagination-link.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .pagination-link.disabled {
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        .empty-state {
+            padding: 30px 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
         @media (max-width: 768px) {
-            .main-panel { padding: 1.5rem 1rem; }
-            .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-            .page-header h1 { font-size: 1.5rem; }
-            .panel { padding: 1.25rem; }
-            .inventory-table th, .inventory-table td { padding: 0.75rem 0.5rem; font-size: 0.85rem; }
+            .page-body { padding: 16px; }
+            .dashboard-topbar { flex-direction: column; align-items: flex-start; }
+            .data-table { min-width: 800px; }
+            .section-card-header { padding: 18px 18px 14px; }
         }
     </style>
 </head>
 <body>
-    <button class="sidebar-toggle" type="button" id="sidebarToggle" aria-label="Toggle Sidebar">=</button>
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-    <div class="app-shell">
+    @php
+        $bahanItems = $allItems->where('type', 'bahan')->values();
+        $barangItems = $allItems->where('type', 'barang')->values();
+        $isInventoryTab = ($activeTab ?? 'inventory') === 'inventory';
+        $isMovementTab = ($activeTab ?? '') === 'movement';
+    @endphp
+
+    <div class="dashboard-layout">
         <aside class="sidebar">
             <div class="sidebar-brand">
-                <img src="{{ $cafeBrand['logo_url'] ?: 'https://placehold.co/64x64/D4A373/FFFFFF?text=BB' }}" alt="{{ $cafeBrand['name'] ?? 'Cafe' }}" class="sidebar-logo">
-                <h2>{{ $cafeBrand['name'] ?? 'Cafe' }}</h2>
-                <p>Panel Gudang</p>
+                <img src="{{ $cafeBrand['logo_url'] ?: 'https://placehold.co/56x56/D97706/FFFFFF?text=MY' }}" alt="{{ $cafeBrand['name'] ?? 'MakanYuk Cafe' }}" class="sidebar-logo">
+                <div class="sidebar-brand-text">
+                    <h2>{{ $cafeBrand['name'] ?? 'MakanYuk Cafe' }}</h2>
+                    <p>Panel Gudang</p>
+                </div>
             </div>
+
             <nav class="nav-menu">
-                <a class="nav-item {{ ($activeTab ?? 'inventory') === 'inventory' ? 'active' : '' }}" href="{{ route('inventory.index') }}">Inventory</a>
-                <a class="nav-item {{ ($activeTab ?? '') === 'movement' ? 'active' : '' }}" href="{{ route('inventory.in.page') }}">Barang Masuk/Keluar</a>
+                <div class="nav-section-title">Utama</div>
+                <a class="nav-item {{ $isInventoryTab ? 'active' : '' }}" href="{{ route('inventory.index') }}">
+                    <i class="fas fa-boxes-stacked"></i> Inventory
+                </a>
+                <a class="nav-item {{ $isMovementTab ? 'active' : '' }}" href="{{ route('inventory.in.page') }}">
+                    <i class="fas fa-arrow-right-arrow-left"></i> Barang Masuk/Keluar
+                </a>
             </nav>
+
             <div class="sidebar-footer">
                 <div class="user-card">
                     <div class="user-info-row">
@@ -180,141 +806,242 @@
                             <strong>{{ auth()->user()->name ?? 'Admin Gudang' }}</strong>
                         </div>
                     </div>
-                    <small style="display:block;margin-bottom:0.5rem;">{{ auth()->user()->username ?? 'gudang' }}</small>
-                    <a href="{{ route('profile.edit') }}" style="display: block; font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 600; margin-bottom: 0.5rem;">Edit Profil</a>
                 </div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button class="logout-btn" type="submit">Logout</button>
+                    <button class="logout-btn" type="submit"><i class="fas fa-right-from-bracket"></i> Logout</button>
                 </form>
             </div>
         </aside>
 
-        <main class="main-panel">
-            <div class="page-header">
-                <div>
-                    <span class="page-kicker">ERP</span>
-                    <h1>Inventory & Perlengkapan</h1>
-                    <p>Kelola bahan baku dan perlengkapan (panci, sendok, dll) di satu tempat.</p>
+        <div class="main-content">
+            <header class="topbar">
+                <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
+                <div class="topbar-right">
+                    <a href="{{ route('profile.edit') }}" class="topbar-btn" title="Profil"><i class="fas fa-user"></i></a>
                 </div>
-                @if (($activeTab ?? 'inventory') === 'inventory')
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="openDrawer('category')">+ Kategori</button>
-                        <button class="btn btn-primary" onclick="openDrawer('bahan')">+ Bahan Baku</button>
-                        <button class="btn btn-primary" onclick="openDrawer('barang')">+ Barang/Perlengkapan</button>
-                        <button class="btn btn-primary" onclick="openDrawer('opname')">Opname</button>
+            </header>
+
+            <main class="page-body">
+            <div class="dashboard-topbar">
+                <div>
+                    <span class="page-kicker"><i class="fas fa-warehouse"></i> ERP System</span>
+                    <h1>
+                        <i class="fas {{ $isInventoryTab ? 'fa-boxes-stacked' : 'fa-arrow-right-arrow-left' }}"></i>
+                        {{ $isInventoryTab ? 'Inventory & Perlengkapan' : 'Barang Masuk/Keluar' }}
+                    </h1>
+                    <p>
+                        {{ $isInventoryTab
+                            ? 'Kelola bahan baku dan perlengkapan (panci, sendok, dll) di satu tempat.'
+                            : 'Catat barang masuk, barang keluar, dan histori perpindahan stok gudang.' }}
+                    </p>
+                </div>
+
+                @if ($isInventoryTab)
+                    <div class="action-row">
+                        <button class="btn btn-primary" type="button" onclick="openDrawer('category')"><i class="fas fa-folder-plus"></i> Kategori</button>
+                        <button class="btn btn-primary" type="button" onclick="openDrawer('bahan')"><i class="fas fa-seedling"></i> Bahan Baku</button>
+                        <button class="btn btn-primary" type="button" onclick="openDrawer('barang')"><i class="fas fa-blender"></i> Perlengkapan</button>
+                        <button class="btn btn-primary" type="button" onclick="openDrawer('opname')"><i class="fas fa-clipboard-check"></i> Opname</button>
+                    </div>
+                @else
+                    <div class="action-row">
+                        <button class="btn btn-primary" type="button" onclick="openDrawer('stock_in')"><i class="fas fa-arrow-down"></i> Barang Masuk</button>
+                        <button class="btn btn-primary" type="button" onclick="openDrawer('stock_out')"><i class="fas fa-arrow-up"></i> Barang Keluar</button>
                     </div>
                 @endif
             </div>
 
-            @if (session('success'))<div class="panel" style="color:#558B2F; font-weight: 600; border-left: 4px solid #558B2F;">{{ session('success') }}</div>@endif
-
-            @if (($activeTab ?? 'inventory') === 'inventory')
-                <section class="panel">
-                    <h3 class="section-title">Stok Bahan Baku </h3>
-                    <div class="table-wrap">
-                        <table class="inventory-table" id="tableBahan">
-                            <thead>
-                                <tr><th>Nama Bahan</th><th>Kategori</th><th>Baik</th><th>Kurang Baik</th><th>Rusak</th><th>Total</th><th>Min. Stok</th><th>Aksi</th></tr>
-                            </thead>
-                            <tbody>
-                                @php $bahanItems = $allItems->where('type', 'bahan'); @endphp
-                                @forelse($bahanItems as $item)
-                                    @php $isLow = (float)$item->total_stock <= (float)$item->min_stock; @endphp
-                                    <tr data-item-id="{{ $item->id }}">
-                                        <td><span class="item-name">{{ $item->name }}</span></td>
-                                        <td>{{ $item->category?->name ?? '-' }} ({{ $item->unit }})</td>
-                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float)$item->stock_good,2,'.',''),'0'),'.') }}</span></td>
-                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float)$item->stock_less_good,2,'.',''),'0'),'.') }}</span></td>
-                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float)$item->stock_damaged,2,'.',''),'0'),'.') }}</span></td>
-                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float)$item->total_stock,2,'.',''),'0'),'.') }} {{ $item->unit }}</span></td>
-                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float)$item->min_stock,2,'.',''),'0'),'.') }}</span></td>
-                                        <td><button class="btn-delete" data-id="{{ $item->id }}">Hapus</button></td>
-                                    </tr>
-                                @empty
-                                    <tr class="empty-row"><td colspan="8" class="empty-state">Belum ada data bahan baku.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section class="panel">
-                    <h3 class="section-title">Stok Barang & Perlengkapan </h3>
-                    <div class="table-wrap">
-                        <table class="inventory-table" id="tableBarang">
-                            <thead>
-                                <tr><th>Nama Barang</th><th>Kategori</th><th>Baik</th><th>Kurang Baik</th><th>Rusak</th><th>Total</th><th>Satuan</th><th>Aksi</th></tr>
-                            </thead>
-                            <tbody>
-                                @php $barangItems = $allItems->where('type', 'barang'); @endphp
-                                @forelse($barangItems as $item)
-                                    <tr data-item-id="{{ $item->id }}">
-                                        <td><span class="item-name">{{ $item->name }}</span></td>
-                                        <td>{{ $item->category?->name ?? '-' }}</td>
-                                        <td><span class="amount">{{ (int)$item->stock_good }}</span></td>
-                                        <td><span class="amount">{{ (int)$item->stock_less_good }}</span></td>
-                                        <td><span class="amount">{{ (int)$item->stock_damaged }}</span></td>
-                                        <td><span class="amount">{{ (int)$item->total_stock }}</span></td>
-                                        <td>{{ $item->unit }}</td>
-                                        <td><button class="btn-delete" data-id="{{ $item->id }}">Hapus</button></td>
-                                    </tr>
-                                @empty
-                                    <tr class="empty-row"><td colspan="8" class="empty-state">Belum ada data barang/perlengkapan.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            @endif
-
-            @if (($activeTab ?? '') === 'movement')
-                <div style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem;">
-                    <button class="btn btn-primary" onclick="openDrawer('stock_in')">+ Barang Masuk</button>
-                    <button class="btn btn-primary" onclick="openDrawer('stock_out')">+ Barang Keluar</button>
+            @if (session('success'))
+                <div class="section-card" style="padding: 16px 20px; color: var(--green); border-color: #A7F3D0; background: var(--green-light); font-weight: 800;">
+                    {{ session('success') }}
                 </div>
-                <section class="panel">
-                    <h3 class="section-title">Riwayat Barang Masuk/Keluar</h3>
-                    <div class="table-wrap">
-                        <table class="inventory-table">
+            @endif
+
+            @if ($isInventoryTab)
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title"><i class="fas fa-seedling"></i> Stok Bahan Baku</div>
+                        <button class="btn-delete btn-delete-all" type="button" data-delete-type="bahan">
+                            <i class="fas fa-trash-can"></i> Hapus Semua
+                        </button>
+                    </div>
+                    <div class="section-card-body">
+                        <table class="data-table" id="tableBahan">
                             <thead>
-                                <tr><th>Waktu</th><th>Bahan/Barang</th><th>Tipe</th><th>Kondisi</th><th>Qty</th><th>Catatan / Keterangan</th><th>User</th></tr>
+                                <tr>
+                                    <th>Nama Bahan</th>
+                                    <th>Kategori</th>
+                                    <th>Baik</th>
+                                    <th>Kurang Baik</th>
+                                    <th>Rusak</th>
+                                    <th>Total</th>
+                                    <th>Min. Stok</th>
+                                    <th>Aksi</th>
+                                </tr>
                             </thead>
                             <tbody>
-                                @php
-                                    $filtered = $movements->getCollection()->filter(fn($x) => in_array($x->type, ['in', 'out'], true));
-                                @endphp
-                                @forelse($filtered as $m)
-                                    <tr>
-                                        <td>{{ $m->moved_at?->format('d M Y, H:i') }}</td>
-                                        <td><span class="item-name">{{ $m->item?->name ?? '-' }}</span></td>
+                                @forelse ($bahanItems as $item)
+                                    @php $isLow = (float) $item->total_stock <= (float) $item->min_stock; @endphp
+                                    <tr data-item-id="{{ $item->id }}">
+                                        <td><span class="cell-item">{{ $item->name }}</span></td>
+                                        <td>{{ $item->category?->name ?? '-' }} ({{ $item->unit }})</td>
+                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float) $item->stock_good, 2, '.', ''), '0'), '.') }}</span></td>
+                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float) $item->stock_less_good, 2, '.', ''), '0'), '.') }}</span></td>
+                                        <td><span class="amount text-danger">{{ rtrim(rtrim(number_format((float) $item->stock_damaged, 2, '.', ''), '0'), '.') }}</span></td>
                                         <td>
-                                            @if($m->type === 'in')
-                                                <span class="tag tag-in">Masuk</span>
-                                            @elseif($m->type === 'out')
-                                                <span class="tag tag-out">Keluar</span>
-                                            @else
-                                                <span class="tag tag-success">Opname</span>
-                                            @endif
+                                            <span class="amount {{ $isLow ? 'text-danger' : '' }}">
+                                                {{ rtrim(rtrim(number_format((float) $item->total_stock, 2, '.', ''), '0'), '.') }} {{ $item->unit }}
+                                            </span>
                                         </td>
-                                        <td>{{ $m->stock_condition ?: '-' }} @if($m->to_stock_condition) -> {{ $m->to_stock_condition }} @endif</td>
-                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float)$m->qty,2,'.',''),'0'),'.') }} {{ $m->item?->unit }}</span></td>
-                                        <td>{!! $m->notes ? nl2br(e($m->notes)) : '-' !!}</td>
-                                        <td>{{ $m->user?->username ?? '-' }}</td>
+                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float) $item->min_stock, 2, '.', ''), '0'), '.') }}</span></td>
+                                        <td>
+                                            @if ($isLow)
+                                                <span class="status-badge badge-low" style="margin-right: 8px;"><span class="status-dot"></span> Stok Rendah</span>
+                                            @endif
+                                            <button class="btn-delete btn-delete-item" type="button" data-item-id="{{ $item->id }}"><i class="fas fa-trash"></i> Hapus</button>
+                                        </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="7" class="empty-state">Belum ada mutasi stok.</td></tr>
+                                    <tr class="empty-row">
+                                        <td colspan="8" class="empty-state">Belum ada data bahan baku.</td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
-                    <div class="pagination-area">{{ $movements->links('components.pagination') }}</div>
+                </section>
+
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title"><i class="fas fa-blender"></i> Stok Barang & Perlengkapan</div>
+                        <button class="btn-delete btn-delete-all" type="button" data-delete-type="barang">
+                            <i class="fas fa-trash-can"></i> Hapus Semua
+                        </button>
+                    </div>
+                    <div class="section-card-body">
+                        <table class="data-table" id="tableBarang">
+                            <thead>
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Kategori</th>
+                                    <th>Baik</th>
+                                    <th>Kurang Baik</th>
+                                    <th>Rusak</th>
+                                    <th>Total</th>
+                                    <th>Satuan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($barangItems as $item)
+                                    @php $isLow = (float) $item->total_stock <= (float) $item->min_stock && (float) $item->min_stock > 0; @endphp
+                                    <tr data-item-id="{{ $item->id }}">
+                                        <td><span class="cell-item">{{ $item->name }}</span></td>
+                                        <td>{{ $item->category?->name ?? '-' }}</td>
+                                        <td><span class="amount">{{ (int) $item->stock_good }}</span></td>
+                                        <td><span class="amount">{{ (int) $item->stock_less_good }}</span></td>
+                                        <td><span class="amount text-danger">{{ (int) $item->stock_damaged }}</span></td>
+                                        <td><span class="amount {{ $isLow ? 'text-danger' : '' }}">{{ (int) $item->total_stock }}</span></td>
+                                        <td>{{ $item->unit }}</td>
+                                        <td>
+                                            @if ($isLow)
+                                                <span class="status-badge badge-low" style="margin-right: 8px;"><span class="status-dot"></span> Stok Rendah</span>
+                                            @endif
+                                            <button class="btn-delete btn-delete-item" type="button" data-item-id="{{ $item->id }}"><i class="fas fa-trash"></i> Hapus</button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr class="empty-row">
+                                        <td colspan="8" class="empty-state">Belum ada data barang/perlengkapan.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
             @endif
-        </main>
+
+            @if ($isMovementTab)
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div class="section-card-title"><i class="fas fa-clock-rotate-left"></i> Riwayat Barang Masuk/Keluar</div>
+                        <button class="btn-delete btn-delete-all-movements" type="button">
+                            <i class="fas fa-trash-can"></i> Hapus Semua
+                        </button>
+                    </div>
+                    <div class="section-card-body">
+                        <table class="data-table" id="tableMovements">
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Bahan/Barang</th>
+                                    <th>Tipe</th>
+                                    <th>Kondisi</th>
+                                    <th>Qty</th>
+                                    <th>Catatan</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($movements as $movement)
+                                    @php
+                                        $typeClass = match ($movement->type) {
+                                            'in' => 'badge-in',
+                                            'out' => 'badge-out',
+                                            default => 'badge-opname',
+                                        };
+                                        $typeLabel = match ($movement->type) {
+                                            'in' => 'Masuk',
+                                            'out' => 'Keluar',
+                                            default => 'Opname',
+                                        };
+                                        $conditionLabel = match ($movement->stock_condition) {
+                                            'good' => 'Baik',
+                                            'less_good' => 'Kurang Baik',
+                                            'damaged' => 'Rusak',
+                                            default => '-',
+                                        };
+                                        if ($movement->type === 'opname' && $movement->to_stock_condition) {
+                                            $toLabel = match ($movement->to_stock_condition) {
+                                                'good' => 'Baik',
+                                                'less_good' => 'Kurang Baik',
+                                                'damaged' => 'Rusak',
+                                                default => '-',
+                                            };
+                                            $conditionLabel .= ' -> ' . $toLabel;
+                                        }
+                                    @endphp
+                                    <tr data-movement-id="{{ $movement->id }}">
+                                        <td>{{ optional($movement->moved_at)->format('d M Y, H:i') ?? '-' }}</td>
+                                        <td><span class="cell-item">{{ $movement->item?->name ?? '-' }}</span></td>
+                                        <td><span class="status-badge {{ $typeClass }}"><span class="status-dot"></span> {{ $typeLabel }}</span></td>
+                                        <td>{{ $conditionLabel }}</td>
+                                        <td><span class="amount">{{ rtrim(rtrim(number_format((float) $movement->qty, 2, '.', ''), '0'), '.') }} {{ $movement->item?->unit ?? '' }}</span></td>
+                                        <td>{{ $movement->notes ?: '-' }}</td>
+                                        <td>
+                                            <button class="btn-delete btn-delete-movement" type="button" data-movement-id="{{ $movement->id }}">
+                                                <i class="fas fa-trash"></i> Hapus
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="empty-state">Belum ada riwayat pergerakan stok.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination-area">
+                        {{ $movements->links('components.pagination') }}
+                    </div>
+                </section>
+            @endif
+            </main>
+        </div>
     </div>
 
-    <!-- Inventory Drawer -->
     <div class="drawer-backdrop" id="drawerBackdrop"></div>
     <aside class="inventory-drawer" id="inventoryDrawer" aria-hidden="true">
         <div class="drawer-head">
@@ -322,14 +1049,14 @@
             <button type="button" class="drawer-close" onclick="closeDrawer()">Tutup</button>
         </div>
         <div class="drawer-body">
-            <!-- Form Kategori -->
             <form id="formCategory" method="POST" action="{{ route('inventory.categories.store') }}" style="display:none;">
                 @csrf
                 <div class="drawer-field">
-                    <label>Tipe Kategori</label>
+                    <label>Tipe kategori</label>
                     <select name="type" required>
-                        <option value="bahan">Bahan Baku (Konsumsi)</option>
-                        <option value="barang">Barang / Perlengkapan (Aset)</option>
+                        <option value="">Pilih tipe</option>
+                        <option value="bahan">Bahan Baku</option>
+                        <option value="barang">Barang/Perlengkapan</option>
                     </select>
                 </div>
                 <div class="drawer-field">
@@ -349,7 +1076,6 @@
                 </div>
             </form>
 
-            <!-- Form Bahan -->
             <form id="formBahan" method="POST" action="{{ route('inventory.items.store') }}" style="display:none;">
                 @csrf
                 <div class="drawer-field">
@@ -371,7 +1097,6 @@
                 </div>
             </form>
 
-            <!-- Form Barang -->
             <form id="formBarang" method="POST" action="{{ route('inventory.items.store') }}" style="display:none;">
                 @csrf
                 <div class="drawer-field">
@@ -389,7 +1114,6 @@
                 </div>
             </form>
 
-            <!-- Form Opname -->
             <form id="formOpname" method="POST" action="{{ route('inventory.stock.opname') }}" style="display:none;">
                 @csrf
                 <div class="drawer-field">
@@ -429,7 +1153,6 @@
                 </div>
             </form>
 
-            <!-- Form Stock In -->
             <form id="formStockIn" method="POST" action="{{ route('inventory.stock.in') }}" style="display:none;">
                 @csrf
                 <div class="drawer-field">
@@ -437,7 +1160,7 @@
                     <select name="inventory_item_id" required>
                         <option value="">Pilih bahan/barang</option>
                         @foreach ($allItems as $item)
-                            <option value="{{ $item->id }}">{{ $item->name }} ({{ rtrim(rtrim(number_format((float)$item->total_stock,2,'.',''), '0'), '.') }} {{ $item->unit }})</option>
+                            <option value="{{ $item->id }}">{{ $item->name }} ({{ rtrim(rtrim(number_format((float) $item->total_stock, 2, '.', ''), '0'), '.') }} {{ $item->unit }})</option>
                         @endforeach
                     </select>
                 </div>
@@ -460,7 +1183,6 @@
                 </div>
             </form>
 
-            <!-- Form Stock Out -->
             <form id="formStockOut" method="POST" action="{{ route('inventory.stock.out') }}" style="display:none;">
                 @csrf
                 <div class="drawer-field">
@@ -468,7 +1190,7 @@
                     <select name="inventory_item_id" required>
                         <option value="">Pilih bahan/barang</option>
                         @foreach ($allItems as $item)
-                            <option value="{{ $item->id }}">{{ $item->name }} ({{ rtrim(rtrim(number_format((float)$item->total_stock,2,'.',''), '0'), '.') }} {{ $item->unit }})</option>
+                            <option value="{{ $item->id }}">{{ $item->name }} ({{ rtrim(rtrim(number_format((float) $item->total_stock, 2, '.', ''), '0'), '.') }} {{ $item->unit }})</option>
                         @endforeach
                     </select>
                 </div>
@@ -486,18 +1208,24 @@
                     <input type="number" step="0.01" min="0.01" name="qty" placeholder="Contoh: 2" required>
                 </div>
                 <div class="drawer-field">
-                    <label>Catatan / Alasan Keluar</label>
-                    <textarea name="notes" rows="3" placeholder="Contoh: Panci rusak dibuang / Bahan untuk masak hari ini" required></textarea>
+                    <label>Dipakai untuk</label>
+                    <input type="text" name="used_for" placeholder="Contoh: Produksi harian" required>
                 </div>
-                <input type="hidden" name="used_for" value="Pengeluaran Gudang">
-                <input type="hidden" name="used_items" value="Cek catatan">
+                <div class="drawer-field">
+                    <label>Bahan/barang dipakai</label>
+                    <input type="text" name="used_items" placeholder="Contoh: 2 panci, 5kg gula" required>
+                </div>
+                <div class="drawer-field">
+                    <label>Catatan / Alasan Keluar</label>
+                    <textarea name="notes" rows="3" placeholder="Contoh: Panci rusak dibuang / bahan untuk masak hari ini"></textarea>
+                </div>
             </form>
 
             <div id="drawerError" class="drawer-error"></div>
         </div>
         <div class="drawer-foot">
             <button type="button" class="btn-drawer-cancel" onclick="closeDrawer()">Batal</button>
-            <button type="button" class="btn btn-primary" id="btnSubmitDrawer" onclick="submitActiveForm()">Simpan Data</button>
+            <button type="button" class="btn btn-primary" id="btnSubmitDrawer" onclick="submitActiveForm()"><i class="fas fa-check"></i> Simpan Data</button>
         </div>
     </aside>
 
@@ -505,8 +1233,6 @@
 
     <script>
         (function () {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
             const inventoryDrawer = document.getElementById('inventoryDrawer');
             const drawerBackdrop = document.getElementById('drawerBackdrop');
             const toastWrap = document.getElementById('toastWrap');
@@ -516,42 +1242,42 @@
             window.showToast = function (message, type = 'success') {
                 const el = document.createElement('div');
                 el.className = 'toast-item ' + type;
-                el.innerHTML = '<span>' + String(message) + '</span><button type="button">x</button>';
+                el.innerHTML = '<span>' + String(message) + '</span><button type="button"><i class="fas fa-times"></i></button>';
                 el.querySelector('button').onclick = () => el.remove();
                 toastWrap.appendChild(el);
-                setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 200); }, 3500);
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 200);
+                }, 3500);
             };
 
-            const openSidebar = () => { document.body.classList.remove('sidebar-collapsed'); document.body.classList.add('sidebar-open'); };
-            const closeSidebar = () => { document.body.classList.add('sidebar-collapsed'); document.body.classList.remove('sidebar-open'); };
-            
-            if (window.innerWidth <= 1100) closeSidebar();
-            sidebarToggle?.addEventListener('click', () => document.body.classList.contains('sidebar-collapsed') ? openSidebar() : closeSidebar());
-            sidebarBackdrop?.addEventListener('click', closeSidebar);
+            const titleMap = {
+                category: 'Input Kategori Baru',
+                bahan: 'Tambah Bahan Baku',
+                barang: 'Tambah Perlengkapan',
+                opname: 'Stok Opname',
+                stock_in: 'Barang Masuk',
+                stock_out: 'Barang Keluar',
+            };
+
+            const formMap = {
+                category: 'formCategory',
+                bahan: 'formBahan',
+                barang: 'formBarang',
+                opname: 'formOpname',
+                stock_in: 'formStockIn',
+                stock_out: 'formStockOut',
+            };
 
             window.openDrawer = (type) => {
-                const titleMap = {
-                    'category': 'Input Kategori Baru',
-                    'bahan': 'Tambah Bahan Baku Baru',
-                    'barang': 'Tambah Barang/Perlengkapan',
-                    'opname': 'Stok Opname',
-                    'stock_in': 'Barang Masuk',
-                    'stock_out': 'Barang Keluar'
-                };
-                const formMap = {
-                    'category': 'formCategory',
-                    'bahan': 'formBahan',
-                    'barang': 'formBarang',
-                    'opname': 'formOpname',
-                    'stock_in': 'formStockIn',
-                    'stock_out': 'formStockOut'
-                };
-
-                document.querySelectorAll('.inventory-drawer form').forEach(f => f.style.display = 'none');
-                activeFormId = formMap[type];
+                document.querySelectorAll('.inventory-drawer form').forEach((form) => {
+                    form.style.display = 'none';
+                });
+                activeFormId = formMap[type] || null;
+                if (!activeFormId) return;
                 document.getElementById(activeFormId).style.display = 'block';
-                document.getElementById('drawerTitle').textContent = titleMap[type];
-                
+                document.getElementById('drawerTitle').textContent = titleMap[type] || 'Form Inventory';
+                document.getElementById('drawerError').style.display = 'none';
                 inventoryDrawer.classList.add('open');
                 drawerBackdrop.classList.add('open');
                 inventoryDrawer.setAttribute('aria-hidden', 'false');
@@ -564,123 +1290,243 @@
                 inventoryDrawer.setAttribute('aria-hidden', 'true');
                 document.body.style.overflow = '';
                 document.getElementById('drawerError').style.display = 'none';
-                document.querySelectorAll('.inventory-drawer form').forEach(f => f.reset());
+                document.querySelectorAll('.inventory-drawer form').forEach((form) => form.reset());
             };
 
-            const formatNum = (n) => String(Number(n || 0).toLocaleString('id-ID'));
+            const formatAmount = (value, type) => {
+                const numeric = Number(value || 0);
+                if (type === 'barang') {
+                    return String(parseInt(numeric, 10));
+                }
+                return String(numeric.toLocaleString('id-ID', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2,
+                }));
+            };
 
-            const buildItemRow = (item) => {
-                if (item.type === 'bahan') {
-                    return `
-                        <tr data-item-id="${item.id}">
-                            <td><span class="item-name">${item.name}</span></td>
-                            <td>${item.category?.name || '-'} (${item.unit})</td>
-                            <td><span class="amount">${formatNum(item.stock_good)}</span></td>
-                            <td><span class="amount">${formatNum(item.stock_less_good)}</span></td>
-                            <td><span class="amount">${formatNum(item.stock_damaged)}</span></td>
-                            <td><span class="amount">${formatNum(item.total_stock)} ${item.unit}</span></td>
-                            <td><span class="amount">${formatNum(item.min_stock)}</span></td>
-                            <td><button class="btn-delete" data-id="${item.id}">Hapus</button></td>
-                        </tr>
-                    `;
-                } else {
-                    return `
-                        <tr data-item-id="${item.id}">
-                            <td><span class="item-name">${item.name}</span></td>
-                            <td>${item.category?.name || '-'}</td>
-                            <td><span class="amount">${parseInt(item.stock_good)}</span></td>
-                            <td><span class="amount">${parseInt(item.stock_less_good)}</span></td>
-                            <td><span class="amount">${parseInt(item.stock_damaged)}</span></td>
-                            <td><span class="amount">${parseInt(item.total_stock)}</span></td>
-                            <td>${item.unit}</td>
-                            <td><button class="btn-delete" data-id="${item.id}">Hapus</button></td>
-                        </tr>
-                    `;
+            const buildInventoryRow = (item) => {
+                const isBahan = item.type === 'bahan';
+                const total = Number(item.total_stock || 0);
+                const minStock = Number(item.min_stock || 0);
+                const isLow = total <= minStock && minStock > 0;
+
+                return `
+                    <tr data-item-id="${item.id}">
+                        <td><span class="cell-item">${item.name}</span></td>
+                        <td>${item.category?.name || '-'}${isBahan ? ` (${item.unit})` : ''}</td>
+                        <td><span class="amount">${formatAmount(item.stock_good, item.type)}</span></td>
+                        <td><span class="amount">${formatAmount(item.stock_less_good, item.type)}</span></td>
+                        <td><span class="amount text-danger">${formatAmount(item.stock_damaged, item.type)}</span></td>
+                        <td><span class="amount ${isLow ? 'text-danger' : ''}">${formatAmount(item.total_stock, item.type)}${isBahan ? ` ${item.unit}` : ''}</span></td>
+                        <td>${isBahan ? `<span class="amount">${formatAmount(item.min_stock, item.type)}</span>` : item.unit}</td>
+                        <td>
+                            ${isLow ? '<span class="status-badge badge-low" style="margin-right: 8px;"><span class="status-dot"></span> Stok Rendah</span>' : ''}
+                            <button class="btn-delete btn-delete-item" type="button" data-item-id="${item.id}"><i class="fas fa-trash"></i> Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            };
+
+            const bindDeleteEvents = () => {
+                document.querySelectorAll('.btn-delete-item').forEach((btn) => {
+                    btn.onclick = async () => {
+                        const id = btn.dataset.itemId;
+                        if (!id || !confirm('Hapus item ini dari inventory?')) return;
+
+                        try {
+                            const formData = new FormData();
+                            formData.append('_method', 'DELETE');
+
+                            const res = await fetch(`{{ url('gudang/items') }}/${id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                },
+                                body: formData,
+                            });
+
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus item.');
+
+                            document.querySelector(`tr[data-item-id="${id}"]`)?.remove();
+                            document.querySelectorAll('#tableBahan tbody, #tableBarang tbody').forEach((tbody) => {
+                                if (!tbody.querySelector('tr')) {
+                                    tbody.innerHTML = '<tr class="empty-row"><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
+                                }
+                            });
+                            window.showToast(data.message || 'Item berhasil dihapus.');
+                        } catch (error) {
+                            window.showToast(error.message || 'Gagal menghapus item.', 'error');
+                        }
+                    };
+                });
+
+                document.querySelectorAll('.btn-delete-all').forEach((btn) => {
+                    btn.onclick = async () => {
+                        const type = btn.dataset.deleteType;
+                        if (!type) return;
+
+                        const label = type === 'barang' ? 'barang/perlengkapan' : 'bahan baku';
+                        if (!confirm(`Hapus semua data ${label}?`)) return;
+
+                        try {
+                            const formData = new FormData();
+                            formData.append('_method', 'DELETE');
+
+                            const res = await fetch(`{{ url('gudang/items/type') }}/${type}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                },
+                                body: formData,
+                            });
+
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus semua data.');
+
+                            const tableId = type === 'barang' ? 'tableBarang' : 'tableBahan';
+                            const tableBody = document.querySelector(`#${tableId} tbody`);
+                            if (tableBody) {
+                                tableBody.innerHTML = '<tr class="empty-row"><td colspan="8" class="empty-state">Belum ada data.</td></tr>';
+                            }
+
+                            window.showToast(data.message || 'Semua data berhasil dihapus.');
+                        } catch (error) {
+                            window.showToast(error.message || 'Gagal menghapus semua data.', 'error');
+                        }
+                    };
+                });
+
+                document.querySelectorAll('.btn-delete-movement').forEach((btn) => {
+                    btn.onclick = async () => {
+                        const id = btn.dataset.movementId;
+                        if (!id || !confirm('Hapus riwayat ini?')) return;
+
+                        try {
+                            const formData = new FormData();
+                            formData.append('_method', 'DELETE');
+
+                            const res = await fetch(`{{ url('gudang/movements') }}/${id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                },
+                                body: formData,
+                            });
+
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus riwayat.');
+
+                            document.querySelector(`tr[data-movement-id="${id}"]`)?.remove();
+                            const movementBody = document.querySelector('#tableMovements tbody');
+                            if (movementBody && !movementBody.querySelector('tr')) {
+                                movementBody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada riwayat pergerakan stok.</td></tr>';
+                            }
+                            window.showToast(data.message || 'Riwayat berhasil dihapus.');
+                        } catch (error) {
+                            window.showToast(error.message || 'Gagal menghapus riwayat.', 'error');
+                        }
+                    };
+                });
+
+                const deleteAllMovementsButton = document.querySelector('.btn-delete-all-movements');
+                if (deleteAllMovementsButton) {
+                    deleteAllMovementsButton.onclick = async () => {
+                        if (!confirm('Hapus semua riwayat barang masuk/keluar?')) return;
+
+                        try {
+                            const formData = new FormData();
+                            formData.append('_method', 'DELETE');
+
+                            const res = await fetch(`{{ route('inventory.movements.destroy-all') }}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                },
+                                body: formData,
+                            });
+
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Gagal menghapus semua riwayat.');
+
+                            const movementBody = document.querySelector('#tableMovements tbody');
+                            if (movementBody) {
+                                movementBody.innerHTML = '<tr><td colspan="7" class="empty-state">Belum ada riwayat pergerakan stok.</td></tr>';
+                            }
+                            window.showToast(data.message || 'Semua riwayat berhasil dihapus.');
+                        } catch (error) {
+                            window.showToast(error.message || 'Gagal menghapus semua riwayat.', 'error');
+                        }
+                    };
                 }
             };
 
             window.submitActiveForm = async () => {
                 if (!activeFormId) return;
                 const form = document.getElementById(activeFormId);
+                if (!(form instanceof HTMLFormElement)) return;
+
                 const formData = new FormData(form);
                 const drawerError = document.getElementById('drawerError');
-                
-                // Jika form stock in/out/opname, submit biasa (biar halaman refresh karena banyak perubahan data)
-                if (activeFormId === 'formStockIn' || activeFormId === 'formStockOut' || activeFormId === 'formOpname') {
+
+                if (['formStockIn', 'formStockOut', 'formOpname'].includes(activeFormId)) {
                     form.submit();
                     return;
                 }
 
                 btnSubmit.disabled = true;
-                btnSubmit.textContent = 'Menyimpan...';
+                btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
                 drawerError.style.display = 'none';
 
                 try {
                     const res = await fetch(form.action, {
                         method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                        body: formData
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: formData,
                     });
 
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.message || 'Gagal menyimpan data');
+                    if (!res.ok) throw new Error(data.message || 'Gagal menyimpan data.');
 
                     if (activeFormId === 'formCategory') {
-                        // Tambah kategori baru ke dropdown
-                        const cat = data.category;
-                        const selectId = cat.type === 'bahan' ? 'selectBahanCat' : 'selectBarangCat';
+                        const category = data.category;
+                        const selectId = category.type === 'bahan' ? 'selectBahanCat' : 'selectBarangCat';
                         const select = document.getElementById(selectId);
-                        const opt = new Option(`${cat.name} (${cat.unit})`, cat.id);
-                        select.add(opt);
-                        window.showToast(data.message);
+                        if (select) {
+                            const option = new Option(`${category.name} (${category.unit})`, category.id);
+                            select.add(option);
+                        }
+                        window.showToast(data.message || 'Kategori berhasil ditambahkan.');
                     } else {
-                        // Tambah item baru ke tabel
                         const item = data.item;
                         const tableId = item.type === 'bahan' ? 'tableBahan' : 'tableBarang';
                         const tbody = document.querySelector(`#${tableId} tbody`);
-                        const emptyRow = tbody.querySelector('.empty-row');
-                        if (emptyRow) emptyRow.remove();
-                        
-                        tbody.insertAdjacentHTML('afterbegin', buildItemRow(item));
+                        tbody?.querySelector('.empty-row')?.remove();
+                        tbody?.insertAdjacentHTML('afterbegin', buildInventoryRow(item));
                         bindDeleteEvents();
-                        window.showToast(data.message);
+                        window.showToast(data.message || 'Item berhasil ditambahkan.');
                     }
+
                     closeDrawer();
-                } catch (err) {
-                    drawerError.textContent = err.message;
+                } catch (error) {
+                    drawerError.textContent = error.message || 'Gagal menyimpan data.';
                     drawerError.style.display = 'block';
                 } finally {
                     btnSubmit.disabled = false;
-                    btnSubmit.textContent = 'Simpan Data';
+                    btnSubmit.innerHTML = '<i class="fas fa-check"></i> Simpan Data';
                 }
-            };
-
-            const bindDeleteEvents = () => {
-                document.querySelectorAll('.btn-delete').forEach(btn => {
-                    btn.onclick = async () => {
-                        const id = btn.dataset.id;
-                        if (!confirm('Hapus item ini dari inventory?')) return;
-                        
-                        try {
-                            const formData = new FormData();
-                            formData.append('_method', 'DELETE');
-                            const res = await fetch(`/gudang/items/${id}`, {
-                                method: 'POST',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-                                body: formData
-                            });
-                            const data = await res.json();
-                            if (res.ok) {
-                                document.querySelector(`tr[data-item-id="${id}"]`).remove();
-                                window.showToast(data.message);
-                            } else {
-                                window.showToast(data.message, 'error');
-                            }
-                        } catch (e) {
-                            window.showToast('Gagal menghapus item', 'error');
-                        }
-                    };
-                });
             };
 
             bindDeleteEvents();
@@ -688,22 +1534,36 @@
 
             setInterval(async () => {
                 try {
-                    const res = await fetch('{{ route('inventory.live') }}');
+                    const res = await fetch('{{ route('inventory.live') }}', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        credentials: 'same-origin',
+                    });
+                    if (!res.ok) return;
                     const data = await res.json();
-                    
-                    data.items.forEach(item => {
+                    (data.items || []).forEach((item) => {
                         const row = document.querySelector(`tr[data-item-id="${item.id}"]`);
-                        if (row) {
-                            row.querySelector('td:nth-child(3) .amount').textContent = item.stock_good;
-                            row.querySelector('td:nth-child(4) .amount').textContent = item.stock_less_good;
-                            row.querySelector('td:nth-child(5) .amount').textContent = item.stock_damaged;
-                            row.querySelector('td:nth-child(6) .amount').textContent = item.total_stock;
+                        if (!row) return;
+
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length < 7) return;
+
+                        cells[2].querySelector('.amount').textContent = formatAmount(item.stock_good, item.type);
+                        cells[3].querySelector('.amount').textContent = formatAmount(item.stock_less_good, item.type);
+                        cells[4].querySelector('.amount').textContent = formatAmount(item.stock_damaged, item.type);
+                        if (item.type === 'bahan') {
+                            cells[5].querySelector('.amount').textContent = `${formatAmount(item.total_stock, item.type)} ${item.unit}`;
+                            cells[6].querySelector('.amount').textContent = formatAmount(item.min_stock, item.type);
+                        } else {
+                            cells[5].querySelector('.amount').textContent = formatAmount(item.total_stock, item.type);
+                            cells[6].textContent = item.unit;
                         }
                     });
                 } catch (e) {
-                    console.error('Failed to fetch live inventory data', e);
                 }
-            }, 1000);
+            }, 4000);
         })();
     </script>
     @include('components.live-sync')

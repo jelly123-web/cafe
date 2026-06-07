@@ -10,6 +10,7 @@ use App\Models\MenuCategory;
 use App\Models\Promo;
 use App\Models\SaleTransaction;
 use App\Models\SaleTransactionItem;
+use App\Models\SystemSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,29 @@ use Illuminate\View\View;
 
 class PublicTableMenuController extends Controller
 {
+    private function brandPayload(): array
+    {
+        $brandName = SystemSetting::getValue('cafe_name', config('app.name', 'Cafe'));
+        $brandLogo = SystemSetting::getValue('cafe_logo');
+        $heroTag = SystemSetting::getValue('hero_banner_tag', 'PROMO SPESIAL HARI INI');
+        $heroTitle = SystemSetting::getValue('hero_banner_title', 'Diskon 50% Untuk Semua Paket Nasi Goreng');
+        $heroDesc = SystemSetting::getValue('hero_banner_desc', 'Nikmati paket lengkap dengan harga setengah. Berlaku sampai pukul 23:59 malam ini.');
+        $heroButtonText = SystemSetting::getValue('hero_banner_button_text', 'Lihat Promo');
+        $heroImage = SystemSetting::getValue('hero_banner_image');
+
+        return [
+            'name' => $brandName,
+            'logo_url' => $brandLogo ? '/brand-logo?v=' . rawurlencode($brandLogo) : null,
+            'hero' => [
+                'tag' => $heroTag,
+                'title' => $heroTitle,
+                'desc' => $heroDesc,
+                'button_text' => $heroButtonText,
+                'image_url' => $heroImage ? Storage::disk('public')->url($heroImage) : null,
+            ],
+        ];
+    }
+
     private function activePromos()
     {
         return Promo::query()
@@ -325,6 +349,7 @@ class PublicTableMenuController extends Controller
     private function liveMenuPayload(): array
     {
         $promos = $this->activePromos();
+        $brand = $this->brandPayload();
         $categories = MenuCategory::query()
             ->with(['menus' => fn ($query) => $query->where('is_sold_out', false)->orderBy('name')])
             ->orderBy('name')
@@ -348,6 +373,7 @@ class PublicTableMenuController extends Controller
         $latestCategoryTs = MenuCategory::query()->max('updated_at');
         $latestPackageTs = FoodPackage::query()->max('updated_at');
         $latestPromoTs = Promo::query()->max('updated_at');
+        $latestSettingTs = SystemSetting::query()->max('updated_at');
         $menuCount = Menu::query()->where('is_sold_out', false)->where('code', '!=', 'A01')->count();
         $categoryCount = MenuCategory::query()->count();
         $packageCount = FoodPackage::query()->count();
@@ -358,12 +384,15 @@ class PublicTableMenuController extends Controller
                 strtotime((string) $latestMenuTs) ?: 0,
                 strtotime((string) $latestCategoryTs) ?: 0,
                 strtotime((string) $latestPackageTs) ?: 0,
-                strtotime((string) $latestPromoTs) ?: 0
+                strtotime((string) $latestPromoTs) ?: 0,
+                strtotime((string) $latestSettingTs) ?: 0
             ),
+            'settings_ts' => strtotime((string) $latestSettingTs) ?: 0,
             'menu_count' => $menuCount,
             'category_count' => $categoryCount,
             'package_count' => $packageCount,
             'promo_count' => $promoCount,
+            'brand' => $brand,
             'promos_html' => view('public.partials.promo-strip', [
                 'promos' => $promos,
             ])->render(),
@@ -413,6 +442,7 @@ class PublicTableMenuController extends Controller
             'packages' => $packages,
             'menus' => $menus,
             'initial_menu_ts' => $liveMenu['latest_ts'],
+            'initial_settings_ts' => $liveMenu['settings_ts'] ?? 0,
             'initial_menu_count' => $liveMenu['menu_count'],
             'initial_category_count' => $liveMenu['category_count'],
             'initial_package_count' => $liveMenu['package_count'],

@@ -171,6 +171,8 @@
             overflow: hidden;
             position: relative;
             background: linear-gradient(135deg, #E85D2C 0%, #F97316 50%, #FB923C 100%);
+            background-size: cover;
+            background-position: center;
             color: white;
         }
 
@@ -194,6 +196,16 @@
             height: 130px;
             background: rgba(255,255,255,0.06);
             border-radius: 50%;
+        }
+
+        .hero.has-image::before {
+            inset: 0;
+            width: auto;
+            height: auto;
+            top: 0;
+            right: 0;
+            border-radius: 0;
+            background: linear-gradient(135deg, rgba(232,93,44,0.92) 0%, rgba(249,115,22,0.84) 55%, rgba(251,146,60,0.76) 100%);
         }
 
         .hero > * { position: relative; z-index: 1; }
@@ -2699,9 +2711,15 @@
 <body>
     <nav class="navbar" id="navbar">
         <div class="navbar-inner">
-            <a href="#" class="brand">
-                <div class="brand-icon"><i class="fas fa-utensils"></i></div>
-                <span class="brand-name">cafecaf</span>
+            <a href="#" class="brand" id="brandLink">
+                <div class="brand-icon" id="brandIcon">
+                    @if(!empty($cafeBrand['logo_url']))
+                        <img src="{{ $cafeBrand['logo_url'] }}" alt="{{ $cafeBrand['name'] ?? 'cafecaf' }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+                    @else
+                        <i class="fas fa-utensils"></i>
+                    @endif
+                </div>
+                <span class="brand-name" id="brandName">{{ $cafeBrand['name'] ?? 'cafecaf' }}</span>
             </a>
             <div class="nav-actions">
                 <button class="nav-btn" type="button" title="Riwayat pesanan" onclick="showToast('Riwayat pesanan belum tersedia', 'fa-clock-rotate-left')">
@@ -2716,12 +2734,18 @@
     </nav>
 
     <main class="shell">
-        <section class="hero">
+        <section
+            id="heroSection"
+            class="hero {{ !empty($publicHero['image_url']) ? 'has-image' : '' }}"
+            @if(!empty($publicHero['image_url']))
+                style="background-image:url('{{ $publicHero['image_url'] }}')"
+            @endif
+        >
             <div class="hero-content">
-                <div class="hero-tag"><i class="fas fa-fire"></i> PROMO SPESIAL HARI INI</div>
-                <h1 class="hero-title">Diskon 50% Untuk Semua Paket Nasi Goreng</h1>
-                <p class="hero-desc">Nikmati paket lengkap dengan harga setengah. Berlaku sampai pukul 23:59 malam ini.</p>
-                <button class="hero-cta" type="button" onclick="scrollToSection('promoSection')"><i class="fas fa-tag"></i> Lihat Promo</button>
+                <div class="hero-tag" id="heroTag"><i class="fas fa-fire"></i> <span>{{ $publicHero['tag'] ?? 'PROMO SPESIAL HARI INI' }}</span></div>
+                <h1 class="hero-title" id="heroTitle">{{ $publicHero['title'] ?? 'Diskon 50% Untuk Semua Paket Nasi Goreng' }}</h1>
+                <p class="hero-desc" id="heroDesc">{{ $publicHero['desc'] ?? 'Nikmati paket lengkap dengan harga setengah. Berlaku sampai pukul 23:59 malam ini.' }}</p>
+                <button class="hero-cta" id="heroButton" type="button" onclick="scrollToSection('promoSection')"><i class="fas fa-tag"></i> <span>{{ $publicHero['button_text'] ?? 'Lihat Promo' }}</span></button>
             </div>
         </section>
 
@@ -3423,6 +3447,39 @@
             });
 
             promoWrap?.addEventListener('click', (e) => {
+                const promoCard = e.target.closest('.promo-card[data-promo-action="quick-add"]');
+                if (promoCard) {
+                    const itemType = promoCard.dataset.itemType === 'package' ? 'package' : 'menu';
+                    const itemId = parseItemNumber(promoCard.dataset.id);
+                    const itemName = promoCard.dataset.name || 'Promo item';
+                    const itemPrice = parseItemNumber(promoCard.dataset.price);
+                    const originalPrice = parseItemNumber(promoCard.dataset.originalPrice) || itemPrice;
+                    const promoMeta = parsePromoMeta(promoCard.dataset.promoMeta);
+
+                    if (itemType === 'package') {
+                        packageCart.set(itemId, {
+                            name: itemName,
+                            qty: (packageCart.get(itemId)?.qty || 0) + 1,
+                            price: itemPrice,
+                            originalPrice,
+                            promoMeta: promoMeta || null,
+                        });
+                    } else {
+                        cart.set(itemId, {
+                            name: itemName,
+                            qty: (cart.get(itemId)?.qty || 0) + 1,
+                            price: itemPrice,
+                            originalPrice,
+                            promoMeta: promoMeta || null,
+                        });
+                    }
+
+                    refreshOrderView();
+                    openCartDrawer();
+                    window.showToast('Promo ditambahkan ke keranjang.', 'success');
+                    return;
+                }
+
                 const actionBtn = e.target.closest('[data-promo-action]');
                 if (actionBtn) {
                     const action = actionBtn.getAttribute('data-promo-action');
@@ -3569,6 +3626,58 @@
             refreshOrderView(); applyMenuFilter('all');
 
             let isPolling = false;
+            const brandIcon = document.getElementById('brandIcon');
+            const brandName = document.getElementById('brandName');
+            const heroSection = document.getElementById('heroSection');
+            const heroTag = document.getElementById('heroTag');
+            const heroTitle = document.getElementById('heroTitle');
+            const heroDesc = document.getElementById('heroDesc');
+            const heroButton = document.getElementById('heroButton');
+            let lastSettingsTs = Number(@json($initial_settings_ts ?? 0));
+
+            const renderBrandAndHero = (brandData = {}) => {
+                if (brandName && typeof brandData.name === 'string' && brandData.name.trim() !== '') {
+                    brandName.textContent = brandData.name;
+                }
+
+                if (brandIcon) {
+                    if (brandData.logo_url) {
+                        brandIcon.innerHTML = `<img src="${brandData.logo_url}" alt="${(brandData.name || 'cafecaf').replace(/"/g, '&quot;')}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+                    } else {
+                        brandIcon.innerHTML = '<i class="fas fa-utensils"></i>';
+                    }
+                }
+
+                const heroData = brandData.hero || {};
+                if (heroTag) {
+                    const heroTagText = heroTag.querySelector('span');
+                    if (heroTagText && typeof heroData.tag === 'string' && heroData.tag.trim() !== '') {
+                        heroTagText.textContent = heroData.tag;
+                    }
+                }
+                if (heroTitle && typeof heroData.title === 'string' && heroData.title.trim() !== '') {
+                    heroTitle.textContent = heroData.title;
+                }
+                if (heroDesc && typeof heroData.desc === 'string' && heroData.desc.trim() !== '') {
+                    heroDesc.textContent = heroData.desc;
+                }
+                if (heroButton) {
+                    const heroButtonText = heroButton.querySelector('span');
+                    if (heroButtonText && typeof heroData.button_text === 'string' && heroData.button_text.trim() !== '') {
+                        heroButtonText.textContent = heroData.button_text;
+                    }
+                }
+                if (heroSection) {
+                    if (heroData.image_url) {
+                        heroSection.classList.add('has-image');
+                        heroSection.style.backgroundImage = `url("${heroData.image_url}")`;
+                    } else {
+                        heroSection.classList.remove('has-image');
+                        heroSection.style.backgroundImage = '';
+                    }
+                }
+            };
+
             const pollData = async () => {
                 if (isPolling) return;
                 isPolling = true;
@@ -3584,6 +3693,12 @@
                         const nextCategoryCount = Number(mData.category_count || 0);
                         const nextPackageCount = Number(mData.package_count || 0);
                         const nextPromoCount = Number(mData.promo_count || 0);
+                        const nextSettingsTs = Number(mData.settings_ts || 0);
+
+                        if (nextSettingsTs !== lastSettingsTs && mData.brand) {
+                            renderBrandAndHero(mData.brand);
+                            lastSettingsTs = nextSettingsTs;
+                        }
 
                         if (
                             nextLatestTs !== lastMenuTs ||

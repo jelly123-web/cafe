@@ -103,6 +103,57 @@ class InventoryController extends Controller
         return back()->with('success', 'Item berhasil dihapus.');
     }
 
+    public function destroyItemsByType(Request $request, string $type): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        abort_unless(in_array($type, ['bahan', 'barang'], true), 404);
+
+        $deleted = InventoryItem::query()
+            ->where('type', $type)
+            ->delete();
+
+        $label = $type === 'barang' ? 'barang/perlengkapan' : 'bahan baku';
+        $message = $deleted > 0
+            ? 'Semua data ' . $label . ' berhasil dihapus.'
+            : 'Tidak ada data ' . $label . ' untuk dihapus.';
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => $message,
+                'deleted' => $deleted,
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function destroyMovement(Request $request, InventoryMovement $movement): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $movement->delete();
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['message' => 'Riwayat berhasil dihapus.']);
+        }
+
+        return back()->with('success', 'Riwayat berhasil dihapus.');
+    }
+
+    public function destroyAllMovements(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $deleted = InventoryMovement::query()->delete();
+        $message = $deleted > 0
+            ? 'Semua riwayat barang masuk/keluar berhasil dihapus.'
+            : 'Tidak ada riwayat barang masuk/keluar untuk dihapus.';
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => $message,
+                'deleted' => $deleted,
+            ]);
+        }
+
+        return back()->with('success', $message);
+    }
+
     public function stockIn(Request $request): RedirectResponse
     {
         $data = $request->validate([

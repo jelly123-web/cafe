@@ -28,24 +28,33 @@
         .package-menu-option { 
             display: flex; 
             align-items: center; 
-            gap: 1rem; 
+            gap: 0.75rem; 
             padding: 1rem; 
             background: #fff; 
             border: 1.5px solid var(--accent); 
             border-radius: 16px; 
             cursor: pointer; 
             transition: all 0.2s;
-            position: relative;
         }
         .package-menu-option:hover { border-color: var(--highlight); transform: translateY(-2px); }
         .package-menu-option.selected { border-color: var(--highlight); background: #fffdfb; box-shadow: 0 4px 12px var(--shadow); }
         
         .package-menu-checkbox { width: 20px; height: 20px; accent-color: var(--highlight); flex-shrink: 0; }
-        .package-menu-info { flex: 1; }
-        .package-menu-info strong { display: block; color: var(--primary); font-size: 0.95rem; }
+        .package-menu-info { flex: 1; min-width: 0; }
+        .package-menu-info strong { display: block; color: var(--primary); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .package-menu-info small { color: var(--text-muted); font-size: 0.8rem; }
 
-        .qty-control { display: flex; align-items: center; gap: 0.5rem; background: #fdfaf8; padding: 0.25rem; border-radius: 10px; border: 1px solid var(--accent); }
+        .qty-control { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.5rem; 
+            background: #fdfaf8; 
+            padding: 0.25rem; 
+            border-radius: 10px; 
+            border: 1px solid var(--accent); 
+            flex-shrink: 0;
+            margin-left: auto;
+        }
         .qty-btn { width: 28px; height: 28px; border-radius: 6px; border: none; background: #fff; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .qty-btn:hover { background: var(--highlight); color: #fff; }
         .qty-input { width: 35px; text-align: center; border: none; background: transparent; font-weight: 700; color: var(--primary); -moz-appearance: textfield; }
@@ -129,16 +138,18 @@
                         $qty = $menuQuantities[$menu->id] ?? 1;
                     @endphp
                     <div class="package-menu-option {{ $isSelected ? 'selected' : '' }}" data-menu-id="{{ $menu->id }}">
-                        <input
-                            type="checkbox"
-                            name="menus[]"
-                            value="{{ $menu->id }}"
-                            class="package-menu-checkbox"
-                            @checked($isSelected)
-                        >
-                        <div class="package-menu-info">
-                            <strong>{{ $menu->name }}</strong>
-                            <small>{{ $menu->code }} - Rp {{ number_format((float) $menu->selling_price, 0, ',', '.') }}</small>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0;">
+                            <input
+                                type="checkbox"
+                                name="menus[]"
+                                value="{{ $menu->id }}"
+                                class="package-menu-checkbox"
+                                @checked($isSelected)
+                            >
+                            <div class="package-menu-info">
+                                <strong>{{ $menu->name }}</strong>
+                                <small>{{ $menu->code }} - Rp {{ number_format((float) $menu->selling_price, 0, ',', '.') }}</small>
+                            </div>
                         </div>
                         
                         <div class="qty-control" style="{{ $isSelected ? '' : 'display:none;' }}">
