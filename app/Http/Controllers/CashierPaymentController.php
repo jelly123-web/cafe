@@ -6,10 +6,14 @@ use App\Models\CashierCart;
 use App\Models\CashierCartItem;
 use App\Models\Menu;
 use App\Models\SaleTransaction;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CashierPaymentController extends Controller
@@ -24,6 +28,19 @@ class CashierPaymentController extends Controller
         return view('cashier.payments.live', $this->paymentData());
     }
 
+    public function cartLive(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user, 403);
+
+        $cart = $this->cartData((int) $user->id);
+
+        return response()->json([
+            'cart' => $cart,
+            'signature' => md5(json_encode($cart)),
+        ]);
+    }
+
     public function superadminIndex(): View
     {
         $prefix = request()->routeIs('superadmin.*') ? 'superadmin' : 'leader_cashier';
@@ -36,8 +53,29 @@ class CashierPaymentController extends Controller
         return view($prefix . '.payments.live', $this->paymentData());
     }
 
+    public function mobileScannerPage(Request $request, string $token): View
+    {
+        $scope = $request->routeIs('superadmin.*') ? 'superadmin' : 'cashier';
+        $target = Cache::get($this->scannerCacheKey($token));
+
+        abort_unless(
+            is_array($target)
+            && ($target['scope'] ?? null) === $scope
+            && ! empty($target['user_id']),
+            404
+        );
+
+        return view('payments.mobile-scanner', [
+            'postUrl' => route($scope . '.scanner.mobile.cart', ['token' => $token]),
+            'scopeLabel' => $scope === 'superadmin' ? 'Superadmin' : 'Kasir',
+            'targetName' => $target['user_name'] ?? 'Kasir',
+            'expiresAt' => $target['expires_at'] ?? null,
+        ]);
+    }
+
     private function paymentData(): array
     {
+        $scanner = $this->scannerLinkData();
         $orders = SaleTransaction::query()
             ->with('table')
             ->withCount('items')
@@ -45,10 +83,16 @@ class CashierPaymentController extends Controller
             ->orderByDesc('sold_at')
             ->paginate(12);
 
+        $cart = $this->cartData((int) auth()->id());
+
         return [
             'orders' => $orders,
-            'cart' => $this->cartData((int) auth()->id()),
+            'cart' => $cart,
+            'cartSignature' => md5(json_encode($cart)),
             'menuCategories' => \App\Models\MenuCategory::query()->orderBy('name')->get(),
+            'mobileScannerUrl' => $scanner['url'],
+            'mobileScannerQr' => $scanner['qr'],
+            'mobileScannerExpiresAt' => $scanner['expires_at'],
         ];
     }
 
@@ -210,5 +254,53 @@ class CashierPaymentController extends Controller
         } while (SaleTransaction::query()->where('code', $code)->exists());
 
         return $code;
+    }
+
+    private function scannerLinkData(): array
+    {
+        $user = auth()->user();
+        abort_unless($user, 403);
+
+        $scope = request()->routeIs('superadmin.*') ? 'superadmin' : 'cashier';
+        $sessionKey = 'mobile_scanner_token_' . $scope;
+        $token = (string) request()->session()->get($sessionKey, '');
+        $expiresAt = now()->addHours(8);
+
+        if ($token === '' || ! Cache::has($this->scannerCacheKey($token))) {
+            $token = Str::random(40);
+            request()->session()->put($sessionKey, $token);
+        }
+
+        Cache::put($this->scannerCacheKey($token), [
+            'user_id' => (int) $user->id,
+            'user_name' => $user->name,
+            'scope' => $scope,
+            'expires_at' => $expiresAt->toIso8601String(),
+        ], $expiresAt);
+
+        $routeName = $scope === 'superadmin' ? 'superadmin.scanner.mobile' : 'cashier.scanner.mobile';
+        $url = URL::temporarySignedRoute($routeName, $expiresAt, ['token' => $token]);
+
+        return [
+            'url' => $url,
+            'qr' => $this->qrDataUri($url),
+            'expires_at' => $expiresAt->format('d M Y H:i'),
+        ];
+    }
+
+    private function qrDataUri(string $url): string
+    {
+        $svg = app('qrcode')
+            ->format('svg')
+            ->size(220)
+            ->margin(1)
+            ->generate($url);
+
+        return 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }
+
+    private function scannerCacheKey(string $token): string
+    {
+        return 'mobile_scanner_target:' . $token;
     }
 }

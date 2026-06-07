@@ -72,7 +72,29 @@
             left: 0;
             height: 100vh;
             z-index: 1000;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 900;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        .topbar-hamburger {
+            display: flex; width: 36px; height: 36px; border: 1.5px solid var(--border);
+            background: var(--white); border-radius: var(--radius-sm);
+            align-items: center; justify-content: center; cursor: pointer;
+            color: var(--fg-secondary); font-size: 20px; font-weight: 800;
+            transition: all var(--transition);
+        }
+        .topbar-hamburger i { font-size: 15px; line-height: 1; }
+        .topbar-hamburger:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
 
         .sidebar-brand {
             padding: 0 6px 16px;
@@ -232,7 +254,10 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        body.sidebar-collapsed .main-content { margin-left: 0; }
 
         .topbar {
             background: var(--white);
@@ -753,9 +778,12 @@
 
         @media (max-width: 1024px) {
             .sidebar {
-                display: none;
+                transform: translateX(-100%);
             }
-
+            .sidebar.mobile-open {
+                transform: translateX(0);
+                box-shadow: var(--shadow-lg);
+            }
             .main-content {
                 margin-left: 0;
             }
@@ -778,7 +806,7 @@
     @endphp
 
     <div class="dashboard-layout">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
                 <img src="{{ $cafeBrand['logo_url'] ?: 'https://placehold.co/56x56/D97706/FFFFFF?text=MY' }}" alt="{{ $cafeBrand['name'] ?? 'MakanYuk Cafe' }}" class="sidebar-logo">
                 <div class="sidebar-brand-text">
@@ -816,7 +844,12 @@
 
         <div class="main-content">
             <header class="topbar">
-                <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="topbar-hamburger" id="sidebarToggle" type="button" title="Toggle Sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
+                </div>
                 <div class="topbar-right">
                     <a href="{{ route('profile.edit') }}" class="topbar-btn" title="Profil"><i class="fas fa-user"></i></a>
                 </div>
@@ -1230,9 +1263,52 @@
     </aside>
 
     <div id="toastWrap" class="toast-wrap"></div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <script>
         (function () {
+            const initSidebar = () => {
+                const btn = document.getElementById('sidebarToggle');
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (!btn || !sidebar || !overlay) return;
+                if (btn.dataset.sidebarBound === '1') return;
+                btn.dataset.sidebarBound = '1';
+
+                const isMobile = () => window.innerWidth <= 1024;
+                const closeMobileSidebar = () => {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('show');
+                };
+
+                btn.addEventListener('click', () => {
+                    if (isMobile()) {
+                        sidebar.classList.toggle('mobile-open');
+                        overlay.classList.toggle('show');
+                        document.body.classList.remove('sidebar-collapsed');
+                        return;
+                    }
+
+                    closeMobileSidebar();
+                    document.body.classList.toggle('sidebar-collapsed');
+                    localStorage.setItem('inventory_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+                });
+
+                overlay.addEventListener('click', closeMobileSidebar);
+
+                window.addEventListener('resize', () => {
+                    if (!isMobile()) {
+                        closeMobileSidebar();
+                    }
+                });
+
+                const isCollapsed = localStorage.getItem('inventory_sidebar_collapsed');
+                if (isCollapsed === '1') {
+                    document.body.classList.add('sidebar-collapsed');
+                }
+            };
+            initSidebar();
+
             const inventoryDrawer = document.getElementById('inventoryDrawer');
             const drawerBackdrop = document.getElementById('drawerBackdrop');
             const toastWrap = document.getElementById('toastWrap');

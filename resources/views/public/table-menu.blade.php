@@ -1222,107 +1222,207 @@
         .order-modal {
             position: fixed; left: 50%; top: 50%;
             transform: translate(-50%, -45%);
-            width: min(480px, 92vw); background: #fff;
-            border: 1px solid var(--accent); border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(62, 39, 35, 0.25);
-            opacity: 0; visibility: hidden; transition: .25s ease; z-index: 1001;
-            display: grid; grid-template-rows: auto 1fr auto;
+            width: min(440px, 92vw); background: #fff;
+            border: 1px solid var(--border); border-radius: 24px;
+            box-shadow: var(--shadow-xl);
+            opacity: 0; visibility: hidden; transition: .3s ease; z-index: 1001;
+            display: flex; flex-direction: column;
+            overflow: hidden;
         }
         .order-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
 
-        .modal-head, .modal-foot { padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-        .modal-head { border-bottom: 1px solid var(--accent); }
-        .modal-head strong { font-family: 'Playfair Display', Georgia, serif; font-size: 1.3rem; color: var(--primary); text-transform: lowercase; }
-        .modal-foot { border-top: 1px solid var(--accent); justify-content: flex-end; gap: 0.75rem; }
-        .modal-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; }
-        .modal-body label { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .modal-close { border: 1px solid var(--accent); background: #fff; color: var(--primary); border-radius: 8px; padding: 0.4rem 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-        .modal-close:hover { background: var(--bg-main); }
+        .modal-head { 
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .modal-head strong { 
+            font-size: 20px;
+            font-weight: 900;
+            color: var(--fg);
+            text-transform: capitalize;
+            margin-bottom: 4px;
+            font-family: inherit;
+        }
+        .price#modalMenuPrice { 
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--highlight);
+        }
 
-        .qty-control-modal { display: flex; align-items: center; gap: 1.25rem; background: var(--bg-main); padding: 0.5rem; border-radius: 16px; border: 1px solid var(--accent); width: fit-content; margin: 0 auto; }
-        .qty-btn-modal { width: 44px; height: 44px; border-radius: 12px; border: none; background: #fff; color: var(--primary); cursor: pointer; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: all 0.2s; }
-        .qty-btn-modal:hover { background: var(--highlight); color: #fff; }
-        .qty-val-modal { font-size: 1.5rem; font-weight: 800; color: var(--primary); min-width: 40px; text-align: center; }
+        .modal-body { 
+            padding: 24px;
+            display: flex;
+            flex-direction: column; 
+            gap: 24px; 
+            overflow-y: auto; 
+            flex: 1;
+        }
+        .modal-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-body label { 
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 0;
+            display: block;
+        }
+        .modal-close { display: none; }
+
+        .qty-control-modal { 
+            display: flex; 
+            align-items: center; 
+            gap: 16px; 
+        }
+        .qty-btn-modal { 
+            width: 40px; 
+            height: 40px; 
+            border-radius: var(--radius-md); 
+            border: 1.5px solid var(--border); 
+            background: #fff; 
+            color: var(--fg); 
+            cursor: pointer; 
+            font-size: 18px; 
+            font-weight: 800; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: all 0.2s ease; 
+        }
+        .qty-btn-modal:hover { border-color: var(--highlight); color: var(--highlight); background: var(--accent-light); }
+        .qty-val-modal { font-size: 20px; font-weight: 900; color: var(--fg); min-width: 30px; text-align: center; }
 
         .qty-input {
-            width: 100%; border: 1px solid var(--accent); border-radius: 12px;
-            padding: 0.75rem 1rem; font-family: inherit; font-size: 1rem; color: var(--text-main);
-            background: var(--bg-main); outline: none; transition: all 0.2s ease; text-align: center;
+            width: 100%; border: 1.5px solid var(--border); border-radius: 12px;
+            padding: 0.75rem 1rem; font-family: inherit; font-size: 1rem; color: var(--fg);
+            background: var(--bg); outline: none; transition: all 0.2s ease; text-align: center;
         }
 
-        .btn-light { border: 1px solid var(--loss); background: #fff; color: var(--loss); border-radius: 12px; padding: 0.65rem 1.5rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
-        .btn-light:hover { background: #FFEBEE; }
-        .total-line { display: flex; justify-content: space-between; font-weight: 700; color: var(--primary); font-size: 1.1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--accent); }
-        .modal-promo-box {
-            display:none;
-            padding: 0.85rem 1rem;
-            border: 1px dashed var(--accent);
-            border-radius: 14px;
-            background: #fffaf5;
-            color: var(--text-main);
-            font-size: 0.88rem;
-            line-height: 1.5;
+        .btn-light#removeFromCartBtn { 
+            border: 1.5px solid #FECACA; 
+            background: #fff; 
+            color: #DC2626; 
+            border-radius: var(--radius-md); 
+            padding: 14px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            flex: 0.4;
         }
-        .modal-promo-box strong { color: var(--primary); display:block; margin-bottom:0.2rem; }
-        .notes-group {
-            display: grid;
-            gap: 0.55rem;
-        }
-        .notes-label-row {
+        .btn-light#removeFromCartBtn:hover { background: #FEE2E2; border-color: #DC2626; }
+        
+        .total-line { 
+            padding: 20px 24px;
+            background: var(--bg);
+            border-top: 1px solid var(--bg);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
+            margin-top: auto;
         }
-        .notes-label-row label {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .total-line span:first-child { font-size: 14px; font-weight: 700; color: var(--muted); }
+        .total-line span:last-child { font-size: 20px; font-weight: 900; color: var(--fg); }
+
+        .modal-promo-box {
+            padding: 12px 16px;
+            border: 1.5px solid var(--highlight);
+            border-radius: 12px;
+            background: var(--accent-light);
+            color: var(--fg);
+            font-size: 13px;
+            line-height: 1.5;
+            display: none;
+            margin-bottom: 8px;
+        }
+        .modal-promo-box strong { color: var(--highlight); display:block; margin-bottom:0.2rem; }
+        .notes-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
         .notes-actions {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 4px;
         }
         .voice-btn {
-            border: 1px solid var(--accent);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            border: 1.5px solid var(--border);
             background: #fff;
-            color: var(--primary);
-            border-radius: 999px;
-            padding: 0.45rem 0.8rem;
+            color: var(--fg-secondary);
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
+            width: fit-content;
         }
-        .voice-btn:hover { background: var(--bg-main); }
+        .voice-btn:hover { border-color: var(--highlight); color: var(--highlight); background: var(--accent-light); }
+        .voice-btn i { color: var(--highlight); }
         .voice-btn.is-recording {
-            background: rgba(212, 163, 115, 0.15);
-            border-color: var(--highlight);
-            color: var(--highlight);
+            background: #FEE2E2;
+            border-color: #DC2626;
+            color: #DC2626;
         }
+        .voice-btn.is-recording i { color: #DC2626; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
         .voice-state {
-            font-size: 0.78rem;
-            color: var(--text-muted);
+            font-size: 11px;
+            color: var(--muted);
         }
         .notes-textarea {
-            width: 100%;
-            min-height: 92px;
+            width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+            padding: 14px 16px; font-family: inherit; font-size: 14px; color: var(--fg);
+            background: var(--bg); outline: none; transition: all 0.2s ease;
+            min-height: 80px;
             resize: vertical;
-            border: 1px solid var(--accent);
-            border-radius: 16px;
-            padding: 0.85rem 1rem;
-            background: var(--bg-main);
-            color: var(--text-main);
-            outline: none;
         }
         .notes-textarea:focus {
             border-color: var(--highlight);
-            box-shadow: 0 0 0 3px rgba(212, 163, 115, 0.12);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1);
         }
+
+        .modal-foot {
+            padding: 0 24px 24px;
+            background: var(--bg);
+            display: flex;
+            gap: 12px;
+        }
+        .modal-foot .btn {
+            background: var(--highlight);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-foot .btn:hover {
+            background: var(--accent-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(217, 119, 6, 0.35);
+        }
+        .modal-foot .btn:active { transform: translateY(0); }
 
         .footer {
             text-align: center;
@@ -2824,34 +2924,36 @@
     <section class="order-modal" id="orderModal" aria-hidden="true">
         <div class="modal-head">
             <strong id="modalMenuName">Menu</strong>
-            <button type="button" class="modal-close" id="closeModalBtn">Tutup</button>
+            <div class="price" id="modalMenuPrice"></div>
+            <button type="button" class="modal-close" id="closeModalBtn" style="display:none;">Tutup</button>
         </div>
         <div class="modal-body">
-            <div class="price" id="modalMenuPrice" style="font-size: 1.4rem; text-align: center; margin-bottom: 0.5rem;"></div>
             <div class="modal-promo-box" id="modalPromoNote"></div>
 
-            <label style="text-align: center; display: block; margin-bottom: 0.5rem;">Jumlah Pesanan</label>
-            <div class="qty-control-modal">
-                <button type="button" class="qty-btn-modal" id="modalMinusBtn">-</button>
-                <div class="qty-val-modal" id="modalQtyVal">1</div>
-                <button type="button" class="qty-btn-modal" id="modalPlusBtn">+</button>
-            </div>
-
-            <div class="notes-group">
-                <div class="notes-label-row">
-                    <label for="orderNotes">Catatan Pesanan</label>
-                    <div class="notes-actions">
-                        <button type="button" class="voice-btn" id="voiceNoteBtn">🎤 Mulai rekam</button>
-                        <span class="voice-state" id="voiceNoteState">Siap ngomong</span>
-                    </div>
+            <div class="modal-section">
+                <label>Jumlah Pesanan</label>
+                <div class="qty-control-modal">
+                    <button type="button" class="qty-btn-modal" id="modalMinusBtn">-</button>
+                    <span class="qty-val-modal" id="modalQtyVal">1</span>
+                    <button type="button" class="qty-btn-modal" id="modalPlusBtn">+</button>
                 </div>
-                <textarea id="orderNotes" name="notes" class="notes-textarea" rows="3" placeholder="Contoh: es teh, jangan teh tawar, dan tambah es."></textarea>
             </div>
 
-            <div class="total-line">
-                <span>Total</span>
-                <span id="modalSubtotal">Rp 0</span>
+            <div class="modal-section">
+                <label for="orderNotes">Catatan Pesanan</label>
+                <textarea id="orderNotes" name="notes" class="notes-textarea" placeholder="Tulis catatan di sini..."></textarea>
+                <div class="notes-actions">
+                    <button type="button" class="voice-btn" id="voiceNoteBtn">
+                        <i class="fas fa-microphone"></i>
+                        <span>Mulai rekam</span>
+                    </button>
+                    <span class="voice-state" id="voiceNoteState">Siap ngomong</span>
+                </div>
             </div>
+        </div>
+        <div class="total-line">
+            <span>Total</span>
+            <span id="modalSubtotal">Rp 0</span>
         </div>
         <div class="modal-foot">
             <button type="button" class="btn-light" id="removeFromCartBtn">Hapus</button>
@@ -3259,12 +3361,13 @@
 
             const setVoiceState = (text, active = false) => {
                 if (voiceNoteState) voiceNoteState.textContent = text;
-                if (voiceNoteBtn) voiceNoteBtn.classList.toggle('is-recording', active);
                 if (voiceNoteBtn) {
-                    voiceNoteBtn.textContent = active ? '🎤 Tutup mic' : '🎤 Mulai rekam';
+                    voiceNoteBtn.classList.toggle('is-recording', active);
+                    voiceNoteBtn.innerHTML = active 
+                        ? '<i class="fas fa-stop"></i> Berhenti...' 
+                        : '<i class="fas fa-microphone"></i> Mulai rekam';
                 }
             };
-
             const stopVoiceRecognition = (resetState = true) => {
                 if (speechRecognition && isRecordingVoice) {
                     try { speechRecognition.stop(); } catch (_) {}

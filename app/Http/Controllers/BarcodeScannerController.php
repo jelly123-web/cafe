@@ -230,6 +230,70 @@ class BarcodeScannerController extends Controller
         ]);
     }
 
+    public function addMenuToTargetCart(Request $request, string $token): JsonResponse
+    {
+        $target = Cache::get('mobile_scanner_target:' . $token);
+        if (! is_array($target) || empty($target['user_id']) || empty($target['scope'])) {
+            return response()->json([
+                'message' => 'Sesi scanner HP sudah tidak aktif. Buka ulang dari aplikasi kasir.',
+            ], 404);
+        }
+
+        $routeScope = $request->routeIs('superadmin.*') ? 'superadmin' : 'cashier';
+        if (($target['scope'] ?? null) !== $routeScope) {
+            return response()->json([
+                'message' => 'Sesi scanner tidak cocok dengan halaman kasir tujuan.',
+            ], 422);
+        }
+
+        $data = $request->validate([
+            'barcode' => ['required', 'string', 'max:120'],
+            'qty' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $barcode = $this->cleanBarcode($data['barcode']);
+        $menu = $this->findMenuByBarcode($barcode);
+
+        if (! $menu) {
+            $inventory = $this->findInventoryByBarcode($barcode);
+            if ($inventory) {
+                return response()->json([
+                    'message' => 'Barcode ditemukan di inventory, bukan menu pembayaran.',
+                    'found_in_inventory' => true,
+                    'inventory' => $this->inventoryPayload($inventory),
+                ], 404);
+            }
+
+            return response()->json([
+                'message' => 'Menu dengan barcode ini belum terdaftar.',
+                'found_in_inventory' => false,
+                'barcode' => $barcode,
+            ], 404);
+        }
+
+        $cart = CashierCart::query()->firstOrCreate(['user_id' => (int) $target['user_id']]);
+        $item = $cart->items()->where('menu_id', $menu->id)->first();
+        if ($item) {
+            $item->update([
+                'qty' => (int) $item->qty + (int) $data['qty'],
+                'unit_price' => (float) $menu->selling_price,
+                'unit_cost' => (float) $menu->cost_price,
+            ]);
+        } else {
+            $cart->items()->create([
+                'menu_id' => $menu->id,
+                'qty' => (int) $data['qty'],
+                'unit_price' => (float) $menu->selling_price,
+                'unit_cost' => (float) $menu->cost_price,
+            ]);
+        }
+
+        return response()->json([
+            'message' => $menu->name . ' dikirim ke aplikasi kasir.',
+            'item' => $this->menuPayload($menu),
+        ]);
+    }
+
     private function cleanBarcode(string $barcode): string
     {
         return trim($barcode);

@@ -158,6 +158,55 @@
       font-weight: 700;
       color: var(--fg-secondary);
     }
+    .scanner-link-card {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: #FFFBF6;
+    }
+    .scanner-link-card h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--fg);
+    }
+    .scanner-link-card p {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .scanner-link-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .scanner-qr {
+      width: 118px;
+      height: 118px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      padding: 8px;
+      object-fit: contain;
+    }
+    .scanner-link-tools {
+      flex: 1;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .scanner-link-tools input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      background: var(--white);
+    }
 
     .scan-row {
       display: grid;
@@ -824,7 +873,11 @@
             const cameraBox = document.getElementById('cameraBox');
             const cameraVideo = document.getElementById('cameraVideo');
             const cameraStatus = document.getElementById('cameraStatus');
+            const mobileScannerLink = document.getElementById('mobileScannerLink');
+            const copyMobileScannerLink = document.getElementById('copyMobileScannerLink');
+            const cartLiveRoute = @json(route('superadmin.payments.cart.live'));
             const initialCart = @json($cart['items']);
+            let lastCartSignature = @json($cartSignature);
             const cartState = new Map((initialCart || []).map((item) => [Number(item.menu_id), { ...item }]));
             let pendingBarcode = '';
             let barcodeDetector = null;
@@ -986,6 +1039,29 @@
                 return data;
             };
 
+            const refreshCart = async () => {
+                try {
+                    const response = await fetch(cartLiveRoute, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        credentials: 'same-origin',
+                    });
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    if (!data.signature || data.signature === lastCartSignature) return;
+
+                    cartState.clear();
+                    (data.cart?.items || []).forEach((item) => {
+                        cartState.set(Number(item.menu_id), { ...item });
+                    });
+                    renderCart();
+                    lastCartSignature = data.signature;
+                } catch (error) {
+                }
+            };
+
             const ensureDetector = async () => {
                 if (barcodeDetector) return barcodeDetector;
                 if (!window.isSecureContext) {
@@ -1111,6 +1187,7 @@
                         <small>Barang baru disimpan dan langsung masuk ke pembayaran.</small>
                     `);
                     upsertCartItem(data.item, qty);
+                    lastCartSignature = '';
                     barcodeInput.value = '';
                     qtyInput.value = '1';
                 } catch (error) {
@@ -1197,6 +1274,7 @@
                     }
                     cartState.delete(menuId);
                     renderCart();
+                    lastCartSignature = '';
                     showResult(`<strong>${esc(data.message || 'Item dihapus.')}</strong>`);
                 } catch (error) {
                     showResult(`<span>${esc(error.message)}</span>`, true);
@@ -1213,6 +1291,16 @@
             window.addEventListener('focus', focusBarcode);
             document.addEventListener('turbo:load', focusBarcode);
             document.addEventListener('turbo:before-cache', stopCamera);
+            copyMobileScannerLink?.addEventListener('click', async () => {
+                const value = mobileScannerLink?.value?.trim();
+                if (!value) return;
+                try {
+                    await navigator.clipboard.writeText(value);
+                    showResult('<strong>Link scanner HP berhasil disalin.</strong>');
+                } catch (error) {
+                    showResult('<span>Gagal menyalin link scanner HP.</span>', true);
+                }
+            });
             focusBarcode();
 
             let interval;
@@ -1269,8 +1357,9 @@
                     interval = setInterval(() => {
                         if (document.visibilityState === 'visible') {
                             fetchLivePayment();
+                            refreshCart();
                         }
-                    }, 15000);
+                    }, 4000);
                 }
             };
 
@@ -1325,6 +1414,19 @@
                             <div class="camera-overlay"><div class="camera-frame"></div></div>
                         </div>
                         <div id="cameraStatus" class="camera-status">Arahkan kamera HP ke barcode menu.</div>
+                    </div>
+
+                    <div class="scanner-link-card">
+                        <h3><i class="fas fa-mobile-screen-button" style="color:var(--accent);"></i> Scanner HP ke Aplikasi Kasir</h3>
+                        <p>Scan QR ini dari HP lain. HP itu akan jadi alat scan barcode, lalu hasilnya langsung masuk ke aplikasi kasir di layar ini.</p>
+                        <div class="scanner-link-wrap">
+                            <img src="{{ $mobileScannerQr }}" alt="QR Scanner HP" class="scanner-qr">
+                            <div class="scanner-link-tools">
+                                <input id="mobileScannerLink" type="text" value="{{ $mobileScannerUrl }}" readonly>
+                                <button id="copyMobileScannerLink" class="btn-soft" type="button"><i class="fas fa-copy"></i> Salin Link Scanner HP</button>
+                                <small style="color:var(--muted);">Aktif sampai {{ $mobileScannerExpiresAt }}</small>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="registerBox" class="register-box">

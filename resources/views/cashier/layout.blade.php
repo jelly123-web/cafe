@@ -213,6 +213,9 @@
         <div class="main-content">
             <header class="topbar">
                 <div class="topbar-left">
+                    <button class="topbar-hamburger" id="sidebarToggle" type="button" title="Toggle Sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
                 </div>
                 <div class="topbar-right">

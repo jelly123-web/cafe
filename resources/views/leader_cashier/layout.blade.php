@@ -92,6 +92,9 @@
   <div class="main-content">
     <header class="topbar">
       <div class="topbar-left">
+        <button class="topbar-hamburger" id="sidebarToggle" type="button" title="Toggle Sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
         <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
       </div>
       <div class="topbar-right">
@@ -135,18 +138,41 @@
     const toggleBtn = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('sidebarOverlay');
     
+    const isMobile = () => window.innerWidth <= 900;
+    const closeMobileSidebar = () => {
+        sidebar?.classList.remove('mobile-open');
+        overlay?.classList.remove('show');
+    };
+
     if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('show');
+            if (isMobile()) {
+                sidebar.classList.toggle('mobile-open');
+                overlay.classList.toggle('show');
+                document.body.classList.remove('sidebar-collapsed');
+            } else {
+                closeMobileSidebar();
+                document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('leader_cashier_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed') ? '1' : '0');
+            }
         });
     }
     if (overlay) {
         overlay.addEventListener('click', () => {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('show');
+            closeMobileSidebar();
         });
     }
+
+    const isCollapsed = localStorage.getItem('leader_cashier_sidebar_collapsed');
+    if (isCollapsed === '1') {
+        document.body.classList.add('sidebar-collapsed');
+    }
+
+    window.addEventListener('resize', () => {
+        if (!isMobile()) {
+            closeMobileSidebar();
+        }
+    });
 
     // ===== FADE IN =====
     const observer = new IntersectionObserver((entries) => {

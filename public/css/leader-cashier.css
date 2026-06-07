@@ -52,8 +52,10 @@ body {
 .sidebar {
   width: 260px; background: var(--white); border-right: 1px solid var(--border);
   display: flex; flex-direction: column; position: fixed;
-  top: 0; left: 0; height: 100vh; z-index: 90; transition: transform 0.3s ease;
+  top: 0; left: 0; height: 100vh; z-index: 1000; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+body.sidebar-collapsed .sidebar { transform: translateX(-100%); }
 .sidebar-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.3); z-index: 85;
