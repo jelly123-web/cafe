@@ -85,12 +85,6 @@
             </div>
 
             <div class="package-field full">
-                <label for="notes">Catatan (Opsional)</label>
-                <textarea id="notes" name="notes" rows="3" placeholder="Contoh: Paket hemat, cocok untuk 2 orang.">{{ old('notes', $package->notes ?? '') }}</textarea>
-                @error('notes')<small class="form-error">{{ $message }}</small>@enderror
-            </div>
-
-            <div class="package-field full">
                 <label for="free_item">Barang Gratis (Opsional)</label>
                 <select id="free_item" name="free_item">
                     <option value="">Tidak ada barang gratis</option>

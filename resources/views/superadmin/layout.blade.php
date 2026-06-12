@@ -120,9 +120,10 @@
       position: sticky; top: 0; z-index: 50;
     }
     .topbar-left { display: flex; align-items: center; gap: 0; }
-    .topbar-hamburger { display: flex; width: 36px; height: 36px; border: 1.5px solid var(--border); background: var(--white); border-radius: var(--radius-sm); align-items: center; justify-content: center; cursor: pointer; color: var(--fg-secondary); font-size: 20px; font-weight: 800; transition: all var(--transition); }
-    .topbar-hamburger i { font-size: 15px; line-height: 1; }
+    .topbar-hamburger { display: flex; width: 36px; height: 36px; border: 1.5px solid var(--border); background: var(--white); border-radius: var(--radius-sm); align-items: center; justify-content: center; cursor: pointer; color: var(--fg-secondary); font-size: 20px; font-weight: 800; transition: all var(--transition); position: fixed; top: 18px; left: 276px; z-index: 1101; box-shadow: var(--shadow-xs); }
+    .topbar-hamburger .sidebar-toggle-mark { font-size: 22px; line-height: 1; font-weight: 900; transform: translateY(-1px); }
     .topbar-hamburger:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    body.sidebar-collapsed .topbar-hamburger { left: 16px; }
     .topbar-brand-title { font-size: 22px; font-weight: 900; color: var(--fg); letter-spacing: -0.6px; font-family: var(--font); }
     .topbar-right { display: flex; align-items: center; gap: 6px; }
     .topbar-btn { width: 38px; height: 38px; border: 1px solid var(--border); background: var(--white); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--fg-secondary); font-size: 15px; transition: all var(--transition); position: relative; }
@@ -160,7 +161,7 @@
       .sidebar { transform: translateX(-100%); }
       .sidebar.mobile-open { transform: translateX(0); box-shadow: var(--shadow-lg); }
       .main-content { margin-left: 0; }
-      .topbar-hamburger { display: flex; }
+      .topbar-hamburger { top: 18px; left: 16px; }
       .topbar-search { display: none; }
       .page-body { padding: 16px; }
     }
@@ -267,7 +268,7 @@
       <header class="topbar">
         <div class="topbar-left">
           <button class="topbar-hamburger" id="sidebarToggle" type="button" title="Toggle Sidebar">
-            <i class="fas fa-bars"></i>
+            <span class="sidebar-toggle-mark">=</span>
           </button>
           <span class="topbar-brand-title">{{ $cafeBrand['name'] ?? 'MakanYuk' }}</span>
         </div>

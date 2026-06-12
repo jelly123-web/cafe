@@ -14,7 +14,7 @@
 @section('title', 'Edit Paket')
 @section('kicker', 'Superadmin')
 @section('page_title', 'Edit Paket Makanan')
-@section('page_description', 'Ubah isi, foto, harga, dan menu di dalam paket.')
+@section('page_description', '')
 
 @section('content')
     @include('superadmin.packages.form', [

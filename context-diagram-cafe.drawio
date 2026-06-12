@@ -1,0 +1,123 @@
+<mxfile host="app.diagrams.net" agent="Codex" pages="2">
+  <diagram id="context-diagram-cafe" name="Context Diagram">
+    <mxGraphModel dx="2060" dy="1124" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="sys" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=18;fontStyle=1;" value="0&#xa;Sistem Informasi Cafe" vertex="1">
+          <mxGeometry height="190" width="190" x="780" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-superadmin" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" value="Superadmin" vertex="1">
+          <mxGeometry height="60" width="170" x="800" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-pelanggan" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" value="Pelanggan" vertex="1">
+          <mxGeometry height="60" width="170" x="100" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-kasir" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" value="Kasir / Staff" vertex="1">
+          <mxGeometry height="60" width="180" x="490" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-dapur" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="Dapur" vertex="1">
+          <mxGeometry height="60" width="170" x="1460" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="ext-inventory" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" value="Inventory" vertex="1">
+          <mxGeometry height="60" width="170" x="1080" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=12;" target="sys" value="login,&amp;nbsp;&lt;div&gt;kelola user,&amp;nbsp;&lt;/div&gt;&lt;div&gt;kelola hak&amp;nbsp;&lt;/div&gt;&lt;div&gt;akses,&amp;nbsp;&lt;/div&gt;&lt;div&gt;kelola menu,&amp;nbsp;&lt;/div&gt;&lt;div&gt;paket,&amp;nbsp;&lt;/div&gt;&lt;div&gt;promo,&amp;nbsp;&lt;/div&gt;&lt;div&gt;meja,&amp;nbsp;&lt;/div&gt;&lt;div&gt;minta laporan&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="290" />
+              <mxPoint x="840" y="290" />
+            </Array>
+            <mxPoint x="840" y="100" as="sourcePoint" />
+            <mxPoint x="840" y="362.1291218949665" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=12;exitX=0.737;exitY=0.044;exitDx=0;exitDy=0;exitPerimeter=0;" value="info akun,&amp;nbsp;&lt;div&gt;status&amp;nbsp;&lt;/div&gt;&lt;div&gt;pengelolaan&amp;nbsp;&lt;/div&gt;&lt;div&gt;data,&amp;nbsp;&lt;/div&gt;&lt;div&gt;dashboard,&amp;nbsp;&lt;/div&gt;&lt;div&gt;hasil laporan&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+            <mxPoint x="920.0026315789473" y="360.5333678046161" as="sourcePoint" />
+            <mxPoint x="920" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="ext-pelanggan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=12;" target="sys" value="lihat menu, pilih meja, buat pesanan">
+          <mxGeometry relative="1" x="0.0018" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="530" y="500" />
+              <mxPoint x="530" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=12;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" target="ext-pelanggan" value="daftar menu, info promo, status pesanan, konfirmasi pembayaran">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="270" y="470" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="ext-dapur" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=12;" target="sys" value="update status pesanan, update menu habis">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1310" y="480" />
+              <mxPoint x="1310" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="sys" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;fontSize=12;" target="ext-dapur" value="daftar order, detail pesanan, notifikasi proses masak">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1465" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-1" edge="1" parent="1" source="sys" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=0.443;entryY=0.059;entryDx=0;entryDy=0;entryPerimeter=0;" target="ext-kasir" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="690" y="630" as="sourcePoint" />
+            <mxPoint x="740" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-2" edge="1" parent="1" source="ext-kasir" style="endArrow=classic;html=1;rounded=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=0.315;entryY=0.98;entryDx=0;entryDy=0;entryPerimeter=0;" target="sys" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="923" y="690" as="sourcePoint" />
+            <mxPoint x="650" y="988" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-5" parent="1" style="text;whiteSpace=wrap;html=1;rotation=-50;" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;login, input pesanan, scan barcode,&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;&amp;nbsp;checkout, input pembayaran,&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;cetak / kirim struk&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="190" x="660" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-6" parent="1" style="text;whiteSpace=wrap;html=1;rotation=1;" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;data menu, data tagihan,&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;status transaksi, struk, laporan transaksi&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="230" x="430" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-7" edge="1" parent="1" source="ext-inventory" style="endArrow=classic;html=1;rounded=0;exitX=0.75;exitY=0;exitDx=0;exitDy=0;" target="sys" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="1250" y="740" as="sourcePoint" />
+            <mxPoint x="1300" y="690" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-8" edge="1" parent="1" source="sys" style="endArrow=classic;html=1;rounded=0;entryX=0.45;entryY=0.021;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.74;exitY=0.953;exitDx=0;exitDy=0;exitPerimeter=0;" target="ext-inventory" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="1049" y="1035" as="sourcePoint" />
+            <mxPoint x="780" y="740" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-9" parent="1" style="text;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;input barang masuk, barang keluar, stock opname&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="300" x="1060" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="Cr1hI_yJMn22cxxG3TCN-10" parent="1" style="text;whiteSpace=wrap;html=1;rotation=45;" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: nowrap; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;info stok, riwayat pergerakan stok, status inventory&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="300" x="840" y="680" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="FEiv-dHdZEQORIaENRtg" name="Halaman-2">
+    <mxGraphModel dx="1873" dy="1022" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="u_Hy-8fc6uhF_xM94tXF-1" parent="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=18;fontStyle=1;" value="Sistem Informasi Cafe" vertex="1">
+          <mxGeometry height="220" width="220" x="304" y="410" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

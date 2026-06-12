@@ -24,8 +24,7 @@ class SuperadminPackageController extends Controller
             ->when($search, function ($query, string $search) {
                 $query->where(function ($subQuery) use ($search) {
                     $subQuery->where('code', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('name', 'like', "%{$search}%");
                 });
             })
             ->latest()
@@ -64,7 +63,6 @@ class SuperadminPackageController extends Controller
 
         $package = new FoodPackage();
         $package->fill($data);
-        $package->description = $selectedMenuNames;
         $package->notes = $data['notes'] ?? null;
         $package->free_item = $data['free_item'] ?? null;
         $package->menu_category_id = $packageCategoryId;
@@ -116,7 +114,6 @@ class SuperadminPackageController extends Controller
         $selectedMenuNames = $this->selectedMenuNames($syncData);
 
         $package->fill($data);
-        $package->description = $selectedMenuNames;
         $package->notes = $data['notes'] ?? null;
         $package->free_item = $data['free_item'] ?? null;
         $package->menu_category_id = $packageCategoryId;
@@ -238,7 +235,6 @@ class SuperadminPackageController extends Controller
             'id' => $package->id,
             'code' => $package->code,
             'name' => $package->name,
-            'description' => $package->description,
             'notes' => $package->notes,
             'free_item' => $package->free_item,
             'menu_category_id' => $package->menu_category_id,

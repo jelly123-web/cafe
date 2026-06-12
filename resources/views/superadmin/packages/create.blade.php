@@ -14,7 +14,7 @@
 @section('title', 'Tambah Paket')
 @section('kicker', 'Superadmin')
 @section('page_title', 'Tambah Paket Makanan')
-@section('page_description', 'Buat paket makanan terpisah dari menu biasa dan isi dengan beberapa menu.')
+@section('page_description', '')
 
 @section('content')
     @include('superadmin.packages.form', [

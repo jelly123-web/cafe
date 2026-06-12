@@ -478,11 +478,6 @@
                                 <span class="tag tag-free"><i class="fas fa-gift" style="margin-right:3px;"></i> Free: {{ $package->free_item }}</span>
                             @endif
                         </div>
-                        <div class="package-menu-list">
-                            @foreach ($package->menus as $menu)
-                                <span class="package-menu-tag">({{ $menu->pivot->quantity }}x) {{ $menu->name }}</span>
-                            @endforeach
-                        </div>
                     </div>
                     <div class="package-actions">
                         <button
@@ -760,9 +755,6 @@
 
             const buildPackageHtml = (p) => {
                 const img = escapeHtml(p.image_url || defaultImage);
-                const chips = Array.isArray(p.menus) && p.menus.length
-                    ? p.menus.map((m) => `<span class="package-menu-tag">(${escapeHtml(m.quantity)}x) ${escapeHtml(m.name)}</span>`).join('')
-                    : '<span class="package-menu-tag">Belum ada menu</span>';
                 return `
                     <div class="package-card" data-package-id="${p.id}">
                         <img class="package-thumb" src="${img}" alt="${escapeHtml(p.name)}">
@@ -772,7 +764,6 @@
                                 <span class="tag tag-success">${formatMoney(p.selling_price)}</span>
                                 ${p.free_item ? `<span class="tag tag-free"><i class="fas fa-gift" style="margin-right:3px;"></i> Free: ${escapeHtml(p.free_item)}</span>` : ''}
                             </div>
-                            <div class="package-menu-list">${chips}</div>
                         </div>
                         <div class="package-actions">
                             <button type="button" class="btn-open-edit"

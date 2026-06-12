@@ -97,11 +97,6 @@
                         @if ($package->free_item)
                             <span class="tag tag-category"><i class="fas fa-gift"></i>&nbsp; Free: {{ $package->free_item }}</span>
                         @endif
-                        @if ($packageItems)
-                            <span class="tag tag-muted">{{ $packageItems }}</span>
-                        @else
-                            <span class="tag tag-muted">Belum ada menu</span>
-                        @endif
                     </div>
                 </div>
                 <div class="actions">
